@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KnowledgeForge AI - Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <meta charset="utf-8">
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <h2>KnowledgeForge AI</h2>
+    <p id="welcomeText"></p>
+
+    <hr>
+
+    <h3>Create Team</h3>
+
+    <form id="teamForm">
+        <label>Team Name</label>
+        <input type="text" id="teamName" required>
+
+        <label>Description</label>
+        <textarea id="teamDescription" rows="3" required></textarea>
+
+        <button type="submit">Create Team</button>
+    </form>
+
+    <p id="teamMessage"></p>
+
+    <br>
+    <button onclick="logout()">Log out</button>
+
+</div>
+
+<script>
+
+    const welcomeText = document.getElementById("welcomeText");
+
+    // ✅ Check if logged in
+    async function checkAuth() {
+        const response = await fetch("/api/me", {
+            credentials: "include"
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            welcomeText.innerText = "Welcome, " + data.email;
+        } else {
+            window.location.href = "/login.html";
+        }
+    }
+
+    checkAuth();
+
+    // ✅ Create Team
+    const teamForm = document.getElementById("teamForm");
+    const teamMessage = document.getElementById("teamMessage");
+
+    teamForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const teamName = document.getElementById("teamName").value;
+        const teamDescription = document.getElementById("teamDescription").value;
+
+        const response = await fetch("/api/teams", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                teamName: teamName,
+                teamDescription: teamDescription
+            })
+        });
+
+        if (response.ok) {
+            teamMessage.innerText = "Team created successfully ✅";
+            teamForm.reset();
+        } else {
+            teamMessage.innerText = "Failed to create team.";
+        }
+    });
+
+    // ✅ Logout
+    async function logout() {
+        await fetch("/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+        window.location.href = "/login.html";
+    }
+
+</script>
+
+</body>
+</html>
