@@ -14,6 +14,14 @@
 
     <hr>
 
+    <h3>My Teams</h3>
+
+    <div id="teamsContainer" style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <p>Loading teams...</p>
+    </div>
+
+    <hr>
+
     <h3>Create Team</h3>
 
     <form id="teamForm">
@@ -29,6 +37,7 @@
     <p id="teamMessage"></p>
 
     <br>
+
     <button onclick="logout()">Log out</button>
 
 </div>
@@ -37,60 +46,175 @@
 
     const welcomeText = document.getElementById("welcomeText");
 
-    // ✅ Check if logged in
+    // Check if user is logged in
     async function checkAuth() {
+
         const response = await fetch("/api/me", {
             credentials: "include"
         });
 
         if (response.ok) {
+
             const data = await response.json();
+
             welcomeText.innerText = "Welcome, " + data.email;
+
         } else {
+
             window.location.href = "/login.html";
         }
     }
 
-    checkAuth();
 
-    // ✅ Create Team
-    const teamForm = document.getElementById("teamForm");
-    const teamMessage = document.getElementById("teamMessage");
+    // Load teams belonging to logged-in user
+    async function loadTeams() {
 
-    teamForm.addEventListener("submit", async function (event) {
-        event.preventDefault();
-
-        const teamName = document.getElementById("teamName").value;
-        const teamDescription = document.getElementById("teamDescription").value;
+        const teamsContainer = document.getElementById("teamsContainer");
 
         const response = await fetch("/api/teams", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                teamName: teamName,
-                teamDescription: teamDescription
-            })
+            credentials: "include"
         });
 
         if (response.ok) {
-            teamMessage.innerText = "Team created successfully ✅";
-            teamForm.reset();
+
+            const teams = await response.json();
+
+            teamsContainer.innerHTML = "";
+
+            if (teams.length === 0) {
+
+                teamsContainer.innerHTML =
+                    "<p>You are not in any teams yet.</p>";
+
+                return;
+            }
+
+
+            // Create one card for every team
+            teams.forEach(team => {
+
+                const teamCard = document.createElement("div");
+
+                teamCard.style.border = "1px solid #ccc";
+                teamCard.style.padding = "15px";
+                teamCard.style.borderRadius = "8px";
+                teamCard.style.minWidth = "200px";
+                teamCard.style.backgroundColor = "#f9f9f9";
+
+
+                teamCard.innerHTML = `
+                    <h4 style="margin-top: 0;">
+                        ${team.name}
+                    </h4>
+
+                    <p style="font-size: 13px; color: #555;">
+                        ${team.description}
+                    </p>
+
+                    <button
+                        onclick="openTeam('${team.id}')"
+                        style="margin-top: 10px;">
+                        Open
+                    </button>
+                `;
+
+
+                teamsContainer.appendChild(teamCard);
+            });
+
         } else {
-            teamMessage.innerText = "Failed to create team.";
+
+            teamsContainer.innerHTML =
+                "<p style='color: red;'>Failed to load teams.</p>";
+        }
+    }
+
+
+    // Open selected team page
+    function openTeam(teamId) {
+
+        window.location.href =
+            "/team.html?id=" + teamId;
+    }
+
+
+    // Create Team
+    const teamForm = document.getElementById("teamForm");
+    const teamMessage = document.getElementById("teamMessage");
+
+
+    teamForm.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+
+        const teamName =
+            document.getElementById("teamName").value;
+
+        const teamDescription =
+            document.getElementById("teamDescription").value;
+
+
+        const response = await fetch("/api/teams", {
+
+            method: "POST",
+
+            credentials: "include",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                teamName: teamName,
+                teamDescription: teamDescription
+
+            })
+        });
+
+
+        if (response.ok) {
+
+            teamMessage.innerText =
+                "Team created successfully ✅";
+
+            teamMessage.style.color = "green";
+
+            teamForm.reset();
+
+
+            // Reload teams so the new team immediately appears
+            loadTeams();
+
+        } else {
+
+            teamMessage.innerText =
+                "Failed to create team.";
+
+            teamMessage.style.color = "red";
         }
     });
 
-    // ✅ Logout
+
+    // Logout
     async function logout() {
+
         await fetch("/logout", {
+
             method: "POST",
+
             credentials: "include"
         });
+
+
         window.location.href = "/login.html";
     }
+
+
+    // Run when dashboard loads
+    checkAuth();
+    loadTeams();
 
 </script>
 

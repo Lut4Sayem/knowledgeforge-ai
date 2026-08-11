@@ -9,5 +9,5 @@ import java.util.Optional;
 public interface TeamMemberRepository extends MongoRepository<TeamMember, String> {
     List<TeamMember> findByTeamId(String teamId);
     Optional<TeamMember> findByTeamIdAndUserId(String teamId, String userId);
-
+    List<TeamMember> findByUserId(String userId);
 }

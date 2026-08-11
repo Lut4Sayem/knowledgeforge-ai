@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KnowledgeForge AI - Team</title>
+    <link rel="stylesheet" href="/style.css">
+    <meta charset="utf-8">
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <a href="/dashboard.html">← Back to Dashboard</a>
+
+    <h2 id="teamName">Loading Team...</h2>
+    <p id="teamDescription"></p>
+
+    <hr>
+
+    <h3>Members</h3>
+    <ul id="membersList">
+        <!-- Members will go here -->
+    </ul>
+
+</div>
+
+<script>
+    // 1. Get the team ID from the URL (e.g. ?id=12345)
+    const urlParams = new URLSearchParams(window.location.search);
+    const teamId = urlParams.get("id");
+
+    if (!teamId) {
+        alert("No team ID provided!");
+        window.location.href = "/dashboard.html";
+    }
+
+    // 2. Fetch the team details from our new API
+    async function loadTeamDetails() {
+        const response = await fetch(`/api/teams/${teamId}`, {
+            credentials: "include"
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            // 3. Put the data on the screen
+            document.getElementById("teamName").innerText = data.team.name;
+            document.getElementById("teamDescription").innerText = data.team.description;
+
+            // 4. Loop through members and show them
+            const membersList = document.getElementById("membersList");
+            data.teamMembers.forEach(member => {
+                const li = document.createElement("li");
+                li.innerText = `Name: ${member.fullName} - Email: ${member.email} - Role: ${member.role}`;
+                membersList.appendChild(li);
+            });
+        } else {
+            document.getElementById("teamName").innerText = "Team not found.";
+        }
+    }
+
+    loadTeamDetails();
+</script>
+
+</body>
+</html>
