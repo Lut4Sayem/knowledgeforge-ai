@@ -64,13 +64,8 @@ public class TeamService {
         if(emailNotInDB){
             throw new RuntimeException("User Not Found");
         }
-        // ... top part stays the same ...
         String userId = userOpt.get().getId();
-        System.out.println("DEBUG: Found userId: " + userId);
-
         List<TeamMember> teamMembers = teamMemberRepository.findByUserId(userId);
-        System.out.println("DEBUG: Found " + teamMembers.size() + " TeamMembers for this user.");
-
         List<String> teamIds = new ArrayList<>();
         for (TeamMember teamMember : teamMembers) {
             teamIds.add(teamMember.getTeamId());
