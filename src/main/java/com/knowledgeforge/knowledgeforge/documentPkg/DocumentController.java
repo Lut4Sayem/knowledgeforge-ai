@@ -23,4 +23,15 @@ public class DocumentController {
     public List<DocumentEntity> getDocuments(@PathVariable String spaceId) {
         return documentService.getDocuments(spaceId);
     }
+
+    @GetMapping("/api/documents/{documentId}")
+    public ResponseEntity<DocumentEntity> getDocument(@PathVariable String documentId) {
+        DocumentEntity document= documentService.getDocumentByID(documentId);
+        return ResponseEntity.status(200).body(document);
+    }
+    @PutMapping("/api/documents/{documentId}")
+    public ResponseEntity<DocumentEntity> updateDocument(@PathVariable String documentId, @RequestBody UpdateDocumentRequest updateDocumentRequest) {
+        DocumentEntity body = documentService.updateDocument(documentId, updateDocumentRequest);
+        return ResponseEntity.status(200).body(body);
+    }
 }
