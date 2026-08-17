@@ -4,11 +4,14 @@ import com.knowledgeforge.knowledgeforge.team.TeamMemberRepository;
 import com.knowledgeforge.knowledgeforge.team.TeamRepository;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -44,6 +47,19 @@ public class SpaceService {
         space.setUpdatedAt(new Date());
         return spaceRepository.save(space);
 
+    }
+
+    public List<Space> getSpace(String teamId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<User> userEmail= userRepository.findByEmail(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        String userId = user.getId();
+        boolean exists = teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
+        if(!exists){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a part of the team");
+        }
+        return spaceRepository.findByTeamId(teamId);
     }
 
 }

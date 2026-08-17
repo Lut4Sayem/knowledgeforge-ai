@@ -1,65 +1,257 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>KnowledgeForge AI - Team</title>
-    <link rel="stylesheet" href="/style.css">
-    <meta charset="utf-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Team</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* tiny helpers in case your CSS doesn't have these */
+        .page { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+        .row { display: flex; gap: 16px; flex-wrap: wrap; }
+        .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fff; }
+        .spaces-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+        .muted { color: #666; }
+        .btn { padding: 8px 12px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; }
+        .btn.secondary { background: #fff; color: #222; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
+        textarea { min-height: 80px; resize: vertical; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; }
+        .topbar { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+    </style>
 </head>
 <body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <a href="/dashboard.html" class="muted">← Back to Dashboard</a>
+        </div>
+        <div>
+            <button id="logoutBtn" class="btn secondary" type="button">Log out</button>
+        </div>
+    </div>
 
-<div class="dashboard-container">
+    <div id="errorBox" class="error" style="display:none;"></div>
 
-    <a href="/dashboard.html">← Back to Dashboard</a>
+    <div class="card" style="margin-bottom: 16px;">
+        <h1 id="teamName">Loading...</h1>
+        <p id="teamDescription" class="muted"></p>
+    </div>
 
-    <h2 id="teamName">Loading Team...</h2>
-    <p id="teamDescription"></p>
+    <div class="row" style="align-items:flex-start;">
+        <!-- LEFT: Spaces -->
+        <div style="flex: 1; min-width: 320px;">
+            <div class="card" style="margin-bottom: 16px;">
+                <h2>Spaces</h2>
 
-    <hr>
+                <form id="createSpaceForm" style="margin: 12px 0;">
+                    <div style="margin-bottom: 8px;">
+                        <label class="muted">Space name</label>
+                        <input id="spaceNameInput" type="text" placeholder="e.g. Platform" required />
+                    </div>
 
-    <h3>Members</h3>
-    <ul id="membersList">
-        <!-- Members will go here -->
-    </ul>
+                    <div style="margin-bottom: 8px;">
+                        <label class="muted">Description</label>
+                        <textarea id="spaceDescInput" placeholder="e.g. Core infrastructure docs"></textarea>
+                    </div>
 
+                    <button class="btn" type="submit">+ Create Space</button>
+                </form>
+
+                <div id="spacesContainer" class="spaces-grid"></div>
+                <p id="spacesEmpty" class="muted" style="display:none; margin-top: 10px;">No spaces yet.</p>
+            </div>
+        </div>
+
+        <!-- RIGHT: Members -->
+        <div style="flex: 1; min-width: 320px;">
+            <div class="card">
+                <h2>Members</h2>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                    </tr>
+                    </thead>
+                    <tbody id="membersTbody"></tbody>
+                </table>
+                <p id="membersEmpty" class="muted" style="display:none; margin-top: 10px;">No members found.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    // 1. Get the team ID from the URL (e.g. ?id=12345)
-    const urlParams = new URLSearchParams(window.location.search);
-    const teamId = urlParams.get("id");
+    const errorBox = document.getElementById("errorBox");
 
-    if (!teamId) {
-        alert("No team ID provided!");
-        window.location.href = "/dashboard.html";
+    function showError(msg) {
+        errorBox.style.display = "block";
+        errorBox.textContent = msg;
     }
 
-    // 2. Fetch the team details from our new API
-    async function loadTeamDetails() {
-        const response = await fetch(`/api/teams/${teamId}`, {
-            credentials: "include"
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+
+    function getTeamIdFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("id");
+    }
+
+    async function fetchJson(url, options = {}) {
+        const res = await fetch(url, {
+            credentials: "include",
+            ...options
         });
 
-        if (response.ok) {
-            const data = await response.json();
+        // Session expired / not logged in
+        if (res.status === 401) {
+            window.location.href = "/login.html";
+            return;
+        }
 
-            // 3. Put the data on the screen
-            document.getElementById("teamName").innerText = data.team.name;
-            document.getElementById("teamDescription").innerText = data.team.description;
+        // try parse JSON safely
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) {}
 
-            // 4. Loop through members and show them
-            const membersList = document.getElementById("membersList");
-            data.teamMembers.forEach(member => {
-                const li = document.createElement("li");
-                li.innerText = `Name: ${member.fullName} - Email: ${member.email} - Role: ${member.role}`;
-                membersList.appendChild(li);
-            });
-        } else {
-            document.getElementById("teamName").innerText = "Team not found.";
+        if (!res.ok) {
+            // show message from backend if available
+            const msg = (data && (data.message || data.error)) ? (data.message || data.error) : ("Request failed: " + res.status);
+            throw new Error(msg);
+        }
+
+        return data;
+    }
+
+    async function loadTeam(teamId) {
+        // expected: { team: {...}, teamMembers: [...] }
+        const data = await fetchJson(`/api/teams/${teamId}`);
+
+        document.getElementById("teamName").textContent = data.team?.name ?? "(No name)";
+        document.getElementById("teamDescription").textContent = data.team?.description ?? "";
+
+        const tbody = document.getElementById("membersTbody");
+        const empty = document.getElementById("membersEmpty");
+        tbody.innerHTML = "";
+
+        const members = data.teamMembers || [];
+        if (members.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+        empty.style.display = "none";
+
+        for (const m of members) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+          <td>${m.fullName ?? ""}</td>
+          <td>${m.email ?? ""}</td>
+          <td>${m.role ?? ""}</td>
+        `;
+            tbody.appendChild(tr);
         }
     }
 
-    loadTeamDetails();
-</script>
+    async function loadSpaces(teamId) {
+        const spaces = await fetchJson(`/api/teams/${teamId}/spaces`);
 
+        const container = document.getElementById("spacesContainer");
+        const empty = document.getElementById("spacesEmpty");
+        container.innerHTML = "";
+
+        if (!spaces || spaces.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+        empty.style.display = "none";
+
+        for (const s of spaces) {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+          <h3 style="margin-top:0;">${s.name ?? "(No name)"}</h3>
+          <p class="muted">${s.description ?? ""}</p>
+          <button class="btn secondary" type="button">Open</button>
+        `;
+
+            // Space page not built yet; keep as placeholder
+            card.querySelector("button").addEventListener("click", () => {
+                alert("Space page not implemented yet. Space id: " + (s.id || s._id));
+            });
+
+            container.appendChild(card);
+        }
+    }
+
+    async function createSpace(teamId, name, description) {
+        return fetchJson(`/api/teams/${teamId}/spaces`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, description })
+        });
+    }
+
+    async function logout() {
+        // if you already have a logout endpoint, replace this.
+        // Default Spring logout endpoint is usually POST /logout.
+        try {
+            await fetch("/logout", { method: "POST", credentials: "include" });
+        } catch (e) {}
+        window.location.href = "/login.html";
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+
+    document.getElementById("createSpaceForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const teamId = getTeamIdFromUrl();
+        const name = document.getElementById("spaceNameInput").value.trim();
+        const description = document.getElementById("spaceDescInput").value.trim();
+
+        if (!teamId) {
+            showError("Missing team id in URL. Expected: /team.html?id=...");
+            return;
+        }
+
+        try {
+            await createSpace(teamId, name, description);
+
+            // reset inputs
+            document.getElementById("spaceNameInput").value = "";
+            document.getElementById("spaceDescInput").value = "";
+
+            // refresh spaces
+            await loadSpaces(teamId);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    // page init
+    (async function init() {
+        clearError();
+        const teamId = getTeamIdFromUrl();
+        if (!teamId) {
+            showError("Missing team id in URL. Expected: /team.html?id=...");
+            return;
+        }
+
+        try {
+            await loadTeam(teamId);
+            await loadSpaces(teamId);
+        } catch (err) {
+            showError(err.message);
+        }
+    })();
+</script>
 </body>
 </html>
