@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document - KnowledgeForge</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .page {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        textarea {
+            min-height: 350px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 9px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #222;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn.secondary {
+            background: white;
+            color: #222;
+            border: 1px solid #222;
+        }
+
+        .actions {
+            margin-top: 20px;
+        }
+
+        .preview {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #eee;
+            padding: 4px 9px;
+            margin-right: 5px;
+            border-radius: 12px;
+        }
+
+        .error {
+            background: #ffecec;
+            border: 1px solid #ffbdbd;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success {
+            color: green;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 800px) {
+            .editor-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="topbar">
+        <button class="btn secondary" id="backButton">← Back</button>
+
+        <button class="btn secondary" id="logoutButton">
+            Log out
+        </button>
+    </div>
+
+    <div id="errorBox" class="error"></div>
+
+    <!-- EDIT MODE -->
+    <div id="editorSection">
+
+        <h1>Edit Document</h1>
+
+        <div class="editor-grid">
+
+            <div class="card">
+
+                <label for="titleInput">Title</label>
+                <input id="titleInput" type="text">
+
+                <label for="contentInput">Content / Markdown</label>
+                <textarea id="contentInput"></textarea>
+
+                <label for="tagsInput">Tags</label>
+                <input
+                        id="tagsInput"
+                        type="text"
+                        placeholder="api, platform, rfc"
+                >
+
+                <label for="statusInput">Status</label>
+
+                <select id="statusInput">
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="PUBLISHED">PUBLISHED</option>
+                </select>
+
+                <div class="actions">
+                    <button class="btn" id="saveButton">
+                        Save
+                    </button>
+
+                    <span id="saveMessage" class="success"></span>
+                </div>
+
+            </div>
+
+            <div class="card">
+
+                <h2>Preview</h2>
+
+                <h1 id="previewTitle"></h1>
+
+                <div id="previewTags"></div>
+
+                <p id="previewStatus"></p>
+
+                <hr>
+
+                <div
+                        id="previewContent"
+                        class="preview">
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- VIEW MODE -->
+    <div id="viewSection" style="display:none;">
+
+        <div class="card">
+
+            <h1 id="viewTitle"></h1>
+
+            <div id="viewTags"></div>
+
+            <p id="viewStatus"></p>
+
+            <hr>
+
+            <div
+                    id="viewContent"
+                    class="preview">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    const params =
+        new URLSearchParams(window.location.search);
+
+    const documentId = params.get("id");
+
+    const mode =
+        params.get("mode") || "view";
+
+
+    function showError(message) {
+
+        const box =
+            document.getElementById("errorBox");
+
+        box.style.display = "block";
+        box.textContent = message;
+    }
+
+
+    async function fetchJson(url, options = {}) {
+
+        const response =
+            await fetch(url, {
+                credentials: "include",
+                ...options
+            });
+
+        if (response.status === 401) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const text =
+            await response.text();
+
+        let data = null;
+
+        try {
+            data =
+                text ? JSON.parse(text) : null;
+        }
+        catch (e) {
+        }
+
+        if (!response.ok) {
+
+            throw new Error(
+                data?.message ||
+                data?.error ||
+                "Request failed: " +
+                response.status
+            );
+        }
+
+        return data;
+    }
+
+
+    function updatePreview() {
+
+        const title =
+            document.getElementById("titleInput").value;
+
+        const content =
+            document.getElementById("contentInput").value;
+
+        const tagsText =
+            document.getElementById("tagsInput").value;
+
+        const status =
+            document.getElementById("statusInput").value;
+
+
+        document.getElementById("previewTitle")
+            .textContent = title;
+
+
+        document.getElementById("previewContent")
+            .textContent = content;
+
+
+        document.getElementById("previewStatus")
+            .textContent = "Status: " + status;
+
+
+        const tagsContainer =
+            document.getElementById("previewTags");
+
+        tagsContainer.innerHTML = "";
+
+
+        const tags =
+            tagsText.split(",")
+                .map(tag => tag.trim())
+                .filter(tag => tag !== "");
+
+
+        for (const tag of tags) {
+
+            const span =
+                document.createElement("span");
+
+            span.className = "tag";
+
+            span.textContent = tag;
+
+            tagsContainer.appendChild(span);
+        }
+    }
+
+
+    async function loadDocument() {
+
+        if (!documentId) {
+
+            showError(
+                "Document ID is missing from URL."
+            );
+
+            return;
+        }
+
+
+        const doc =
+            await fetchJson(
+                `/api/documents/${documentId}`
+            );
+
+
+        if (mode === "edit") {
+
+            document.getElementById("editorSection")
+                .style.display = "block";
+
+            document.getElementById("viewSection")
+                .style.display = "none";
+
+
+            document.getElementById("titleInput")
+                .value = doc.title || "";
+
+            document.getElementById("contentInput")
+                .value = doc.content || "";
+
+            document.getElementById("tagsInput")
+                .value =
+                (doc.tags || []).join(", ");
+
+            document.getElementById("statusInput")
+                .value = doc.status || "DRAFT";
+
+
+            updatePreview();
+
+        }
+        else {
+
+            document.getElementById("editorSection")
+                .style.display = "none";
+
+            document.getElementById("viewSection")
+                .style.display = "block";
+
+
+            document.getElementById("viewTitle")
+                .textContent = doc.title || "Untitled";
+
+
+            document.getElementById("viewContent")
+                .textContent = doc.content || "";
+
+
+            document.getElementById("viewStatus")
+                .textContent =
+                "Status: " +
+                (doc.status || "DRAFT");
+
+
+            const tagsContainer =
+                document.getElementById("viewTags");
+
+
+            for (const tag of (doc.tags || [])) {
+
+                const span =
+                    document.createElement("span");
+
+                span.className = "tag";
+
+                span.textContent = tag;
+
+                tagsContainer.appendChild(span);
+            }
+        }
+    }
+
+
+    async function saveDocument() {
+
+        const title =
+            document.getElementById("titleInput")
+                .value.trim();
+
+        const content =
+            document.getElementById("contentInput")
+                .value;
+
+        const status =
+            document.getElementById("statusInput")
+                .value;
+
+
+        const tags =
+            document.getElementById("tagsInput")
+                .value
+                .split(",")
+                .map(tag => tag.trim())
+                .filter(tag => tag !== "");
+
+
+        try {
+
+            await fetchJson(
+                `/api/documents/${documentId}`,
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        title,
+                        content,
+                        tags,
+                        status
+                    })
+                }
+            );
+
+
+            document.getElementById("saveMessage")
+                .textContent = "Saved!";
+
+            setTimeout(() => {
+                document.getElementById(
+                    "saveMessage"
+                ).textContent = "";
+            }, 2000);
+
+        }
+        catch (error) {
+
+            showError(error.message);
+        }
+    }
+
+
+    document.getElementById("saveButton")
+        .addEventListener(
+            "click",
+            saveDocument
+        );
+
+
+    document.getElementById("titleInput")
+        .addEventListener(
+            "input",
+            updatePreview
+        );
+
+
+    document.getElementById("contentInput")
+        .addEventListener(
+            "input",
+            updatePreview
+        );
+
+
+    document.getElementById("tagsInput")
+        .addEventListener(
+            "input",
+            updatePreview
+        );
+
+
+    document.getElementById("statusInput")
+        .addEventListener(
+            "change",
+            updatePreview
+        );
+
+
+    document.getElementById("backButton")
+        .addEventListener(
+            "click",
+            () => history.back()
+        );
+
+
+    document.getElementById("logoutButton")
+        .addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    await fetch(
+                        "/logout",
+                        {
+                            method: "POST",
+                            credentials: "include"
+                        }
+                    );
+
+                }
+                catch (e) {
+                }
+
+                window.location.href =
+                    "/login.html";
+            }
+        );
+
+
+    loadDocument()
+        .catch(error =>
+            showError(error.message)
+        );
+
+</script>
+
+</body>
+</html>
