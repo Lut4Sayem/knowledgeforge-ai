@@ -53,7 +53,10 @@ public class SecurityConfig {
                                 "/style.css",
                                 "/favicon.ico",
                                 "/api/auth/register",
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/api/spaces/",
+                                "/space.html",
+                                "/team.html"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

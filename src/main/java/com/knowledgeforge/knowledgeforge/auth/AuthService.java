@@ -1,8 +1,5 @@
 package com.knowledgeforge.knowledgeforge.auth;
 
-import com.knowledgeforge.knowledgeforge.auth.dto.LoginRequest;
-import com.knowledgeforge.knowledgeforge.auth.dto.RegisterRequest;
-import com.knowledgeforge.knowledgeforge.auth.dto.UserResponse;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,7 +33,7 @@ public class AuthService {
 
     // ================= REGISTER =================
 
-    public UserResponse register(RegisterRequest request) {
+    public AuthController.UserResponse register(AuthController.RegisterRequest request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new ResponseStatusException(
@@ -55,7 +52,7 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        return new UserResponse(
+        return new AuthController.UserResponse(
                 savedUser.getId(),
                 savedUser.getFullName(),
                 savedUser.getEmail()
@@ -64,7 +61,7 @@ public class AuthService {
 
     // ================= LOGIN =================
 
-    public UserResponse login(
+    public AuthController.UserResponse login(
             LoginRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
@@ -90,10 +87,32 @@ public class AuthService {
                         )
                 );
 
-        return new UserResponse(
+        return new AuthController.UserResponse(
                 user.getId(),
                 user.getFullName(),
                 user.getEmail()
         );
+    }
+
+    public static class LoginRequest {
+
+        private String email;
+        private String password;
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
     }
 }

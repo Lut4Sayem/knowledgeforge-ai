@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/teams/{teamId}/spaces")
 public class SpaceController {
     private final SpaceService spaceService;
 
@@ -14,14 +13,19 @@ public class SpaceController {
         this.spaceService = spaceService;
     }
 
-    @PostMapping
+    @PostMapping("/api/teams/{teamId}/spaces")
     public ResponseEntity<Space> createSpace(@PathVariable String teamId, @RequestBody CreateSpaceRequest request){
         Space body = spaceService.createSpace(teamId, request);
         return ResponseEntity.status(201).body(body);
     }
 
-    @GetMapping
+    @GetMapping("/api/teams/{teamId}/spaces")
     public ResponseEntity<List<Space>> getSpace(@PathVariable String teamId){
         return ResponseEntity.status(200).body(spaceService.getSpace(teamId));
+    }
+
+    @GetMapping("/api/spaces/{spaceId}")
+    public ResponseEntity<Space> getSpaceById(@PathVariable String spaceId){
+        return ResponseEntity.status(200).body(spaceService.getSpaceById(spaceId));
     }
 }

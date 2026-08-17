@@ -183,7 +183,7 @@
 
             // Space page not built yet; keep as placeholder
             card.querySelector("button").addEventListener("click", () => {
-                alert("Space page not implemented yet. Space id: " + (s.id || s._id));
+                window.location.href = `/space.html?id=${s.id || s._id}`;
             });
 
             container.appendChild(card);

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Space</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .page { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+        .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fff; margin-bottom: 16px; }
+        .muted { color: #666; font-size: 0.9em; }
+        .btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; }
+        .btn.secondary { background: #fff; color: #222; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+        .badge.PUBLISHED { background: #d4f7e7; color: #1a7a4a; }
+        .badge.DRAFT { background: #fff3cd; color: #856404; }
+        input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div id="breadcrumb" class="muted">← Back</div>
+        <button id="logoutBtn" class="btn secondary" type="button">Log out</button>
+    </div>
+
+    <div id="errorBox" class="error" style="display:none;"></div>
+
+    <div class="card">
+        <h1 id="spaceName">Loading...</h1>
+        <p id="spaceDescription" class="muted"></p>
+    </div>
+
+    <div class="card">
+        <h2>Documents</h2>
+
+        <!-- Create Document Form -->
+        <form id="createDocForm" style="margin-bottom: 16px;">
+            <input id="docTitleInput" type="text" placeholder="Document title" required />
+            <button class="btn" type="submit">+ Create Document</button>
+        </form>
+
+        <!-- Documents Table -->
+        <table>
+            <thead>
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="docsTbody"></tbody>
+        </table>
+        <p id="docsEmpty" class="muted" style="display:none; margin-top: 10px;">No documents yet.</p>
+    </div>
+</div>
+
+<script>
+    const errorBox = document.getElementById("errorBox");
+
+    function showError(msg) {
+        errorBox.style.display = "block";
+        errorBox.textContent = msg;
+    }
+
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+
+    function getSpaceIdFromUrl() {
+        return new URLSearchParams(window.location.search).get("id");
+    }
+
+    async function fetchJson(url, options = {}) {
+        const res = await fetch(url, { credentials: "include", ...options });
+
+        if (res.status === 401) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) {}
+
+        if (!res.ok) {
+            const msg = (data && (data.message || data.error))
+                ? (data.message || data.error)
+                : ("Request failed: " + res.status);
+            throw new Error(msg);
+        }
+
+        return data;
+    }
+
+    async function loadSpace(spaceId) {
+        const space = await fetchJson(`/api/spaces/${spaceId}`);
+
+        document.getElementById("spaceName").textContent = space.name ?? "(No name)";
+        document.getElementById("spaceDescription").textContent = space.description ?? "";
+
+        // breadcrumb back link
+        const breadcrumb = document.getElementById("breadcrumb");
+        if (space.teamId) {
+            breadcrumb.innerHTML = `<a href="/team.html?id=${space.teamId}" class="muted">← Back to Team</a>`;
+        }
+    }
+
+    async function loadDocuments(spaceId) {
+        const docs = await fetchJson(`/api/spaces/${spaceId}/documents`);
+
+        const tbody = document.getElementById("docsTbody");
+        const empty = document.getElementById("docsEmpty");
+        tbody.innerHTML = "";
+
+        const list = Array.isArray(docs) ? docs : [];
+
+        if (list.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+        empty.style.display = "none";
+
+        for (const d of list) {
+            const docId = d.id || d._id;
+            const status = d.status ?? "DRAFT";
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td>${d.title ?? "(No title)"}</td>
+        <td><span class="badge ${status}">${status}</span></td>
+        <td>
+          <button class="btn secondary viewBtn" style="margin-right:6px;">View</button>
+          <button class="btn editBtn">Edit</button>
+        </td>
+      `;
+
+            tr.querySelector(".viewBtn").addEventListener("click", () => {
+                window.location.href = `/document.html?id=${docId}&mode=view`;
+            });
+
+            tr.querySelector(".editBtn").addEventListener("click", () => {
+                window.location.href = `/document.html?id=${docId}&mode=edit`;
+            });
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    document.getElementById("createDocForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+
+        const spaceId = getSpaceIdFromUrl();
+        const title = document.getElementById("docTitleInput").value.trim();
+
+        try {
+            await fetchJson(`/api/spaces/${spaceId}/documents`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: title,
+                    content: "",
+                    tags: [],
+                    status: "DRAFT"
+                })
+            });
+
+            document.getElementById("docTitleInput").value = "";
+            await loadDocuments(spaceId);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+        try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch (e) {}
+        window.location.href = "/login.html";
+    });
+
+    (async function init() {
+        clearError();
+        const spaceId = getSpaceIdFromUrl();
+        if (!spaceId) {
+            showError("Missing space id in URL. Expected: /space.html?id=...");
+            return;
+        }
+        try {
+            await loadSpace(spaceId);
+            await loadDocuments(spaceId);
+        } catch (err) {
+            showError(err.message);
+        }
+    })();
+</script>
+</body>
+</html>
