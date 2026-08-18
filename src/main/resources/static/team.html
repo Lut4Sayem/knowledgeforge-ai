@@ -16,7 +16,7 @@
         .btn.small { padding: 5px 10px; font-size: 0.85em; }
         .btn.reject { background: #fff; color: #c0392b; border-color: #c0392b; }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
+        input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
         textarea { min-height: 80px; resize: vertical; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
@@ -49,6 +49,7 @@
         <div class="card" style="margin-bottom: 16px;">
             <h2>Invite Member</h2>
             <button id="generateInviteBtn" class="btn" type="button">+ Generate Invite Link</button>
+
             <div id="inviteLinkBox" class="invite-box" style="display:none;">
                 <input id="inviteLinkInput" type="text" readonly />
                 <button id="copyInviteBtn" class="btn secondary" type="button">Copy</button>
@@ -119,7 +120,7 @@
 
 <script>
     const errorBox = document.getElementById("errorBox");
-    let currentUserId = null;
+    let myEmail = null;
     let isAdmin = false;
 
     function showError(msg) {
@@ -143,26 +144,45 @@
             ...options
         });
 
+        // not logged in
         if (res.status === 401) {
             window.location.href = "/login.html";
             return;
         }
 
+        const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
+
+        // If server returned HTML (often a login page), treat as session expired
+        const looksLikeHtml = contentType.includes("text/html") || (text && text.trim().startsWith("<"));
+        if (res.ok && looksLikeHtml) {
+            window.location.href = "/login.html";
+            return;
+        }
+
         let data = null;
         try { data = text ? JSON.parse(text) : null; } catch (e) {}
 
         if (!res.ok) {
-            const msg = (data && (data.message || data.error)) ? (data.message || data.error) : ("Request failed: " + res.status);
+            const msg = (data && (data.message || data.error))
+                ? (data.message || data.error)
+                : ("Request failed: " + res.status);
             throw new Error(msg);
+        }
+
+        if (data === null) {
+            throw new Error("Unexpected response (not JSON). Please log in again.");
         }
 
         return data;
     }
 
-    async function loadCurrentUser() {
-        const me = await fetchJson(`/api/me`);
-        currentUserId = me.id || me._id;
+    async function loadMe() {
+        const me = await fetchJson("/api/me");
+        if (!me || !me.email) {
+            throw new Error("Could not load current user. Please log in again.");
+        }
+        myEmail = me.email;
     }
 
     async function loadTeam(teamId) {
@@ -191,16 +211,10 @@
             }
         }
 
-        // Determine if current user is ADMIN by matching email
-        // (Members DTO doesn't have userId, so we match by email against /api/me)
-        const meRes = await fetchJson(`/api/me`);
-        const myEmail = meRes.email;
         const myMembership = members.find(m => m.email === myEmail);
-        isAdmin = myMembership && myMembership.role === "ADMIN";
+        isAdmin = !!(myMembership && myMembership.role === "ADMIN");
 
-        if (isAdmin) {
-            document.getElementById("adminPanel").style.display = "block";
-        }
+        document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
     }
 
     async function loadSpaces(teamId) {
@@ -247,6 +261,7 @@
         if (!isAdmin) return;
 
         const requests = await fetchJson(`/api/teams/${teamId}/join-requests`);
+
         const tbody = document.getElementById("pendingTbody");
         const empty = document.getElementById("pendingEmpty");
         tbody.innerHTML = "";
@@ -260,10 +275,11 @@
         for (const r of requests) {
             const requestId = r.id || r._id;
             const tr = document.createElement("tr");
+
             tr.innerHTML = `
-              <td>${r.fullName ?? "(loading...)"}</td>
+              <td>${r.fullName ?? ""}</td>
               <td>${r.email ?? ""}</td>
-              <td>${r.requestedAt ? new Date(r.requestedAt).toLocaleDateString() : ""}</td>
+              <td>${r.requestedAt ? new Date(r.requestedAt).toLocaleString() : ""}</td>
               <td>
                 <button class="btn small acceptBtn">Accept</button>
                 <button class="btn small reject rejectBtn">Reject</button>
@@ -271,16 +287,18 @@
             `;
 
             tr.querySelector(".acceptBtn").addEventListener("click", async () => {
+                clearError();
                 try {
                     await fetchJson(`/api/teams/${teamId}/join-requests/${requestId}/accept`, { method: "POST" });
                     await loadPendingRequests(teamId);
-                    await loadTeam(teamId); // refresh members list
+                    await loadTeam(teamId); // refresh members
                 } catch (err) {
                     showError(err.message);
                 }
             });
 
             tr.querySelector(".rejectBtn").addEventListener("click", async () => {
+                clearError();
                 try {
                     await fetchJson(`/api/teams/${teamId}/join-requests/${requestId}/reject`, { method: "POST" });
                     await loadPendingRequests(teamId);
@@ -312,11 +330,19 @@
         }
     });
 
-    document.getElementById("copyInviteBtn").addEventListener("click", () => {
+    document.getElementById("copyInviteBtn").addEventListener("click", async () => {
         const input = document.getElementById("inviteLinkInput");
-        input.select();
-        navigator.clipboard.writeText(input.value);
-        alert("Invite link copied!");
+        const text = input.value;
+
+        try {
+            await navigator.clipboard.writeText(text);
+            alert("Invite link copied!");
+        } catch (e) {
+            // fallback
+            input.select();
+            document.execCommand("copy");
+            alert("Invite link copied!");
+        }
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -344,6 +370,7 @@
 
     (async function init() {
         clearError();
+
         const teamId = getTeamIdFromUrl();
         if (!teamId) {
             showError("Missing team id in URL. Expected: /team.html?id=...");
@@ -351,7 +378,8 @@
         }
 
         try {
-            await loadTeam(teamId);
+            await loadMe();            // loads myEmail safely
+            await loadTeam(teamId);    // sets isAdmin
             await loadSpaces(teamId);
             await loadPendingRequests(teamId);
         } catch (err) {
