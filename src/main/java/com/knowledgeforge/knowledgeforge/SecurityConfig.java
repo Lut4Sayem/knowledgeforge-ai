@@ -57,7 +57,8 @@ public class SecurityConfig {
                                 "/api/spaces/",
                                 "/space.html",
                                 "/team.html",
-                                "/document.html"
+                                "/document.html",
+                                "/join.html"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

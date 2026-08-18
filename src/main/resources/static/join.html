@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Join Team</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .page { max-width: 500px; margin: 80px auto; padding: 0 16px; text-align: center; }
+        .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 32px; background: #fff; }
+        .btn { padding: 10px 20px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; margin-top: 16px; }
+        .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; margin-top: 16px; }
+        .success { background: #d4f7e7; border: 1px solid #9de8c1; padding: 10px; border-radius: 6px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <h1>Join Team</h1>
+        <p id="statusText">Checking invite...</p>
+        <div id="messageBox" style="display:none;"></div>
+        <button id="actionBtn" class="btn" style="display:none;">Request to Join</button>
+    </div>
+</div>
+
+<script>
+    const inviteCode = new URLSearchParams(window.location.search).get("code");
+    const statusText = document.getElementById("statusText");
+    const messageBox = document.getElementById("messageBox");
+    const actionBtn = document.getElementById("actionBtn");
+
+    function showMessage(text, type) {
+        messageBox.style.display = "block";
+        messageBox.className = type; // "error" or "success"
+        messageBox.textContent = text;
+    }
+
+    async function checkLoginAndInvite() {
+        if (!inviteCode) {
+            statusText.textContent = "";
+            showMessage("Invalid link: no invite code found.", "error");
+            return;
+        }
+
+        // check if logged in
+        const meRes = await fetch("/api/me", { credentials: "include" });
+        if (meRes.status === 401) {
+            // save the invite code, redirect to login, come back after
+            sessionStorage.setItem("pendingInviteCode", inviteCode);
+            window.location.href = "/login.html";
+            return;
+        }
+
+        statusText.textContent = "You've been invited to join a team.";
+        actionBtn.style.display = "inline-block";
+    }
+
+    actionBtn.addEventListener("click", async () => {
+        actionBtn.disabled = true;
+        statusText.textContent = "Sending request...";
+
+        try {
+            const res = await fetch(`/api/team-invites/${inviteCode}/join`, {
+                method: "POST",
+                credentials: "include"
+            });
+
+            const text = await res.text();
+            let data = null;
+            try { data = text ? JSON.parse(text) : null; } catch (e) {}
+
+            if (res.status === 201) {
+                statusText.textContent = "";
+                showMessage("Request sent! Waiting for admin approval.", "success");
+                actionBtn.style.display = "none";
+                return;
+            }
+
+            // handle "already a member" case by checking error message
+            const errorMsg = (data && data.message) ? data.message : "Something went wrong.";
+
+            if (errorMsg.toLowerCase().includes("already a member")) {
+                statusText.textContent = "";
+                showMessage("You're already a member! Redirecting...", "success");
+                // We don't know the teamId here directly from this error,
+                // so just send them to dashboard for now.
+                setTimeout(() => window.location.href = "/dashboard.html", 1500);
+                return;
+            }
+
+            statusText.textContent = "";
+            showMessage(errorMsg, "error");
+            actionBtn.disabled = false;
+
+        } catch (err) {
+            statusText.textContent = "";
+            showMessage("Network error. Please try again.", "error");
+            actionBtn.disabled = false;
+        }
+    });
+
+    checkLoginAndInvite();
+</script>
+</body>
+</html>

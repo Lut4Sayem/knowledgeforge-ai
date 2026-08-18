@@ -6,7 +6,6 @@
     <title>Team</title>
     <link rel="stylesheet" href="style.css" />
     <style>
-        /* tiny helpers in case your CSS doesn't have these */
         .page { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
         .row { display: flex; gap: 16px; flex-wrap: wrap; }
         .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fff; }
@@ -14,6 +13,8 @@
         .muted { color: #666; }
         .btn { padding: 8px 12px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; }
         .btn.secondary { background: #fff; color: #222; }
+        .btn.small { padding: 5px 10px; font-size: 0.85em; }
+        .btn.reject { background: #fff; color: #c0392b; border-color: #c0392b; }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
         textarea { min-height: 80px; resize: vertical; }
@@ -21,6 +22,8 @@
         th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
         .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; }
         .topbar { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+        .invite-box { display: flex; gap: 8px; margin-top: 10px; }
+        .invite-box input { flex: 1; background: #f5f5f5; }
     </style>
 </head>
 <body>
@@ -39,6 +42,34 @@
     <div class="card" style="margin-bottom: 16px;">
         <h1 id="teamName">Loading...</h1>
         <p id="teamDescription" class="muted"></p>
+    </div>
+
+    <!-- ADMIN ONLY: Invite + Pending Requests -->
+    <div id="adminPanel" style="display:none;">
+        <div class="card" style="margin-bottom: 16px;">
+            <h2>Invite Member</h2>
+            <button id="generateInviteBtn" class="btn" type="button">+ Generate Invite Link</button>
+            <div id="inviteLinkBox" class="invite-box" style="display:none;">
+                <input id="inviteLinkInput" type="text" readonly />
+                <button id="copyInviteBtn" class="btn secondary" type="button">Copy</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 16px;">
+            <h2>Pending Join Requests</h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Requested</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="pendingTbody"></tbody>
+            </table>
+            <p id="pendingEmpty" class="muted" style="display:none; margin-top: 10px;">No pending requests.</p>
+        </div>
     </div>
 
     <div class="row" style="align-items:flex-start;">
@@ -88,6 +119,8 @@
 
 <script>
     const errorBox = document.getElementById("errorBox");
+    let currentUserId = null;
+    let isAdmin = false;
 
     function showError(msg) {
         errorBox.style.display = "block";
@@ -110,19 +143,16 @@
             ...options
         });
 
-        // Session expired / not logged in
         if (res.status === 401) {
             window.location.href = "/login.html";
             return;
         }
 
-        // try parse JSON safely
         const text = await res.text();
         let data = null;
         try { data = text ? JSON.parse(text) : null; } catch (e) {}
 
         if (!res.ok) {
-            // show message from backend if available
             const msg = (data && (data.message || data.error)) ? (data.message || data.error) : ("Request failed: " + res.status);
             throw new Error(msg);
         }
@@ -130,8 +160,12 @@
         return data;
     }
 
+    async function loadCurrentUser() {
+        const me = await fetchJson(`/api/me`);
+        currentUserId = me.id || me._id;
+    }
+
     async function loadTeam(teamId) {
-        // expected: { team: {...}, teamMembers: [...] }
         const data = await fetchJson(`/api/teams/${teamId}`);
 
         document.getElementById("teamName").textContent = data.team?.name ?? "(No name)";
@@ -144,46 +178,57 @@
         const members = data.teamMembers || [];
         if (members.length === 0) {
             empty.style.display = "block";
-            return;
+        } else {
+            empty.style.display = "none";
+            for (const m of members) {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                  <td>${m.fullName ?? ""}</td>
+                  <td>${m.email ?? ""}</td>
+                  <td>${m.role ?? ""}</td>
+                `;
+                tbody.appendChild(tr);
+            }
         }
-        empty.style.display = "none";
 
-        for (const m of members) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-          <td>${m.fullName ?? ""}</td>
-          <td>${m.email ?? ""}</td>
-          <td>${m.role ?? ""}</td>
-        `;
-            tbody.appendChild(tr);
+        // Determine if current user is ADMIN by matching email
+        // (Members DTO doesn't have userId, so we match by email against /api/me)
+        const meRes = await fetchJson(`/api/me`);
+        const myEmail = meRes.email;
+        const myMembership = members.find(m => m.email === myEmail);
+        isAdmin = myMembership && myMembership.role === "ADMIN";
+
+        if (isAdmin) {
+            document.getElementById("adminPanel").style.display = "block";
         }
     }
 
     async function loadSpaces(teamId) {
-        const spaces = await fetchJson(`/api/teams/${teamId}/spaces`);
+        const data = await fetchJson(`/api/teams/${teamId}/spaces`);
+        const spaces = Array.isArray(data) ? data : (data?.spaces || []);
 
         const container = document.getElementById("spacesContainer");
         const empty = document.getElementById("spacesEmpty");
         container.innerHTML = "";
 
-        if (!spaces || spaces.length === 0) {
+        if (!spaces.length) {
             empty.style.display = "block";
             return;
         }
         empty.style.display = "none";
 
         for (const s of spaces) {
+            const spaceId = s.id || s._id;
             const card = document.createElement("div");
             card.className = "card";
             card.innerHTML = `
-          <h3 style="margin-top:0;">${s.name ?? "(No name)"}</h3>
-          <p class="muted">${s.description ?? ""}</p>
-          <button class="btn secondary" type="button">Open</button>
-        `;
+              <h3 style="margin-top:0;">${s.name ?? "(No name)"}</h3>
+              <p class="muted">${s.description ?? ""}</p>
+              <button class="btn secondary" type="button">Open</button>
+            `;
 
-            // Space page not built yet; keep as placeholder
             card.querySelector("button").addEventListener("click", () => {
-                window.location.href = `/space.html?id=${s.id || s._id}`;
+                window.location.href = `/space.html?id=${spaceId}`;
             });
 
             container.appendChild(card);
@@ -198,16 +243,86 @@
         });
     }
 
-    async function logout() {
-        // if you already have a logout endpoint, replace this.
-        // Default Spring logout endpoint is usually POST /logout.
-        try {
-            await fetch("/logout", { method: "POST", credentials: "include" });
-        } catch (e) {}
-        window.location.href = "/login.html";
+    async function loadPendingRequests(teamId) {
+        if (!isAdmin) return;
+
+        const requests = await fetchJson(`/api/teams/${teamId}/join-requests`);
+        const tbody = document.getElementById("pendingTbody");
+        const empty = document.getElementById("pendingEmpty");
+        tbody.innerHTML = "";
+
+        if (!requests || requests.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+        empty.style.display = "none";
+
+        for (const r of requests) {
+            const requestId = r.id || r._id;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${r.fullName ?? "(loading...)"}</td>
+              <td>${r.email ?? ""}</td>
+              <td>${r.requestedAt ? new Date(r.requestedAt).toLocaleDateString() : ""}</td>
+              <td>
+                <button class="btn small acceptBtn">Accept</button>
+                <button class="btn small reject rejectBtn">Reject</button>
+              </td>
+            `;
+
+            tr.querySelector(".acceptBtn").addEventListener("click", async () => {
+                try {
+                    await fetchJson(`/api/teams/${teamId}/join-requests/${requestId}/accept`, { method: "POST" });
+                    await loadPendingRequests(teamId);
+                    await loadTeam(teamId); // refresh members list
+                } catch (err) {
+                    showError(err.message);
+                }
+            });
+
+            tr.querySelector(".rejectBtn").addEventListener("click", async () => {
+                try {
+                    await fetchJson(`/api/teams/${teamId}/join-requests/${requestId}/reject`, { method: "POST" });
+                    await loadPendingRequests(teamId);
+                } catch (err) {
+                    showError(err.message);
+                }
+            });
+
+            tbody.appendChild(tr);
+        }
     }
 
-    document.getElementById("logoutBtn").addEventListener("click", logout);
+    async function generateInvite(teamId) {
+        const invite = await fetchJson(`/api/teams/${teamId}/invite`, { method: "POST" });
+        const code = invite.inviteCode;
+        const link = `${window.location.origin}/join.html?code=${code}`;
+
+        document.getElementById("inviteLinkInput").value = link;
+        document.getElementById("inviteLinkBox").style.display = "flex";
+    }
+
+    document.getElementById("generateInviteBtn").addEventListener("click", async () => {
+        clearError();
+        const teamId = getTeamIdFromUrl();
+        try {
+            await generateInvite(teamId);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("copyInviteBtn").addEventListener("click", () => {
+        const input = document.getElementById("inviteLinkInput");
+        input.select();
+        navigator.clipboard.writeText(input.value);
+        alert("Invite link copied!");
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+        try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch (e) {}
+        window.location.href = "/login.html";
+    });
 
     document.getElementById("createSpaceForm").addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -217,26 +332,16 @@
         const name = document.getElementById("spaceNameInput").value.trim();
         const description = document.getElementById("spaceDescInput").value.trim();
 
-        if (!teamId) {
-            showError("Missing team id in URL. Expected: /team.html?id=...");
-            return;
-        }
-
         try {
             await createSpace(teamId, name, description);
-
-            // reset inputs
             document.getElementById("spaceNameInput").value = "";
             document.getElementById("spaceDescInput").value = "";
-
-            // refresh spaces
             await loadSpaces(teamId);
         } catch (err) {
             showError(err.message);
         }
     });
 
-    // page init
     (async function init() {
         clearError();
         const teamId = getTeamIdFromUrl();
@@ -248,6 +353,7 @@
         try {
             await loadTeam(teamId);
             await loadSpaces(teamId);
+            await loadPendingRequests(teamId);
         } catch (err) {
             showError(err.message);
         }

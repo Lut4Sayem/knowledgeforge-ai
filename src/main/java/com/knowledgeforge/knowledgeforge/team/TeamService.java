@@ -52,11 +52,7 @@ public class TeamService {
 
 
     }
-//1. Get current user's ID
-//2. Find TeamMembers by that userId
-//3. Extract teamIds from those TeamMembers
-//4. Find Teams using those teamIds
-//5. Return the list of Teams
+
     public List<Team> getTeams(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> userOpt = userRepository.findByEmail(email);
@@ -99,4 +95,5 @@ public class TeamService {
         response.setTeamMembers(smallMemberDTOs);
         return  response;
     }
+
 }
