@@ -16,6 +16,8 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Date;
+
 @Service
 public class AuthService {
 
@@ -50,6 +52,11 @@ public class AuthService {
                 hashedPassword
         );
 
+        // NEW FIELDS (profile + timestamps)
+        user.setProfilePicture(null);
+        user.setCreatedAt(new Date());
+        user.setUpdatedAt(new Date());
+
         User savedUser = userRepository.save(user);
 
         return new AuthController.UserResponse(
@@ -64,7 +71,8 @@ public class AuthService {
     public AuthController.UserResponse login(
             LoginRequest request,
             HttpServletRequest httpRequest,
-            HttpServletResponse httpResponse) {
+            HttpServletResponse httpResponse
+    ) {
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(

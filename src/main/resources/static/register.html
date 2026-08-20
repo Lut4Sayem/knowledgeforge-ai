@@ -1,35 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>KnowledgeForge AI - Register</title>
-    <link rel="stylesheet" href="/style.css">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KnowledgeForge - Create Workspace</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
-<body class="auth-body">
+<body class="auth-page">
 
-<div class="auth-card">
-    <h2>◇ KnowledgeForge AI</h2>
-    <p>Get started in seconds</p>
+<div class="auth-card" style="padding: 0; overflow: hidden;">
 
-    <form id="registerForm">
-        <label>Full Name</label>
-        <input type="text" id="fullName" placeholder="Jane Doe" required>
+    <!-- Brand Header (matches design: separated top section) -->
+    <div style="padding: 32px 40px 24px; text-align: center; border-bottom: 1px solid var(--border-color);">
+        <h1 style="font-size: 28px; margin-bottom: 4px;">KnowledgeForge</h1>
+        <p style="color: var(--text-muted); font-size: 13px;">Digital Craftsmanship</p>
+    </div>
 
-        <label>Email</label>
-        <input type="email" id="email" placeholder="you@company.com" required>
+    <!-- Form Body -->
+    <div style="padding: 32px 40px 40px;">
+        <h2 style="font-family: var(--font-serif); font-size: 22px; text-align: center; margin-bottom: 24px; color: var(--text-heading);">
+            Create Workspace
+        </h2>
 
-        <label>Password</label>
-        <input type="password" id="password" placeholder="********" required>
+        <!-- Error / Success Message Container (Hidden by default) -->
+        <div id="message" class="alert-error" style="display: none;"></div>
 
-        <label>Confirm Password</label>
-        <input type="password" id="confirmPassword" placeholder="********" required>
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="fullName" class="form-label">Full Name</label>
+                <input type="text" id="fullName" class="form-control" placeholder="John Doe" required>
+            </div>
 
-        <button type="submit">Register</button>
-    </form>
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" class="form-control" placeholder="john@example.com" required>
+            </div>
 
-    <p id="message"></p>
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+            </div>
 
-    <p>Already have an account? <a href="/login.html">Log in</a></p>
+            <div class="form-group">
+                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top: 8px;">
+                REGISTER →
+            </button>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="auth-footer" style="margin-top: 0; border-top: 1px solid var(--border-color); padding: 20px 40px;">
+        Already have a workspace? <a href="/login.html" style="font-weight: 600;">Log in</a>
+    </div>
 </div>
 
 <script>
@@ -39,13 +65,18 @@
     form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
+        // Reset message state
+        message.style.display = "none";
+        message.className = "alert-error";
+        message.innerHTML = "";
+
         const fullName = document.getElementById("fullName").value;
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
         const confirmPassword = document.getElementById("confirmPassword").value;
 
         if (password !== confirmPassword) {
-            message.innerText = "Passwords do not match.";
+            showError("Passwords do not match.");
             return;
         }
 
@@ -63,16 +94,42 @@
         });
 
         if (response.ok) {
-            message.innerText = "Registration successful. Redirecting to login...";
+            // Success state (soft green style via inline override)
+            message.style.display = "flex";
+            message.style.background = "#E6F4EA";
+            message.style.borderColor = "#A8D5B5";
+            message.style.color = "#137333";
+            message.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span>Registration successful. Redirecting to login...</span>
+                `;
             setTimeout(function () {
                 window.location.href = "/login.html";
             }, 1000);
         } else if (response.status === 409) {
-            message.innerText = "Email already exists.";
+            showError("Email already registered.");
         } else {
-            message.innerText = "Registration failed.";
+            showError("Registration failed. Please try again.");
         }
     });
+
+    function showError(text) {
+        message.style.display = "flex";
+        message.style.background = "";
+        message.style.borderColor = "";
+        message.style.color = "";
+        message.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>${text}</span>
+            `;
+    }
 </script>
 
 </body>

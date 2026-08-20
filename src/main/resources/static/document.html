@@ -3,303 +3,694 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document - KnowledgeForge</title>
-    <link rel="stylesheet" href="style.css">
-
+    <title>KnowledgeForge - Document</title>
+    <link rel="stylesheet" href="/style.css">
     <style>
-        .page {
-            max-width: 1200px;
-            margin: 24px auto;
-            padding: 0 20px;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* ── Document-page only styles ── */
+        .error-box {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            padding: 12px 16px;
+            font-size: 13px;
             margin-bottom: 20px;
-        }
-
-        .editor-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            background: white;
-        }
-
-        label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        textarea {
-            min-height: 350px;
-            resize: vertical;
-        }
-
-        textarea.comment-box {
-            min-height: 80px;
-        }
-
-        .btn {
-            padding: 9px 16px;
-            border: none;
-            border-radius: 5px;
-            background: #222;
-            color: white;
-            cursor: pointer;
-        }
-
-        .btn.secondary {
-            background: white;
-            color: #222;
-            border: 1px solid #222;
-        }
-
-        .actions {
-            margin-top: 20px;
-        }
-
-        .preview {
-            white-space: pre-wrap;
-            line-height: 1.6;
-        }
-
-        .tag {
-            display: inline-block;
-            background: #eee;
-            padding: 4px 9px;
-            margin-right: 5px;
-            border-radius: 12px;
-        }
-
-        .muted {
-            color: #666;
-        }
-
-        .comment {
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
-        }
-
-        .comment:last-child {
-            border-bottom: none;
-        }
-
-        .error {
-            background: #ffecec;
-            border: 1px solid #ffbdbd;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
             display: none;
         }
 
-        .success {
-            color: green;
-            margin-left: 10px;
+        /* ── VIEW MODE: Article layout ── */
+        .doc-article {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 48px 56px;
+            max-width: 780px;
         }
 
-        @media (max-width: 800px) {
-            .editor-grid {
-                grid-template-columns: 1fr;
-            }
+        .doc-tags-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .doc-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            background: var(--bg-canvas);
+        }
+
+        .doc-view-title {
+            font-family: var(--font-serif);
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1.15;
+            color: var(--text-heading);
+            margin-bottom: 16px;
+        }
+
+        .doc-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .doc-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Rendered markdown body */
+        .doc-body {
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--text-main);
+        }
+
+        .doc-body h1, .doc-body h2, .doc-body h3 {
+            font-family: var(--font-serif);
+            margin: 28px 0 12px;
+            color: var(--text-heading);
+        }
+
+        .doc-body p { margin: 0 0 16px; }
+
+        .doc-body pre {
+            background: #F4F1EA;
+            border: 1px solid var(--border-color);
+            padding: 16px 20px;
+            font-family: "Courier New", monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .doc-body code {
+            background: #F4F1EA;
+            padding: 2px 6px;
+            font-family: "Courier New", monospace;
+            font-size: 13px;
+        }
+
+        .doc-body blockquote {
+            border-left: 3px solid var(--primary);
+            margin: 16px 0;
+            padding: 8px 16px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .doc-body ul, .doc-body ol {
+            padding-left: 24px;
+            margin: 0 0 16px;
+        }
+
+        /* Attachments in view */
+        .attachment-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--text-main);
+            margin-right: 8px;
+            margin-bottom: 8px;
+            text-decoration: none;
+            background: var(--bg-card);
+            transition: background 0.15s;
+        }
+        .attachment-chip:hover {
+            background: var(--bg-active);
+            text-decoration: none;
+        }
+
+        .attachment-size {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        /* Section dividers */
+        .doc-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .doc-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Comments */
+        .comment-item {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .comment-item:last-child { border-bottom: none; }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .comment-author { font-weight: 600; font-size: 13px; }
+        .comment-time { font-size: 11px; color: var(--text-muted); }
+        .comment-body { font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+
+        .btn-del-comment {
+            background: none;
+            border: none;
+            font-size: 11px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+        }
+        .btn-del-comment:hover { color: var(--error-text); }
+
+        /* Versions */
+        .version-row {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .version-row:last-child { border-bottom: none; }
+
+        .version-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .version-label { font-weight: 600; font-size: 13px; }
+        .version-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        .version-actions { display: flex; gap: 8px; }
+
+        .btn-version {
+            background: none;
+            border: 1px solid var(--border-color);
+            font-size: 11px;
+            padding: 4px 10px;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: background 0.15s;
+        }
+        .btn-version:hover { background: var(--bg-active); }
+
+        .version-preview-box {
+            display: none;
+            margin-top: 12px;
+            padding: 16px;
+            background: var(--bg-canvas);
+            border: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+
+        /* ── EDIT MODE layout ── */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 860px) {
+            .editor-layout { grid-template-columns: 1fr; }
+            .doc-article { padding: 28px 20px; }
+        }
+
+        .editor-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+        }
+
+        .editor-panel-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .editor-textarea {
+            width: 100%;
+            min-height: 320px;
+            resize: vertical;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            font-family: "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-main);
+            background: #FEFEFE;
+            outline: none;
+        }
+        .editor-textarea:focus { border-color: var(--primary); }
+
+        textarea.comment-box {
+            min-height: 72px;
+            resize: none;
+        }
+
+        /* Edit topbar action row */
+        .edit-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .edit-breadcrumb {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Attachment table in edit mode */
+        .attach-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 12px;
+        }
+        .attach-table th {
+            text-align: left;
+            padding: 6px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .attach-table td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            word-break: break-all;
+        }
+        .attach-table tr:last-child td { border-bottom: none; }
+
+        .btn-del-attach {
+            background: none;
+            border: none;
+            font-size: 11px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .btn-del-attach:hover { color: var(--error-text); }
+
+        /* Save message */
+        .save-msg {
+            font-size: 12px;
+            color: var(--badge-green-text);
+            font-weight: 600;
+        }
+
+        /* Edit button in view mode topbar */
+        .edit-btn-topbar {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border: 1px solid var(--primary);
+            background: var(--primary);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .edit-btn-topbar:hover {
+            background: var(--primary-hover);
+            text-decoration: none;
         }
     </style>
 </head>
 
-<body>
+<body class="app-body">
 
-<div class="page">
-
-    <div class="topbar">
-        <button class="btn secondary" id="backButton">← Back</button>
-
-        <button class="btn secondary" id="logoutButton">
-            Log out
-        </button>
+<!-- ===== SIDEBAR ===== -->
+<aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <button type="button" id="backButton"
+                    style="background:none;border:none;cursor:pointer;padding:0;
+                       color:var(--text-muted);display:flex;align-items:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </button>
+            <div>
+                <div style="font-family:var(--font-serif);font-weight:700;font-size:15px;
+                            color:var(--text-heading);">KnowledgeForge</div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;
+                            color:var(--text-muted);">Digital Craftsmanship</div>
+            </div>
+        </div>
     </div>
 
-    <div id="errorBox" class="error"></div>
+    <div class="sidebar-action">
+        <a href="/dashboard.html" class="btn btn-primary btn-full">+ New Space</a>
+    </div>
 
-    <!-- EDIT MODE -->
-    <div id="editorSection">
+    <nav class="sidebar-nav">
+        <a class="nav-item" href="/dashboard.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </a>
+        <a class="nav-item" href="/dashboard.html#teamsSection">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Teams
+        </a>
+        <a class="nav-item active" href="/search.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Search
+        </a>
 
-        <h1>Edit Document</h1>
+        <div style="padding:20px 20px 6px;font-size:10px;font-weight:700;
+                    text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);">
+            My Teams
+        </div>
+        <div id="sidebarTeams" style="padding:0 12px;">
+            <div style="padding:6px 8px;font-size:12px;color:var(--text-muted);">
+                Loading...
+            </div>
+        </div>
+    </nav>
 
-        <div class="editor-grid">
+    <div class="sidebar-footer">
+        <a class="nav-item" href="/profile.html" style="padding:8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            My Spaces
+        </a>
+        <button class="nav-item" type="button" id="logoutButton"
+                style="background:none;border:none;width:100%;text-align:left;
+                   cursor:pointer;font-family:inherit;padding:8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Settings
+        </button>
+    </div>
+</aside>
 
-            <div class="card">
+<!-- ===== MAIN ===== -->
+<div class="app-main">
 
-                <label for="titleInput">Title</label>
-                <input id="titleInput" type="text">
+    <!-- Topbar -->
+    <div class="app-topbar">
+        <nav class="breadcrumb-nav">
+            <span id="topbarDocCrumb" style="color:var(--text-muted);">Document</span>
+            <span style="color:var(--border-dark);">/</span>
+            <span class="active" id="topbarDocTitle">Loading…</span>
+        </nav>
+        <div class="topbar-right">
+            <!-- Edit button (view mode only) -->
+            <button type="button" class="edit-btn-topbar" id="editModeBtn" style="display:none;"
+                    onclick="window.location.href='/document.html?id='+documentId+'&mode=edit'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+            </button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 style="color:var(--text-muted);cursor:pointer;">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 style="color:var(--text-muted);cursor:pointer;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div id="topAvatar"
+                 style="width:32px;height:32px;border-radius:50%;
+                        background:var(--bg-active);border:1px solid var(--border-color);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:700;color:var(--primary);
+                        cursor:pointer;flex-shrink:0;overflow:hidden;"
+                 onclick="window.location.href='/profile.html'">?</div>
+        </div>
+    </div>
 
-                <label for="contentInput">Content / Markdown</label>
-                <textarea id="contentInput"></textarea>
+    <!-- Content -->
+    <div class="app-content">
 
-                <label for="tagsInput">Tags</label>
-                <input
-                        id="tagsInput"
-                        type="text"
-                        placeholder="api, platform, rfc"
-                >
+        <div id="errorBox" class="error-box"></div>
 
-                <label for="statusInput">Status</label>
+        <!-- ═══════════════ VIEW MODE ═══════════════ -->
+        <div id="viewSection" style="display:none;">
 
-                <select id="statusInput">
-                    <option value="DRAFT">DRAFT</option>
-                    <option value="PUBLISHED">PUBLISHED</option>
-                </select>
+            <div class="doc-article">
 
-                <div class="actions">
-                    <button class="btn" id="saveButton">
-                        Save
+                <!-- Tags + status row -->
+                <div class="doc-tags-row" id="viewTags"></div>
+
+                <!-- Title -->
+                <h1 class="doc-view-title" id="viewTitle">Loading…</h1>
+
+                <!-- Meta: author + last updated -->
+                <div class="doc-meta">
+                    <div class="doc-meta-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span id="viewAuthor">—</span>
+                    </div>
+                    <span>·</span>
+                    <div class="doc-meta-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="viewUpdated">—</span>
+                    </div>
+                    <span id="viewStatus"
+                          style="margin-left:auto;"></span>
+                </div>
+
+                <!-- Body -->
+                <div class="doc-body" id="viewContent"></div>
+
+                <!-- Attachments -->
+                <div class="doc-section">
+                    <div class="doc-section-label">Attachments</div>
+                    <div id="attachmentsViewList"></div>
+                    <p id="attachmentsViewEmpty"
+                       style="display:none;font-size:13px;color:var(--text-muted);">
+                        No attachments.
+                    </p>
+                </div>
+
+                <!-- Comments -->
+                <div class="doc-section">
+                    <div class="doc-section-label">Comments</div>
+                    <div id="commentsBoxView"></div>
+                    <div style="margin-top:16px;">
+                        <textarea id="commentInputView" class="form-control comment-box"
+                                  placeholder="Write a comment…"></textarea>
+                        <button class="btn btn-outline" type="button"
+                                id="addCommentBtnView" style="margin-top:8px;">
+                            Add Comment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Versions -->
+                <div class="doc-section">
+                    <div class="doc-section-label">Version History</div>
+                    <div id="versionsBoxView"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ═══════════════ EDIT MODE ═══════════════ -->
+        <div id="editorSection" style="display:none;">
+
+            <div class="edit-topbar">
+                <div class="edit-breadcrumb">Editing: <strong id="editDocTitle">…</strong></div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button class="btn btn-primary" type="button" id="saveButton">Save</button>
+                    <span class="save-msg" id="saveMessage"></span>
+                    <button class="btn btn-secondary" type="button"
+                            onclick="window.location.href='/document.html?id='+documentId+'&mode=view'">
+                        View
                     </button>
+                </div>
+            </div>
 
-                    <span id="saveMessage" class="success"></span>
+            <div class="editor-layout">
 
-                    <hr style="margin:16px 0;">
+                <!-- LEFT: Editor inputs -->
+                <div class="editor-panel">
+                    <div class="editor-panel-title">Editor</div>
 
-                    <h3>Attachments (Links)</h3>
+                    <div class="form-group">
+                        <label for="titleInput" class="form-label">Title</label>
+                        <input id="titleInput" type="text" class="form-control">
+                    </div>
 
-                    <label for="attachNameInput">Name</label>
-                    <input id="attachNameInput" type="text" placeholder="e.g. architecture-diagram.png">
+                    <div class="form-group">
+                        <label for="contentInput" class="form-label">Content / Markdown</label>
+                        <textarea id="contentInput" class="editor-textarea"></textarea>
+                    </div>
 
-                    <label for="attachUrlInput">URL</label>
-                    <input id="attachUrlInput" type="text" placeholder="https://...">
+                    <div class="form-group">
+                        <label for="tagsInput" class="form-label">Tags</label>
+                        <input id="tagsInput" type="text" class="form-control"
+                               placeholder="api, platform, rfc">
+                    </div>
 
-                    <button class="btn secondary" id="addAttachmentBtn" type="button" style="margin-top:10px;">
-                        + Add Attachment Link
-                    </button>
+                    <div class="form-group">
+                        <label for="statusInput" class="form-label">Status</label>
+                        <select id="statusInput" class="form-control">
+                            <option value="DRAFT">DRAFT</option>
+                            <option value="PUBLISHED">PUBLISHED</option>
+                        </select>
+                    </div>
 
-                    <div style="margin-top:14px;">
-                        <table style="width:100%; border-collapse:collapse;">
+                    <!-- Attachments -->
+                    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border-color);">
+                        <div class="editor-panel-title" style="margin-bottom:12px;">
+                            Attachments (Links)
+                        </div>
+
+                        <div class="form-group">
+                            <label for="attachNameInput" class="form-label">Name</label>
+                            <input id="attachNameInput" type="text" class="form-control"
+                                   placeholder="e.g. architecture-diagram.png">
+                        </div>
+                        <div class="form-group">
+                            <label for="attachUrlInput" class="form-label">URL</label>
+                            <input id="attachUrlInput" type="text" class="form-control"
+                                   placeholder="https://...">
+                        </div>
+                        <button class="btn btn-outline btn-sm" type="button"
+                                id="addAttachmentBtn">
+                            + Add Attachment
+                        </button>
+
+                        <table class="attach-table" style="margin-top:16px;">
                             <thead>
                             <tr>
-                                <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Name</th>
-                                <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">URL</th>
-                                <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Actions</th>
+                                <th>Name</th>
+                                <th>URL</th>
+                                <th></th>
                             </tr>
                             </thead>
                             <tbody id="attachmentsEditTbody"></tbody>
                         </table>
-                        <p id="attachmentsEditEmpty" class="muted" style="display:none; margin-top:10px;">No attachments.</p>
+                        <p id="attachmentsEditEmpty"
+                           style="display:none;font-size:12px;color:var(--text-muted);margin-top:8px;">
+                            No attachments yet.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Preview + Comments + Versions -->
+                <div>
+                    <!-- Preview panel -->
+                    <div class="editor-panel" style="margin-bottom:16px;">
+                        <div class="editor-panel-title">Preview</div>
+
+                        <div id="previewTags" class="doc-tags-row"></div>
+                        <h2 id="previewTitle"
+                            style="font-family:var(--font-serif);font-size:24px;
+                                   margin-bottom:8px;color:var(--text-heading);"></h2>
+                        <div class="doc-body" id="previewContent"></div>
+                    </div>
+
+                    <!-- Comments panel -->
+                    <div class="editor-panel" style="margin-bottom:16px;">
+                        <div class="editor-panel-title">Comments</div>
+                        <div id="commentsBox"></div>
+                        <div style="margin-top:12px;">
+                            <textarea id="commentInput" class="form-control comment-box"
+                                      placeholder="Write a comment…"></textarea>
+                            <button class="btn btn-outline btn-sm" type="button"
+                                    id="addCommentBtn" style="margin-top:8px;">
+                                Add Comment
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Versions panel -->
+                    <div class="editor-panel">
+                        <div class="editor-panel-title">Version History</div>
+                        <div id="versionsBox"></div>
                     </div>
                 </div>
 
             </div>
-
-            <div class="card">
-
-                <h2>Preview</h2>
-
-                <h1 id="previewTitle"></h1>
-
-                <div id="previewTags"></div>
-
-                <p id="previewStatus"></p>
-
-                <hr>
-
-                <div
-                        id="previewContent"
-                        class="preview">
-                </div>
-
-                <hr style="margin:16px 0;">
-
-                <h3>Comments</h3>
-
-                <div id="commentsBox"></div>
-
-                <div style="margin-top:10px;">
-                    <textarea id="commentInput" class="comment-box" placeholder="Write a comment..."></textarea>
-                    <button class="btn secondary" id="addCommentBtn" type="button" style="margin-top:8px;">
-                        Add Comment
-                    </button>
-                </div>
-
-                <hr style="margin:16px 0;">
-
-                <h3>Version History</h3>
-                <div id="versionsBox"></div>
-
-            </div>
-
         </div>
 
     </div>
-
-
-    <!-- VIEW MODE -->
-    <div id="viewSection" style="display:none;">
-
-        <div class="card">
-
-            <h1 id="viewTitle"></h1>
-
-            <div id="viewTags"></div>
-
-            <p id="viewStatus"></p>
-
-            <hr>
-
-            <div
-                    id="viewContent"
-                    class="preview">
-            </div>
-
-            <hr style="margin:16px 0;">
-            <h3>Attachments</h3>
-            <div id="attachmentsViewList"></div>
-            <p id="attachmentsViewEmpty" class="muted" style="display:none; margin-top:10px;">No attachments.</p>
-
-            <hr style="margin:16px 0;">
-            <h3>Comments</h3>
-
-            <div id="commentsBoxView"></div>
-
-            <div style="margin-top:10px;">
-                <textarea id="commentInputView" class="comment-box" placeholder="Write a comment..."></textarea>
-                <button class="btn secondary" id="addCommentBtnView" type="button" style="margin-top:8px;">
-                    Add Comment
-                </button>
-            </div>
-
-            <hr style="margin:16px 0;">
-
-            <h3>Version History</h3>
-            <div id="versionsBoxView"></div>
-
-        </div>
-
-    </div>
-
 </div>
 
 <!-- Markdown renderer -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
-    const params = new URLSearchParams(window.location.search);
+    const params     = new URLSearchParams(window.location.search);
     const documentId = params.get("id");
-    const mode = params.get("mode") || "view";
+    const mode       = params.get("mode") || "view";
+
+    /* ── Make documentId accessible to inline onclick ── */
+    window.documentId = documentId;
 
     function showError(message) {
         const box = document.getElementById("errorBox");
@@ -313,29 +704,32 @@
         box.textContent = "";
     }
 
-    async function fetchJson(url, options = {}) {
-        const response = await fetch(url, {
-            credentials: "include",
-            ...options
-        });
+    function timeAgo(dateStr) {
+        if (!dateStr) return "—";
+        const date = new Date(dateStr);
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return "just now";
+        const mins = Math.floor(seconds / 60);
+        if (mins < 60) return mins + " min ago";
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + " hour" + (hrs > 1 ? "s" : "") + " ago";
+        const days = Math.floor(hrs / 24);
+        if (days === 1) return "Yesterday";
+        if (days < 30) return days + " days ago";
+        return date.toLocaleDateString("en-US",
+            { month: "short", day: "numeric", year: "numeric" });
+    }
 
+    async function fetchJson(url, options = {}) {
+        const response = await fetch(url, { credentials: "include", ...options });
         if (response.status === 401) {
             window.location.href = "/login.html";
             return null;
         }
-
         const text = await response.text();
-
-        // success but empty body (rare, but safe)
         if (response.ok && !text) return null;
-
         let data = null;
-        try {
-            data = text ? JSON.parse(text) : null;
-        } catch (e) {
-            data = null;
-        }
-
+        try { data = text ? JSON.parse(text) : null; } catch (e) {}
         if (!response.ok) {
             throw new Error(
                 (data && (data.message || data.error))
@@ -343,7 +737,6 @@
                     : ("Request failed: " + response.status)
             );
         }
-
         return data;
     }
 
@@ -355,16 +748,61 @@
         return (md || "");
     }
 
-    /* ---------------- ATTACHMENTS ---------------- */
+    /* ── Sidebar teams ── */
+    async function loadSidebarTeams() {
+        try {
+            const teams = await fetchJson("/api/teams");
+            const box = document.getElementById("sidebarTeams");
+            box.innerHTML = "";
+            if (!teams || teams.length === 0) {
+                box.innerHTML = `<div style="padding:6px 8px;font-size:12px;
+                    color:var(--text-muted);">No teams</div>`;
+                return;
+            }
+            teams.forEach(t => {
+                const a = document.createElement("a");
+                a.href = "/team.html?id=" + t.id;
+                a.style.cssText = "display:block;padding:6px 8px;font-size:12px;" +
+                    "color:var(--text-main);text-decoration:none;";
+                a.textContent = "• " + (t.name || "(Unnamed)");
+                a.onmouseover = () => a.style.background = "var(--bg-active)";
+                a.onmouseout  = () => a.style.background = "";
+                box.appendChild(a);
+            });
+        } catch (e) {}
+    }
 
+    /* ── Top avatar ── */
+    async function loadMe() {
+        try {
+            const me = await fetchJson("/api/me");
+            if (!me) return;
+            const el = document.getElementById("topAvatar");
+            if (me.profilePicture) {
+                el.innerHTML = `<img src="${me.profilePicture}" alt=""
+                    style="width:100%;height:100%;object-fit:cover;"
+                    onerror="this.parentElement.textContent='?'">`;
+            } else {
+                const name = (me.fullName || me.email || "?");
+                const parts = name.trim().split(" ");
+                el.textContent = parts.length >= 2
+                    ? (parts[0][0] + parts[1][0]).toUpperCase()
+                    : name.substring(0, 2).toUpperCase();
+            }
+        } catch (e) {}
+    }
+
+    /* ══════════════════════════════════════
+       ATTACHMENTS
+    ══════════════════════════════════════ */
     async function loadAttachments() {
         const list = await fetchJson(`/api/documents/${documentId}/attachments`);
         renderAttachments(list || []);
     }
 
     function renderAttachments(list) {
-        // EDIT table
-        const tbody = document.getElementById("attachmentsEditTbody");
+        /* EDIT table */
+        const tbody     = document.getElementById("attachmentsEditTbody");
         const emptyEdit = document.getElementById("attachmentsEditEmpty");
 
         if (tbody && emptyEdit) {
@@ -376,31 +814,29 @@
                 for (const a of list) {
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
-                      <td style="padding:8px; border-bottom:1px solid #f2f2f2;">${a.originalName || ""}</td>
-                      <td style="padding:8px; border-bottom:1px solid #f2f2f2;">
-                        <a href="${a.url || "#"}" target="_blank">${a.url || ""}</a>
-                      </td>
-                      <td style="padding:8px; border-bottom:1px solid #f2f2f2;">
-                        <button class="btn secondary delAttachBtn" type="button" style="color:#c00; border-color:#c00;">Delete</button>
-                      </td>
+                        <td>${a.originalName || ""}</td>
+                        <td><a href="${a.url || "#"}" target="_blank"
+                               style="color:var(--primary);font-size:11px;">
+                            ${(a.url || "").substring(0, 40)}${a.url && a.url.length > 40 ? "…" : ""}
+                        </a></td>
+                        <td><button class="btn-del-attach delAttachBtn" type="button">✕</button></td>
                     `;
                     tr.querySelector(".delAttachBtn").addEventListener("click", async () => {
                         if (!confirm("Delete this attachment?")) return;
                         clearError();
                         try {
-                            await fetchJson(`/api/attachments/${a.id || a._id}`, { method: "DELETE" });
+                            await fetchJson(`/api/attachments/${a.id || a._id}`,
+                                { method: "DELETE" });
                             await loadAttachments();
-                        } catch (err) {
-                            showError(err.message);
-                        }
+                        } catch (err) { showError(err.message); }
                     });
                     tbody.appendChild(tr);
                 }
             }
         }
 
-        // VIEW list
-        const viewList = document.getElementById("attachmentsViewList");
+        /* VIEW chips */
+        const viewList  = document.getElementById("attachmentsViewList");
         const emptyView = document.getElementById("attachmentsViewEmpty");
 
         if (viewList && emptyView) {
@@ -410,10 +846,20 @@
             } else {
                 emptyView.style.display = "none";
                 for (const a of list) {
-                    const div = document.createElement("div");
-                    div.style.padding = "6px 0";
-                    div.innerHTML = `<a href="${a.url || "#"}" target="_blank">${a.originalName || a.url || ""}</a>`;
-                    viewList.appendChild(div);
+                    const chip = document.createElement("a");
+                    chip.className = "attachment-chip";
+                    chip.href = a.url || "#";
+                    chip.target = "_blank";
+                    chip.innerHTML = `
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
+                                     a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span>${a.originalName || a.url || ""}</span>
+                    `;
+                    viewList.appendChild(chip);
                 }
             }
         }
@@ -421,175 +867,146 @@
 
     async function addAttachment() {
         const name = document.getElementById("attachNameInput").value.trim();
-        const url = document.getElementById("attachUrlInput").value.trim();
-
-        if (!name || !url) {
-            showError("Attachment name and URL are required.");
-            return;
-        }
-
+        const url  = document.getElementById("attachUrlInput").value.trim();
+        if (!name || !url) { showError("Attachment name and URL are required."); return; }
         clearError();
-
         try {
             await fetchJson(`/api/documents/${documentId}/attachments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ originalName: name, url })
             });
-
             document.getElementById("attachNameInput").value = "";
-            document.getElementById("attachUrlInput").value = "";
-
+            document.getElementById("attachUrlInput").value  = "";
             await loadAttachments();
-        } catch (err) {
-            showError(err.message);
-        }
+        } catch (err) { showError(err.message); }
     }
 
-    /* ---------------- COMMENTS ---------------- */
-
+    /* ══════════════════════════════════════
+       COMMENTS
+    ══════════════════════════════════════ */
     async function loadComments() {
         const list = await fetchJson(`/api/documents/${documentId}/comments`);
         renderComments(Array.isArray(list) ? list : []);
     }
 
     function renderComments(list) {
-        const boxEdit = document.getElementById("commentsBox");
-        const boxView = document.getElementById("commentsBoxView");
-
-        function renderInto(box) {
+        ["commentsBox", "commentsBoxView"].forEach(boxId => {
+            const box = document.getElementById(boxId);
             if (!box) return;
-
             box.innerHTML = "";
 
             if (list.length === 0) {
-                box.innerHTML = `<p class="muted">No comments yet.</p>`;
+                box.innerHTML = `<p style="color:var(--text-muted);font-size:13px;">
+                    No comments yet.</p>`;
                 return;
             }
 
             for (const c of list) {
                 const div = document.createElement("div");
-                div.className = "comment";
-
+                div.className = "comment-item";
                 const name = c.createdByFullName || c.createdByEmail || "Unknown";
-                const when = c.createdAt ? new Date(c.createdAt).toLocaleString() : "";
+                const when = c.createdAt ? timeAgo(new Date(c.createdAt)) : "";
 
                 div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+                    <div class="comment-header">
                         <div>
-                            <div style="font-weight:bold;">${name}</div>
-                            <div class="muted" style="font-size:12px;">${when}</div>
+                            <div class="comment-author">${name}</div>
+                            <div class="comment-time">${when}</div>
                         </div>
-                        <div>
-                            <button class="btn secondary delCommentBtn" type="button" style="color:#c00; border-color:#c00;">Delete</button>
-                        </div>
+                        <button class="btn-del-comment delCommentBtn" type="button">Delete</button>
                     </div>
-                    <div style="margin-top:8px; white-space:pre-wrap;">${c.content || ""}</div>
+                    <div class="comment-body">${c.content || ""}</div>
                 `;
 
                 div.querySelector(".delCommentBtn").addEventListener("click", async () => {
-                    if (!confirm("Delete this comment? (You can only delete your own)")) return;
+                    if (!confirm("Delete this comment?")) return;
                     clearError();
                     try {
                         await fetchJson(`/api/comments/${c.id}`, { method: "DELETE" });
                         await loadComments();
-                    } catch (err) {
-                        showError(err.message);
-                    }
+                    } catch (err) { showError(err.message); }
                 });
-
                 box.appendChild(div);
             }
-        }
-
-        renderInto(boxEdit);
-        renderInto(boxView);
+        });
     }
 
     async function addCommentFrom(textareaId) {
         const ta = document.getElementById(textareaId);
         if (!ta) return;
-
         const content = ta.value.trim();
-        if (!content) {
-            showError("Comment cannot be empty");
-            return;
-        }
-
+        if (!content) { showError("Comment cannot be empty."); return; }
         clearError();
-
         try {
             await fetchJson(`/api/documents/${documentId}/comments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content })
             });
-
             ta.value = "";
             await loadComments();
-
-        } catch (err) {
-            showError(err.message);
-        }
+        } catch (err) { showError(err.message); }
     }
 
-    /* ---------------- VERSIONS ---------------- */
-
+    /* ══════════════════════════════════════
+       VERSIONS
+    ══════════════════════════════════════ */
     async function loadVersions() {
         const list = await fetchJson(`/api/documents/${documentId}/versions`);
         renderVersions(Array.isArray(list) ? list : []);
     }
 
     function renderVersions(list) {
-        const boxEdit = document.getElementById("versionsBox");
-        const boxView = document.getElementById("versionsBoxView");
-
-        function renderInto(box) {
+        ["versionsBox", "versionsBoxView"].forEach(boxId => {
+            const box = document.getElementById(boxId);
             if (!box) return;
-
             box.innerHTML = "";
 
             if (list.length === 0) {
-                box.innerHTML = `<p class="muted">No versions yet.</p>`;
+                box.innerHTML = `<p style="color:var(--text-muted);font-size:13px;">
+                    No versions yet.</p>`;
                 return;
             }
 
             for (const v of list) {
                 const div = document.createElement("div");
-                div.style.borderBottom = "1px solid #eee";
-                div.style.padding = "8px 0";
-
-                const who = v.savedByFullName || v.savedByEmail || "Unknown";
-                const when = v.savedAt ? new Date(v.savedAt).toLocaleString() : "";
+                div.className = "version-row";
+                const who  = v.savedByFullName || v.savedByEmail || "Unknown";
+                const when = v.savedAt ? timeAgo(new Date(v.savedAt)) : "";
 
                 div.innerHTML = `
-              <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
-                <div>
-                  <div style="font-weight:bold;">Version ${v.versionNumber ?? ""}</div>
-                  <div class="muted" style="font-size:12px;">Saved by ${who} • ${when}</div>
-                </div>
-
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                  <button class="btn secondary previewVersionBtn" type="button">Preview</button>
-                  ${mode === "edit" ? `<button class="btn secondary restoreBtn" type="button">Restore</button>` : ""}
-                </div>
-              </div>
-
-              <div class="versionPreview" style="display:none; margin-top:10px; padding:10px; background:#f9f9f9; border:1px solid #eee; border-radius:6px;">
-                  <div class="muted" style="font-size:12px; margin-bottom:6px;">Saved snapshot:</div>
-                  <h4 style="margin-top:0;">${v.title || "(No title)"}</h4>
-                  <div class="preview">${renderMarkdown(v.content || "")}</div>
-              </div>
-            `;
+                    <div class="version-header">
+                        <div>
+                            <div class="version-label">Version ${v.versionNumber ?? ""}</div>
+                            <div class="version-meta">Saved by ${who} · ${when}</div>
+                        </div>
+                        <div class="version-actions">
+                            <button class="btn-version previewVersionBtn" type="button">
+                                Preview
+                            </button>
+                            ${mode === "edit"
+                    ? `<button class="btn-version restoreBtn" type="button">
+                                       Restore
+                                   </button>`
+                    : ""}
+                        </div>
+                    </div>
+                    <div class="version-preview-box">
+                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+                            Snapshot — v${v.versionNumber}
+                        </div>
+                        <div style="font-family:var(--font-serif);font-size:18px;
+                                    font-weight:600;margin-bottom:12px;">
+                            ${v.title || "(No title)"}
+                        </div>
+                        <div class="doc-body">${renderMarkdown(v.content || "")}</div>
+                    </div>
+                `;
 
                 div.querySelector(".previewVersionBtn").addEventListener("click", () => {
-                    const preview = div.querySelector(".versionPreview");
-
-                    if (preview.style.display === "none") {
-                        preview.style.display = "block";
-                    } else {
-                        preview.style.display = "none";
-                    }
+                    const pb = div.querySelector(".version-preview-box");
+                    pb.style.display = pb.style.display === "none" ? "block" : "none";
                 });
 
                 if (mode === "edit") {
@@ -597,88 +1014,100 @@
                         if (!confirm(`Restore version ${v.versionNumber}?`)) return;
                         clearError();
                         try {
-                            await fetchJson(`/api/documents/${documentId}/versions/${v.id}/restore`, {
-                                method: "POST"
-                            });
+                            await fetchJson(
+                                `/api/documents/${documentId}/versions/${v.id}/restore`,
+                                { method: "POST" }
+                            );
                             await loadDocument();
-                        } catch (err) {
-                            showError(err.message);
-                        }
+                        } catch (err) { showError(err.message); }
                     });
                 }
 
                 box.appendChild(div);
             }
-        }
-
-        renderInto(boxEdit);
-        renderInto(boxView);
+        });
     }
-    /* ---------------- PREVIEW ---------------- */
 
+    /* ══════════════════════════════════════
+       PREVIEW (edit mode live update)
+    ══════════════════════════════════════ */
     function updatePreview() {
-        const title = document.getElementById("titleInput").value;
-        const content = document.getElementById("contentInput").value;
+        const title    = document.getElementById("titleInput").value;
+        const content  = document.getElementById("contentInput").value;
         const tagsText = document.getElementById("tagsInput").value;
-        const status = document.getElementById("statusInput").value;
 
         document.getElementById("previewTitle").textContent = title;
         document.getElementById("previewContent").innerHTML = renderMarkdown(content);
-        document.getElementById("previewStatus").textContent = "Status: " + status;
 
         const tagsContainer = document.getElementById("previewTags");
         tagsContainer.innerHTML = "";
-
-        const tags = tagsText.split(",")
-            .map(tag => tag.trim())
-            .filter(tag => tag !== "");
-
-        for (const tag of tags) {
+        tagsText.split(",").map(t => t.trim()).filter(Boolean).forEach(tag => {
             const span = document.createElement("span");
-            span.className = "tag";
-            span.textContent = tag;
+            span.className = "doc-tag";
+            span.textContent = "#" + tag;
             tagsContainer.appendChild(span);
-        }
+        });
     }
 
-    /* ---------------- LOAD DOCUMENT ---------------- */
-
+    /* ══════════════════════════════════════
+       LOAD DOCUMENT
+    ══════════════════════════════════════ */
     async function loadDocument() {
-        if (!documentId) {
-            showError("Document ID is missing from URL.");
-            return;
-        }
+        if (!documentId) { showError("Document ID is missing from URL."); return; }
 
         const doc = await fetchJson(`/api/documents/${documentId}`);
         if (!doc) return;
 
+        /* Update topbar breadcrumb */
+        document.getElementById("topbarDocTitle").textContent =
+            (doc.title || "Untitled").toUpperCase();
+
         if (mode === "edit") {
             document.getElementById("editorSection").style.display = "block";
-            document.getElementById("viewSection").style.display = "none";
+            document.getElementById("viewSection").style.display   = "none";
+            document.getElementById("editModeBtn").style.display   = "none";
 
-            document.getElementById("titleInput").value = doc.title || "";
-            document.getElementById("contentInput").value = doc.content || "";
-            document.getElementById("tagsInput").value = (doc.tags || []).join(", ");
-            document.getElementById("statusInput").value = doc.status || "DRAFT";
-
+            document.getElementById("editDocTitle").textContent   = doc.title || "";
+            document.getElementById("titleInput").value           = doc.title || "";
+            document.getElementById("contentInput").value         = doc.content || "";
+            document.getElementById("tagsInput").value            =
+                (doc.tags || []).join(", ");
+            document.getElementById("statusInput").value          =
+                doc.status || "DRAFT";
             updatePreview();
+
         } else {
             document.getElementById("editorSection").style.display = "none";
-            document.getElementById("viewSection").style.display = "block";
+            document.getElementById("viewSection").style.display   = "block";
+            document.getElementById("editModeBtn").style.display   = "inline-flex";
 
-            document.getElementById("viewTitle").textContent = doc.title || "Untitled";
-            document.getElementById("viewContent").innerHTML = renderMarkdown(doc.content || "");
-            document.getElementById("viewStatus").textContent = "Status: " + (doc.status || "DRAFT");
-
-            const tagsContainer = document.getElementById("viewTags");
-            tagsContainer.innerHTML = "";
-
-            for (const tag of (doc.tags || [])) {
+            /* Tags + status row */
+            const tagsRow = document.getElementById("viewTags");
+            tagsRow.innerHTML = "";
+            (doc.tags || []).forEach(tag => {
                 const span = document.createElement("span");
-                span.className = "tag";
+                span.className = "doc-tag";
                 span.textContent = tag;
-                tagsContainer.appendChild(span);
-            }
+                tagsRow.appendChild(span);
+            });
+
+            /* Status badge */
+            const statusEl = document.getElementById("viewStatus");
+            const s = (doc.status || "DRAFT").toUpperCase();
+            statusEl.innerHTML = s === "PUBLISHED"
+                ? `<span class="badge badge-published">Published</span>`
+                : `<span class="badge badge-draft">Draft</span>`;
+
+            document.getElementById("viewTitle").textContent =
+                doc.title || "Untitled";
+            document.getElementById("viewContent").innerHTML =
+                renderMarkdown(doc.content || "");
+
+            /* Author + updated */
+            document.getElementById("viewAuthor").textContent =
+                "Penned by " + (doc.createdByFullName || doc.createdByEmail || "Unknown");
+            document.getElementById("viewUpdated").textContent =
+                "Last updated " + timeAgo(doc.updatedAt);
         }
 
         await loadAttachments();
@@ -686,76 +1115,70 @@
         await loadVersions();
     }
 
-    /* ---------------- SAVE DOCUMENT ---------------- */
-
+    /* ══════════════════════════════════════
+       SAVE DOCUMENT
+    ══════════════════════════════════════ */
     async function saveDocument() {
-        const title = document.getElementById("titleInput").value.trim();
+        const title   = document.getElementById("titleInput").value.trim();
         const content = document.getElementById("contentInput").value;
-        const status = document.getElementById("statusInput").value;
-
-        const tags = document.getElementById("tagsInput").value
-            .split(",")
-            .map(tag => tag.trim())
-            .filter(tag => tag !== "");
+        const status  = document.getElementById("statusInput").value;
+        const tags    = document.getElementById("tagsInput").value
+            .split(",").map(t => t.trim()).filter(Boolean);
 
         clearError();
-
         try {
             await fetchJson(`/api/documents/${documentId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title, content, tags, status })
             });
-
-            document.getElementById("saveMessage").textContent = "Saved!";
-            setTimeout(() => {
-                document.getElementById("saveMessage").textContent = "";
-            }, 2000);
-
-            // reload versions list after saving (new version snapshot is created)
+            const msg = document.getElementById("saveMessage");
+            msg.textContent = "Saved ✓";
+            setTimeout(() => { msg.textContent = ""; }, 2000);
             await loadVersions();
-
-        } catch (error) {
-            showError(error.message);
-        }
+        } catch (error) { showError(error.message); }
     }
 
-    /* ---------------- EVENT LISTENERS ---------------- */
+    /* ══════════════════════════════════════
+       EVENT LISTENERS
+    ══════════════════════════════════════ */
+    document.getElementById("addAttachmentBtn")
+        ?.addEventListener("click", addAttachment);
 
-    const addAttachmentBtn = document.getElementById("addAttachmentBtn");
-    if (addAttachmentBtn) addAttachmentBtn.addEventListener("click", addAttachment);
+    document.getElementById("addCommentBtn")
+        ?.addEventListener("click", () => addCommentFrom("commentInput"));
 
-    const addCommentBtn = document.getElementById("addCommentBtn");
-    if (addCommentBtn) addCommentBtn.addEventListener("click", () => addCommentFrom("commentInput"));
+    document.getElementById("addCommentBtnView")
+        ?.addEventListener("click", () => addCommentFrom("commentInputView"));
 
-    const addCommentBtnView = document.getElementById("addCommentBtnView");
-    if (addCommentBtnView) addCommentBtnView.addEventListener("click", () => addCommentFrom("commentInputView"));
+    document.getElementById("saveButton")
+        ?.addEventListener("click", saveDocument);
 
-    const saveBtn = document.getElementById("saveButton");
-    if (saveBtn) saveBtn.addEventListener("click", saveDocument);
+    document.getElementById("titleInput")
+        ?.addEventListener("input", updatePreview);
+    document.getElementById("contentInput")
+        ?.addEventListener("input", updatePreview);
+    document.getElementById("tagsInput")
+        ?.addEventListener("input", updatePreview);
+    document.getElementById("statusInput")
+        ?.addEventListener("change", updatePreview);
 
-    const titleInput = document.getElementById("titleInput");
-    if (titleInput) titleInput.addEventListener("input", updatePreview);
+    document.getElementById("backButton")
+        ?.addEventListener("click", () => history.back());
 
-    const contentInput = document.getElementById("contentInput");
-    if (contentInput) contentInput.addEventListener("input", updatePreview);
+    document.getElementById("logoutButton")
+        ?.addEventListener("click", async () => {
+            try { await fetch("/logout", { method: "POST", credentials: "include" }); }
+            catch (e) {}
+            window.location.href = "/login.html";
+        });
 
-    const tagsInput = document.getElementById("tagsInput");
-    if (tagsInput) tagsInput.addEventListener("input", updatePreview);
-
-    const statusInput = document.getElementById("statusInput");
-    if (statusInput) statusInput.addEventListener("change", updatePreview);
-
-    document.getElementById("backButton").addEventListener("click", () => history.back());
-
-    document.getElementById("logoutButton").addEventListener("click", async () => {
-        try {
-            await fetch("/logout", { method: "POST", credentials: "include" });
-        } catch (e) {}
-        window.location.href = "/login.html";
-    });
-
-    loadDocument().catch(error => showError(error.message));
+    /* ── Boot ── */
+    (async function init() {
+        await loadMe();
+        await loadSidebarTeams();
+        loadDocument().catch(err => showError(err.message));
+    })();
 </script>
 
 </body>

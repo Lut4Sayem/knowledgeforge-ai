@@ -3,59 +3,337 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Space</title>
-    <link rel="stylesheet" href="style.css" />
+    <title>KnowledgeForge - Space</title>
+    <link rel="stylesheet" href="/style.css" />
     <style>
-        .page { max-width: 900px; margin: 24px auto; padding: 0 16px; }
-        .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fff; margin-bottom: 16px; }
-        .muted { color: #666; font-size: 0.9em; }
-        .btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; }
-        .btn.secondary { background: #fff; color: #222; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-        .badge { padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
-        .badge.PUBLISHED { background: #d4f7e7; color: #1a7a4a; }
-        .badge.DRAFT { background: #fff3cd; color: #856404; }
-        input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 8px; }
+        /* ── Space-page only styles ── */
+        .error-box {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 56px 24px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            margin-top: 0;
+        }
+
+        .empty-state-icon {
+            font-size: 40px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            color: var(--text-heading);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            max-width: 340px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .empty-state-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            background: none;
+            transition: background 0.15s;
+        }
+        .empty-state-btn:hover {
+            background: var(--bg-active);
+        }
+
+        /* Doc title in table - wraps, no truncation */
+        .doc-title-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .doc-icon {
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .doc-title-text {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-heading);
+            word-break: break-word;
+        }
+
+        /* Action icon buttons */
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 4px 6px;
+            transition: color 0.15s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .icon-btn:hover { color: var(--primary); }
+        .icon-btn.danger:hover { color: var(--error-text); }
+
+        /* Create doc top bar */
+        .space-topbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Section label */
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        /* Breadcrumb */
+        .page-breadcrumb {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .page-breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        .page-breadcrumb a:hover { color: var(--primary); }
     </style>
 </head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div id="breadcrumb" class="muted">← Back</div>
-        <button id="logoutBtn" class="btn secondary" type="button">Log out</button>
+
+<body class="app-body">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">KF</div>
+        <div class="brand-text">
+            <h2>KnowledgeForge</h2>
+            <p>Digital Craftsmanship</p>
+        </div>
     </div>
 
-    <div id="errorBox" class="error" style="display:none;"></div>
-
-    <div class="card">
-        <h1 id="spaceName">Loading...</h1>
-        <p id="spaceDescription" class="muted"></p>
+    <div class="sidebar-action">
+        <button type="button" class="btn btn-primary btn-full" id="sidebarCreateDocBtn">+ New Space</button>
     </div>
 
-    <div class="card">
-        <h2>Documents</h2>
+    <nav class="sidebar-nav">
+        <a class="nav-item" href="/dashboard.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </a>
+        <a class="nav-item active" href="#">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Teams
+        </a>
+        <a class="nav-item" href="/search.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Search
+        </a>
 
-        <!-- Create Document Form -->
-        <form id="createDocForm" style="margin-bottom: 16px;">
-            <input id="docTitleInput" type="text" placeholder="Document title" required />
-            <button class="btn" type="submit">+ Create Document</button>
-        </form>
+        <div style="padding: 20px 20px 6px; font-size: 10px; font-weight: 700;
+                    text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">
+            My Teams
+        </div>
+        <div id="sidebarTeams" style="padding: 0 12px;">
+            <div style="padding: 6px 8px; font-size: 12px; color: var(--text-muted);">
+                Loading...
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a class="nav-item" href="/profile.html" style="padding: 8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            My Spaces
+        </a>
+        <button class="nav-item" type="button" id="logoutBtn"
+                style="background:none;border:none;width:100%;text-align:left;
+                   cursor:pointer;font-family:inherit;padding:8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Settings
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="app-main">
+
+    <!-- Topbar -->
+    <div class="app-topbar">
+        <nav class="breadcrumb-nav">
+            <span id="topbarTeamCrumb" style="color:var(--text-muted);">Team Alpha</span>
+            <span style="color:var(--border-dark);">·</span>
+            <span class="active" id="topbarSpaceName">Loading…</span>
+        </nav>
+        <div class="topbar-right">
+            <div class="topbar-search">
+                <span class="topbar-search-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </span>
+                <input type="text" placeholder="Search..."
+                       onkeydown="if(event.key==='Enter'&&this.value)
+                        window.location.href='/search.html?q='+encodeURIComponent(this.value)">
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 style="color:var(--text-muted);cursor:pointer;">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 style="color:var(--text-muted);cursor:pointer;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div id="topAvatar" class="member-avatar"
+                 style="width:32px;height:32px;border-radius:50%;background:var(--bg-active);
+                        border:1px solid var(--border-color);display:flex;align-items:center;
+                        justify-content:center;font-size:12px;font-weight:700;
+                        color:var(--primary);cursor:pointer;flex-shrink:0;"
+                 onclick="window.location.href='/profile.html'">?</div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="app-content">
+
+        <div id="errorBox" class="error-box"></div>
+
+        <!-- Page heading -->
+        <div class="page-breadcrumb" id="breadcrumb">
+            <a href="/dashboard.html">Team</a> &rsaquo; <span id="breadcrumbTeamName">…</span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between;
+                    align-items:flex-start; gap:16px; flex-wrap:wrap;
+                    margin-bottom: 28px;">
+            <div>
+                <h1 class="page-title" id="spaceName">Loading…</h1>
+                <p class="page-description" id="spaceDescription"></p>
+            </div>
+            <!-- Create Document button (top-right) -->
+            <div style="flex-shrink:0; padding-top: 6px;">
+                <button class="btn btn-primary" type="button" id="showCreateDocBtn">
+                    + CREATE DOCUMENT
+                </button>
+            </div>
+        </div>
+
+        <!-- Create Document form (hidden by default, shown on button click) -->
+        <div id="createDocWrap" style="display:none; margin-bottom:20px;">
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); padding:20px;">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.8px;color:var(--text-muted);margin-bottom:12px;">
+                    New Document
+                </div>
+                <form id="createDocForm" style="display:flex;gap:10px;align-items:flex-start;">
+                    <input id="docTitleInput" type="text" class="form-control"
+                           placeholder="Document title" required
+                           style="flex:1;margin-bottom:0;" />
+                    <button class="btn btn-primary" type="submit">Create</button>
+                    <button class="btn btn-secondary" type="button" id="cancelCreateDocBtn">Cancel</button>
+                </form>
+            </div>
+        </div>
 
         <!-- Documents Table -->
-        <table>
-            <thead>
-            <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody id="docsTbody"></tbody>
-        </table>
-        <p id="docsEmpty" class="muted" style="display:none; margin-top: 10px;">No documents yet.</p>
+        <div class="table-container" id="docsTableWrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="docsTbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Empty state (hidden until we know docs are empty) -->
+        <div id="emptyState" class="empty-state" style="display:none;">
+            <div class="empty-state-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+            </div>
+            <h3>This space is waiting for its first chapter.</h3>
+            <p>Create a document to start documenting your architecture and patterns.</p>
+            <button class="empty-state-btn" type="button" id="emptyStateCreateBtn">
+                CREATE DOCUMENT
+            </button>
+        </div>
+
+        <p id="docsEmpty" style="display:none;"></p>
+
     </div>
 </div>
 
@@ -76,13 +354,30 @@
         return new URLSearchParams(window.location.search).get("id");
     }
 
+    function timeAgo(dateStr) {
+        if (!dateStr) return "";
+        const date = new Date(dateStr);
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return "just now";
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return minutes + " min ago";
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
+        const days = Math.floor(hours / 24);
+        if (days === 1) return "Yesterday";
+        if (days < 30) return days + " days ago";
+        return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function statusBadge(status) {
+        const s = String(status || "DRAFT").toUpperCase();
+        if (s === "PUBLISHED") return `<span class="badge badge-published">PUBLISHED</span>`;
+        return `<span class="badge badge-draft">DRAFT</span>`;
+    }
+
     async function fetchJson(url, options = {}) {
         const res = await fetch(url, { credentials: "include", ...options });
-
-        if (res.status === 401) {
-            window.location.href = "/login.html";
-            return;
-        }
+        if (res.status === 401) { window.location.href = "/login.html"; return null; }
 
         const text = await res.text();
         let data = null;
@@ -94,99 +389,185 @@
                 : ("Request failed: " + res.status);
             throw new Error(msg);
         }
-
         return data;
+    }
+
+    async function loadSidebarTeams() {
+        try {
+            const teams = await fetchJson("/api/teams");
+            const box = document.getElementById("sidebarTeams");
+            box.innerHTML = "";
+            if (!teams || teams.length === 0) {
+                box.innerHTML = `<div style="padding:6px 8px;font-size:12px;
+                    color:var(--text-muted);">No teams</div>`;
+                return;
+            }
+            teams.forEach(t => {
+                const a = document.createElement("a");
+                a.href = "/team.html?id=" + t.id;
+                a.style.cssText = "display:block;padding:6px 8px;font-size:12px;" +
+                    "color:var(--text-main);text-decoration:none;";
+                a.textContent = "• " + (t.name || "(Unnamed)");
+                a.onmouseover = () => a.style.background = "var(--bg-active)";
+                a.onmouseout  = () => a.style.background = "";
+                box.appendChild(a);
+            });
+        } catch (e) { /* sidebar failing silently is fine */ }
+    }
+
+    async function loadMe() {
+        try {
+            const me = await fetchJson("/api/me");
+            if (!me) return;
+            const el = document.getElementById("topAvatar");
+            if (me.profilePicture) {
+                el.innerHTML = `<img src="${me.profilePicture}" alt=""
+                    style="width:100%;height:100%;object-fit:cover;border-radius:50%;"
+                    onerror="this.parentElement.textContent='${(me.fullName||me.email||"?")[0].toUpperCase()}'">`;
+            } else {
+                const name = (me.fullName || me.email || "?");
+                const parts = name.trim().split(" ");
+                el.textContent = parts.length >= 2
+                    ? (parts[0][0] + parts[1][0]).toUpperCase()
+                    : name.substring(0, 2).toUpperCase();
+            }
+        } catch (e) {}
     }
 
     async function loadSpace(spaceId) {
         const space = await fetchJson(`/api/spaces/${spaceId}`);
+        if (!space) return;
 
-        document.getElementById("spaceName").textContent = space.name ?? "(No name)";
+        document.getElementById("spaceName").textContent     = space.name ?? "(No name)";
         document.getElementById("spaceDescription").textContent = space.description ?? "";
+        document.getElementById("topbarSpaceName").textContent  = space.name ?? "";
 
-        // breadcrumb back link
-        const breadcrumb = document.getElementById("breadcrumb");
         if (space.teamId) {
-            breadcrumb.innerHTML = `<a href="/team.html?id=${space.teamId}" class="muted">← Back to Team</a>`;
+            document.getElementById("breadcrumb").innerHTML =
+                `<a href="/team.html?id=${space.teamId}">Team</a>
+                 &rsaquo; <span id="breadcrumbTeamName">${space.teamName || "Team"}</span>`;
+            document.getElementById("topbarTeamCrumb").textContent =
+                space.teamName || "Team";
         }
     }
 
     async function loadDocuments(spaceId) {
         const docs = await fetchJson(`/api/spaces/${spaceId}/documents`);
-
-        const tbody = document.getElementById("docsTbody");
-        const empty = document.getElementById("docsEmpty");
+        const tbody     = document.getElementById("docsTbody");
+        const tableWrap = document.getElementById("docsTableWrap");
+        const empty     = document.getElementById("emptyState");
         tbody.innerHTML = "";
 
         const list = Array.isArray(docs) ? docs : [];
 
         if (list.length === 0) {
+            tableWrap.style.display = "none";
             empty.style.display = "block";
             return;
         }
+
+        tableWrap.style.display = "block";
         empty.style.display = "none";
 
         for (const d of list) {
-            const docId = d.id || d._id;
+            const docId  = d.id || d._id;
             const status = d.status ?? "DRAFT";
+            const updated = timeAgo(d.updatedAt);
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-  <td>${d.title ?? "(No title)"}</td>
-  <td><span class="badge ${status}">${status}</span></td>
-  <td>
-    <button class="btn secondary viewBtn" style="margin-right:6px;">View</button>
-    <button class="btn editBtn" style="margin-right:6px;">Edit</button>
-    <button class="btn secondary deleteBtn" style="color:#c00; border-color:#c00;">Delete</button>
-  </td>
-`;
+                <td>
+                    <div class="doc-title-cell">
+                        <span class="doc-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
+                                         a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                        </span>
+                        <span class="doc-title-text">${d.title ?? "(No title)"}</span>
+                    </div>
+                </td>
+                <td>${statusBadge(status)}</td>
+                <td style="color:var(--text-muted);font-size:12px;">${updated}</td>
+                <td style="text-align:right;">
+                    <div style="display:inline-flex;gap:4px;align-items:center;">
+                        <button class="icon-btn viewBtn" title="View" type="button">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                        <button class="icon-btn editBtn" title="Edit" type="button">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14
+                                         a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="icon-btn danger deleteBtn" title="Delete" type="button">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                <path d="M10 11v6"/><path d="M14 11v6"/>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
 
             tr.querySelector(".viewBtn").addEventListener("click", () => {
                 window.location.href = `/document.html?id=${docId}&mode=view`;
             });
-
             tr.querySelector(".editBtn").addEventListener("click", () => {
                 window.location.href = `/document.html?id=${docId}&mode=edit`;
             });
-
             tr.querySelector(".deleteBtn").addEventListener("click", async () => {
                 if (!confirm(`Delete "${d.title}"? This cannot be undone.`)) return;
+                clearError();
                 try {
                     await fetchJson(`/api/documents/${docId}`, { method: "DELETE" });
-                    await loadDocuments(spaceId); // just reload the table, same pattern as create
-                } catch (err) {
-                    showError(err.message);
-                }
+                    await loadDocuments(spaceId);
+                } catch (err) { showError(err.message); }
             });
 
             tbody.appendChild(tr);
         }
     }
 
+    /* ── Create doc form toggle ── */
+    function showCreateForm() {
+        document.getElementById("createDocWrap").style.display = "block";
+        document.getElementById("docTitleInput").focus();
+    }
+
+    document.getElementById("showCreateDocBtn").addEventListener("click", showCreateForm);
+    document.getElementById("emptyStateCreateBtn").addEventListener("click", showCreateForm);
+    document.getElementById("cancelCreateDocBtn").addEventListener("click", () => {
+        document.getElementById("createDocWrap").style.display = "none";
+    });
+    document.getElementById("sidebarCreateDocBtn").addEventListener("click", showCreateForm);
+
     document.getElementById("createDocForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         clearError();
-
         const spaceId = getSpaceIdFromUrl();
         const title = document.getElementById("docTitleInput").value.trim();
-
         try {
             await fetchJson(`/api/spaces/${spaceId}/documents`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: title,
-                    content: "",
-                    tags: [],
-                    status: "DRAFT"
-                })
+                body: JSON.stringify({ title, content: "", tags: [], status: "DRAFT" })
             });
-
             document.getElementById("docTitleInput").value = "";
+            document.getElementById("createDocWrap").style.display = "none";
             await loadDocuments(spaceId);
-        } catch (err) {
-            showError(err.message);
-        }
+        } catch (err) { showError(err.message); }
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -194,6 +575,7 @@
         window.location.href = "/login.html";
     });
 
+    /* ── Boot ── */
     (async function init() {
         clearError();
         const spaceId = getSpaceIdFromUrl();
@@ -202,12 +584,13 @@
             return;
         }
         try {
+            await loadMe();
+            await loadSidebarTeams();
             await loadSpace(spaceId);
             await loadDocuments(spaceId);
-        } catch (err) {
-            showError(err.message);
-        }
+        } catch (err) { showError(err.message); }
     })();
 </script>
+
 </body>
 </html>

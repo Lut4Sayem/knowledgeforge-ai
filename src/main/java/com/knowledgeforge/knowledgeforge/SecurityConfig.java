@@ -60,7 +60,10 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/api/auth/register",
                                 "/api/auth/login",
-                                "/search.html"
+                                "/search.html",
+                                "/profile.html",
+                                "/sidebar.js"
+
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

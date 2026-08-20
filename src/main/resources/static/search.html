@@ -3,47 +3,447 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Search</title>
-    <link rel="stylesheet" href="style.css" />
+    <title>KnowledgeForge - Search</title>
+    <link rel="stylesheet" href="/style.css" />
     <style>
-        .page { max-width: 900px; margin: 24px auto; padding: 0 16px; }
-        .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fff; margin-bottom: 16px; }
-        .muted { color: #666; }
-        .btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; }
-        input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 8px; }
-        .result { padding: 12px 0; border-bottom: 1px solid #eee; }
-        .result:last-child { border-bottom: none; }
-        .tag { display: inline-block; background: #eee; padding: 3px 8px; margin-right: 5px; border-radius: 12px; font-size: 0.85em; }
-        .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; margin-bottom: 12px; display:none; }
+        /* ── Search-page only styles ── */
+        .error-box {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* Big search bar at top of content */
+        .search-bar-wrap {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .search-bar-wrap input {
+            width: 100%;
+            padding: 14px 44px 14px 44px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            font-size: 15px;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .search-bar-wrap input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-bar-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-bar-clear {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1;
+            display: none;
+            padding: 2px 4px;
+        }
+        .search-bar-clear:hover { color: var(--text-main); }
+
+        /* Filter tabs */
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-right: 4px;
+        }
+
+        .filter-tab {
+            padding: 5px 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .filter-tab:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .filter-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        /* Results count */
+        .results-count {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Result card */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .result-card:last-child {
+            border-bottom: 1px solid var(--border-color);
+        }
+        .result-card:hover {
+            background: #FDFCF8;
+        }
+
+        .result-main { flex: 1; min-width: 0; }
+
+        /* Source row: team · type */
+        .result-source {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .result-source-sep {
+            font-size: 14px;
+            color: var(--border-dark);
+        }
+
+        .result-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 6px;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .result-excerpt {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.55;
+            margin-bottom: 10px;
+            /* Highlight search term via JS */
+        }
+
+        /* Tag chips */
+        .result-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .result-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border: 1px solid var(--border-color);
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-canvas);
+        }
+
+        /* Updated meta */
+        .result-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Thumbnail (optional) */
+        .result-thumb {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        /* Pagination */
+        .pagination-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-top: 4px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pagination-btn {
+            background: none;
+            border: none;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+        }
+        .pagination-btn:hover { color: var(--primary); }
+        .pagination-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Empty state */
+        .empty-state {
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .empty-state small {
+            font-size: 12px;
+        }
     </style>
 </head>
-<body>
-<div class="page">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <a href="/dashboard.html" class="muted">← Back to Dashboard</a>
-        <button id="logoutBtn" class="btn" type="button">Log out</button>
+
+<body class="app-body">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">KF</div>
+        <div class="brand-text">
+            <h2>KnowledgeForge</h2>
+            <p>Digital Craftsmanship</p>
+        </div>
     </div>
 
-    <div id="errorBox" class="error"></div>
+    <div class="sidebar-action">
+        <a href="/dashboard.html" class="btn btn-primary btn-full">+ New Space</a>
+    </div>
 
-    <div class="card">
-        <h1>Search</h1>
+    <nav class="sidebar-nav">
+        <a class="nav-item" href="/dashboard.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </a>
+        <a class="nav-item" href="/dashboard.html#teamsSection">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Teams
+        </a>
+        <a class="nav-item active" href="/search.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Search
+        </a>
+
+        <div style="padding: 20px 20px 6px; font-size: 10px; font-weight: 700;
+                    text-transform: uppercase; letter-spacing: 0.8px;
+                    color: var(--text-muted);">
+            My Teams
+        </div>
+        <div id="sidebarTeams" style="padding: 0 12px;">
+            <div style="padding: 6px 8px; font-size: 12px; color: var(--text-muted);">
+                Loading...
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a class="nav-item" href="/profile.html" style="padding: 8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            My Spaces
+        </a>
+        <button class="nav-item" type="button" id="logoutBtn"
+                style="background:none;border:none;width:100%;text-align:left;
+                   cursor:pointer;font-family:inherit;padding:8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Settings
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="app-main">
+
+    <!-- Topbar -->
+    <div class="app-topbar">
+        <nav class="breadcrumb-nav">
+            <a href="/dashboard.html" style="color:var(--text-muted);text-decoration:none;">
+                Team
+            </a>
+            <span style="color:var(--border-dark);">›</span>
+            <a href="/dashboard.html" style="color:var(--text-muted);text-decoration:none;">
+                Space
+            </a>
+            <span style="color:var(--border-dark);">›</span>
+            <span class="active">Document</span>
+        </nav>
+        <div class="topbar-right">
+            <!-- Quick search in topbar -->
+            <div class="topbar-search">
+                <span class="topbar-search-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </span>
+                <input type="text" placeholder="Quick search..."
+                       onkeydown="if(event.key==='Enter'&&this.value){
+                        document.getElementById('qInput').value=this.value;
+                        document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+                    }">
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 style="color:var(--text-muted);cursor:pointer;">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 style="color:var(--text-muted);cursor:pointer;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div id="topAvatar"
+                 style="width:32px;height:32px;border-radius:50%;
+                        background:var(--bg-active);border:1px solid var(--border-color);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:700;color:var(--primary);
+                        cursor:pointer;flex-shrink:0;overflow:hidden;"
+                 onclick="window.location.href='/profile.html'">?</div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="app-content">
+
+        <div id="errorBox" class="error-box"></div>
+
+        <!-- Big search bar -->
         <form id="searchForm">
-            <input id="qInput" type="text" placeholder="Search title, content, tags..." />
-            <button class="btn" type="submit">Search</button>
+            <div class="search-bar-wrap">
+                <span class="search-bar-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </span>
+                <input id="qInput" type="text"
+                       placeholder="Architecture Guidelines"
+                       autocomplete="off" />
+                <button type="button" class="search-bar-clear"
+                        id="clearSearchBtn" aria-label="Clear">✕</button>
+            </div>
         </form>
-        <p class="muted" style="margin-top:8px;">Searches across documents in teams you belong to.</p>
-    </div>
 
-    <div class="card">
-        <h2>Results</h2>
+        <!-- Filter tabs -->
+        <div class="filter-row">
+            <span class="filter-label">Filters:</span>
+            <button class="filter-tab active" data-filter="all">All Results</button>
+            <button class="filter-tab" data-filter="document">Documents</button>
+            <button class="filter-tab" data-filter="team">Teams</button>
+            <button class="filter-tab" data-filter="space">Spaces</button>
+        </div>
+
+        <!-- Results count -->
+        <div id="resultsCount" class="results-count" style="display:none;"></div>
+
+        <!-- Results list -->
         <div id="results"></div>
-        <p id="empty" class="muted" style="display:none;">No results.</p>
+
+        <!-- Empty state -->
+        <div id="emptyState" style="display:none;">
+            <div class="empty-state">
+                <p>No results found.</p>
+                <small>Try different keywords or check your spelling.</small>
+            </div>
+        </div>
+
+        <!-- Initial prompt -->
+        <div id="initialPrompt" class="empty-state" style="display:none;">
+            <p>Enter a search term above to find documents across your teams.</p>
+        </div>
+
     </div>
 </div>
 
 <script>
     const errorBox = document.getElementById("errorBox");
+    let allResults  = [];   /* keep full result set for client-side filtering */
+    let currentFilter = "all";
+
+    /* ── Pagination state ── */
+    const PAGE_SIZE = 5;
+    let currentPage = 1;
 
     function showError(msg) {
         errorBox.style.display = "block";
@@ -56,70 +456,333 @@
 
     async function fetchJson(url, options = {}) {
         const res = await fetch(url, { credentials: "include", ...options });
-        if (res.status === 401) { window.location.href = "/login.html"; return; }
+        if (res.status === 401) { window.location.href = "/login.html"; return null; }
         const text = await res.text();
         let data = null;
         try { data = text ? JSON.parse(text) : null; } catch (e) {}
-        if (!res.ok) throw new Error((data && (data.message || data.error)) ? (data.message || data.error) : ("Request failed: " + res.status));
+        if (!res.ok) {
+            throw new Error((data && (data.message || data.error))
+                ? (data.message || data.error)
+                : ("Request failed: " + res.status));
+        }
         return data;
     }
 
-    function renderResults(list) {
-        const box = document.getElementById("results");
-        const empty = document.getElementById("empty");
-        box.innerHTML = "";
+    /* ── Sidebar ── */
+    async function loadSidebarTeams() {
+        try {
+            const teams = await fetchJson("/api/teams");
+            const box = document.getElementById("sidebarTeams");
+            box.innerHTML = "";
+            if (!teams || teams.length === 0) {
+                box.innerHTML = `<div style="padding:6px 8px;font-size:12px;
+                    color:var(--text-muted);">No teams</div>`;
+                return;
+            }
+            teams.forEach(t => {
+                const a = document.createElement("a");
+                a.href = "/team.html?id=" + t.id;
+                a.style.cssText = "display:block;padding:6px 8px;font-size:12px;" +
+                    "color:var(--text-main);text-decoration:none;";
+                a.textContent = "• " + (t.name || "(Unnamed)");
+                a.onmouseover = () => a.style.background = "var(--bg-active)";
+                a.onmouseout  = () => a.style.background = "";
+                box.appendChild(a);
+            });
+        } catch (e) {}
+    }
 
-        const arr = Array.isArray(list) ? list : [];
-        if (arr.length === 0) {
-            empty.style.display = "block";
+    /* ── Avatar ── */
+    async function loadMe() {
+        try {
+            const me = await fetchJson("/api/me");
+            if (!me) return;
+            const el = document.getElementById("topAvatar");
+            if (me.profilePicture) {
+                el.innerHTML = `<img src="${me.profilePicture}" alt=""
+                    style="width:100%;height:100%;object-fit:cover;"
+                    onerror="this.parentElement.textContent='?'">`;
+            } else {
+                const name = (me.fullName || me.email || "?");
+                const parts = name.trim().split(" ");
+                el.textContent = parts.length >= 2
+                    ? (parts[0][0] + parts[1][0]).toUpperCase()
+                    : name.substring(0, 2).toUpperCase();
+            }
+        } catch (e) {}
+    }
+
+    /* ── Result type detection (client-side) ── */
+    function getResultType(r) {
+        /* Backend returns documents. If the API ever returns teams/spaces
+           they would have a `type` field. We check defensively. */
+        if (r.type) return r.type.toLowerCase();
+        if (r.documentId || r.content !== undefined) return "document";
+        if (r.memberCount !== undefined) return "team";
+        if (r.teamId !== undefined) return "space";
+        return "document";
+    }
+
+    /* ── Highlight search term in text ── */
+    function highlight(text, query) {
+        if (!query || !text) return text || "";
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`(${escaped})`, "gi");
+        return String(text).replace(regex,
+            `<mark style="background:#FFF3C4;color:inherit;padding:0 1px;">$1</mark>`);
+    }
+
+    /* ── Render one page of results ── */
+    function renderResults(query) {
+        const box       = document.getElementById("results");
+        const countEl   = document.getElementById("resultsCount");
+        const emptyEl   = document.getElementById("emptyState");
+        const promptEl  = document.getElementById("initialPrompt");
+        box.innerHTML   = "";
+        promptEl.style.display = "none";
+
+        /* Filter */
+        const filtered = currentFilter === "all"
+            ? allResults
+            : allResults.filter(r => getResultType(r) === currentFilter);
+
+        const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+        if (currentPage > totalPages) currentPage = 1;
+
+        countEl.style.display = filtered.length > 0 ? "block" : "none";
+        countEl.textContent   = filtered.length + " Results Found";
+
+        if (filtered.length === 0) {
+            emptyEl.style.display = "block";
+            renderPagination(0, totalPages);
             return;
         }
-        empty.style.display = "none";
+        emptyEl.style.display = "none";
 
-        for (const r of arr) {
+        /* Slice for current page */
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const page  = filtered.slice(start, start + PAGE_SIZE);
+
+        for (const r of page) {
             const div = document.createElement("div");
-            div.className = "result";
+            div.className = "result-card";
 
-            const tags = (r.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
+            const tags = (r.tags || [])
+                .map(t => `<span class="result-tag">#${t}</span>`)
+                .join("");
+
+            const type     = getResultType(r);
+            const typeIcon = type === "team"
+                ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                   </svg>`
+                : type === "space"
+                    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                   </svg>`
+                    : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
+                                 a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                   </svg>`;
+
+            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+            const teamName  = r.teamName  || r.team  || "";
+            const spaceName = r.spaceName || r.space || "";
+
+            /* Updated meta */
+            let updatedText = "";
+            if (r.updatedAt) {
+                const d = new Date(r.updatedAt);
+                const diff = Math.floor((Date.now() - d) / 3600000);
+                if (diff < 1) updatedText = "Updated just now";
+                else if (diff < 24) updatedText = `Updated ${diff}h ago`;
+                else if (diff < 48) updatedText = "Updated yesterday";
+                else updatedText = "Updated " + d.toLocaleDateString("en-US",
+                        { month: "short", day: "numeric" });
+
+                if (r.updatedByFullName || r.updatedByEmail) {
+                    updatedText += " by " + (r.updatedByFullName || r.updatedByEmail);
+                }
+            }
+
+            const excerpt = highlight(r.excerpt || r.snippet || "", query);
+            const titleH  = highlight(r.title || "(No title)", query);
 
             div.innerHTML = `
-        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
-          <div>
-            <div style="font-weight:bold; font-size:1.05em;">${r.title || "(No title)"}</div>
-            <div class="muted" style="margin-top:4px;">Space: ${r.spaceName || ""} | Status: ${r.status || ""}</div>
-            <div style="margin-top:6px;">${tags}</div>
-            <div class="muted" style="margin-top:8px;">${r.excerpt || ""}</div>
-          </div>
-          <div>
-            <button class="btn openBtn" type="button">Open</button>
-          </div>
-        </div>
-      `;
+                <div class="result-main">
+                    <div class="result-source">
+                        ${teamName
+                ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                               </svg>
+                               <span>${teamName}</span>
+                               <span class="result-source-sep">•</span>`
+                : ""}
+                        ${typeIcon}
+                        <span>${typeLabel}</span>
+                    </div>
+                    <div class="result-title">${titleH}</div>
+                    ${excerpt
+                ? `<div class="result-excerpt">${excerpt}</div>`
+                : ""}
+                    ${tags
+                ? `<div class="result-tags">${tags}</div>`
+                : ""}
+                    <div class="result-meta">${updatedText}</div>
+                </div>
+                ${r.thumbnail
+                ? `<img class="result-thumb" src="${r.thumbnail}" alt="">`
+                : ""}
+            `;
 
-            div.querySelector(".openBtn").addEventListener("click", () => {
-                window.location.href = `/document.html?id=${r.documentId}&mode=view`;
+            /* Click whole card to open doc */
+            div.style.cursor = "pointer";
+            div.addEventListener("click", () => {
+                const id = r.documentId || r.id || r._id;
+                if (id) window.location.href = `/document.html?id=${id}&mode=view`;
             });
 
             box.appendChild(div);
         }
+
+        renderPagination(filtered.length, totalPages);
     }
 
+    /* ── Pagination ── */
+    function renderPagination(total, totalPages) {
+        /* Remove old pagination if any */
+        const old = document.getElementById("paginationRow");
+        if (old) old.remove();
+        if (total === 0) return;
+
+        const row = document.createElement("div");
+        row.id = "paginationRow";
+        row.className = "pagination-row";
+        row.innerHTML = `
+            <button class="pagination-btn" id="prevBtn"
+                    ${currentPage <= 1 ? "disabled" : ""}>← Previous</button>
+            <span class="pagination-info">Page ${currentPage} of ${totalPages}</span>
+            <button class="pagination-btn" id="nextBtn"
+                    ${currentPage >= totalPages ? "disabled" : ""}>Next →</button>
+        `;
+
+        document.querySelector(".app-content").appendChild(row);
+
+        document.getElementById("prevBtn").addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                const q = document.getElementById("qInput").value.trim();
+                renderResults(q);
+            }
+        });
+
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                const q = document.getElementById("qInput").value.trim();
+                renderResults(q);
+            }
+        });
+    }
+
+    /* ── Search submit ── */
     document.getElementById("searchForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         clearError();
         const q = document.getElementById("qInput").value.trim();
+
+        /* Show/hide clear button */
+        document.getElementById("clearSearchBtn").style.display = q ? "block" : "none";
+        document.getElementById("initialPrompt").style.display = "none";
+
+        if (!q) {
+            allResults = [];
+            renderResults("");
+            return;
+        }
+
         try {
-            const data = await fetchJson(`/api/search?q=${encodeURIComponent(q)}`);
-            renderResults(data);
+            const data = await fetchJson(
+                `/api/search?q=${encodeURIComponent(q)}`
+            );
+            allResults  = Array.isArray(data) ? data : [];
+            currentPage = 1;
+            renderResults(q);
         } catch (err) {
             showError(err.message);
         }
     });
 
+    /* ── Clear button ── */
+    document.getElementById("clearSearchBtn").addEventListener("click", () => {
+        document.getElementById("qInput").value = "";
+        document.getElementById("clearSearchBtn").style.display = "none";
+        allResults  = [];
+        currentPage = 1;
+        document.getElementById("results").innerHTML = "";
+        document.getElementById("resultsCount").style.display = "none";
+        document.getElementById("emptyState").style.display = "none";
+        const old = document.getElementById("paginationRow");
+        if (old) old.remove();
+    });
+
+    /* ── Search on Enter in topbar quick-search ── */
+    document.getElementById("qInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            document.getElementById("searchForm")
+                .dispatchEvent(new Event("submit"));
+        }
+    });
+
+    /* ── Filter tabs ── */
+    document.querySelectorAll(".filter-tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+            document.querySelectorAll(".filter-tab")
+                .forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            currentFilter = tab.dataset.filter;
+            currentPage   = 1;
+            const q = document.getElementById("qInput").value.trim();
+            renderResults(q);
+        });
+    });
+
+    /* ── Logout ── */
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-        try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch (e) {}
+        try { await fetch("/logout", { method: "POST", credentials: "include" }); }
+        catch (e) {}
         window.location.href = "/login.html";
     });
+
+    /* ── Boot: auto-run search if ?q= is in URL ── */
+    (async function init() {
+        await loadMe();
+        await loadSidebarTeams();
+
+        const params = new URLSearchParams(window.location.search);
+        const qParam = params.get("q");
+
+        if (qParam) {
+            document.getElementById("qInput").value = qParam;
+            document.getElementById("clearSearchBtn").style.display = "block";
+            document.getElementById("searchForm")
+                .dispatchEvent(new Event("submit"));
+        } else {
+            /* Show hint */
+            document.getElementById("initialPrompt").style.display = "none";
+        }
+    })();
 </script>
+
 </body>
 </html>

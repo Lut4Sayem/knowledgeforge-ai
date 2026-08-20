@@ -3,126 +3,487 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Team</title>
-    <link rel="stylesheet" href="style.css" />
+    <title>KnowledgeForge - Team</title>
+    <link rel="stylesheet" href="/style.css" />
     <style>
-        .page { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
-        .row { display: flex; gap: 16px; flex-wrap: wrap; }
-        .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fff; }
-        .spaces-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-        .muted { color: #666; }
-        .btn { padding: 8px 12px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; }
-        .btn.secondary { background: #fff; color: #222; }
-        .btn.small { padding: 5px 10px; font-size: 0.85em; }
-        .btn.reject { background: #fff; color: #c0392b; border-color: #c0392b; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
-        textarea { min-height: 80px; resize: vertical; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
-        .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; }
-        .topbar { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
-        .invite-box { display: flex; gap: 8px; margin-top: 10px; }
-        .invite-box input { flex: 1; background: #f5f5f5; }
-        select { padding: 6px; border-radius: 6px; border: 1px solid #ddd; }
+        /* ── Team-page only styles ── */
+        .team-page-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Spaces grid */
+        .spaces-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .space-card {
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            padding: 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+            position: relative;
+        }
+        .space-card:hover { background: var(--bg-active); }
+
+        .space-card-meta {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-align: right;
+        }
+
+        .space-card-icon {
+            font-size: 20px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .space-card-name {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-heading);
+            line-height: 1.3;
+        }
+
+        /* Members table avatar */
+        .member-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--bg-active);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .member-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .member-info { line-height: 1.3; }
+        .member-name { font-weight: 600; font-size: 13px; color: var(--text-heading); }
+        .member-email { font-size: 12px; color: var(--text-muted); }
+
+        /* Role select */
+        .role-select {
+            border: 1px solid var(--border-color);
+            background: #fff;
+            font-size: 12px;
+            padding: 4px 8px;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        /* Right-rail widgets */
+        .rail-widget {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .rail-widget-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .invite-link-row {
+            display: flex;
+            gap: 0;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .invite-link-row input {
+            flex: 1;
+            border: none;
+            padding: 8px 10px;
+            font-size: 12px;
+            background: #fff;
+            color: var(--text-muted);
+            outline: none;
+            min-width: 0;
+        }
+
+        .invite-copy-btn {
+            background: #fff;
+            border: none;
+            border-left: 1px solid var(--border-color);
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            transition: background 0.15s;
+        }
+        .invite-copy-btn:hover { background: var(--bg-active); }
+
+        /* Pending request cards */
+        .request-card {
+            border: 1px solid var(--border-color);
+            padding: 14px;
+            margin-bottom: 8px;
+        }
+        .request-card:last-child { margin-bottom: 0; }
+
+        .request-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+
+        .request-name { font-weight: 700; font-size: 13px; color: var(--text-heading); }
+        .request-date { font-size: 11px; color: var(--text-muted); }
+        .request-email { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+
+        .request-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn-reject {
+            background: none;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+        }
+        .btn-reject:hover { color: var(--error-text); }
+
+        .btn-accept {
+            background: none;
+            border: none;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 0;
+        }
+        .btn-accept:hover { text-decoration: underline; }
+
+        /* Remove member button */
+        .btn-remove-member {
+            background: none;
+            border: none;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .btn-remove-member:hover { color: var(--error-text); }
+
+        /* Quick create space form in rail */
+        .rail-form-input {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            font-size: 13px;
+            margin-bottom: 8px;
+            background: #fff;
+            outline: none;
+        }
+        .rail-form-input:focus { border-color: var(--primary); }
+
+        textarea.rail-form-input {
+            resize: none;
+            min-height: 64px;
+        }
+
+        .rail-create-link {
+            display: block;
+            text-align: right;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 4px;
+        }
+        .rail-create-link:hover { text-decoration: underline; }
+
+        /* Section label */
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        /* Error box */
+        .error-box {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* Action row buttons at top */
+        .team-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        /* Breadcrumb */
+        .page-breadcrumb {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .page-breadcrumb a {
+            color: var(--text-muted);
+        }
+        .page-breadcrumb a:hover { color: var(--primary); }
     </style>
 </head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div>
-            <a href="/dashboard.html" class="muted">← Back to Dashboard</a>
-        </div>
-        <div>
-            <button id="logoutBtn" class="btn secondary" type="button">Log out</button>
+
+<body class="app-body">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">KF</div>
+        <div class="brand-text">
+            <h2>KnowledgeForge</h2>
+            <p>Digital Craftsmanship</p>
         </div>
     </div>
 
-    <div id="errorBox" class="error" style="display:none;"></div>
-
-    <div class="card" style="margin-bottom: 16px;">
-        <h1 id="teamName">Loading...</h1>
-        <p id="teamDescription" class="muted"></p>
+    <div class="sidebar-action">
+        <button type="button" class="btn btn-primary btn-full" id="sidebarNewSpaceBtn">+ New Space</button>
     </div>
 
-    <!-- ADMIN ONLY: Invite + Pending Requests -->
-    <div id="adminPanel" style="display:none;">
-        <div class="card" style="margin-bottom: 16px;">
-            <h2>Invite Member</h2>
-            <button id="generateInviteBtn" class="btn" type="button">+ Generate Invite Link</button>
+    <nav class="sidebar-nav">
+        <a class="nav-item" href="/dashboard.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </a>
+        <a class="nav-item active" href="#">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Teams
+        </a>
+        <a class="nav-item" href="/search.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Search
+        </a>
 
-            <div id="inviteLinkBox" class="invite-box" style="display:none;">
-                <input id="inviteLinkInput" type="text" readonly />
-                <button id="copyInviteBtn" class="btn secondary" type="button">Copy</button>
+        <div style="padding: 20px 20px 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">
+            My Teams
+        </div>
+        <div id="sidebarTeams" style="padding: 0 12px;">
+            <div style="padding: 6px 8px; font-size: 12px; color: var(--text-muted);">Loading...</div>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a class="nav-item" href="/profile.html" style="padding: 8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            My Spaces
+        </a>
+        <button class="nav-item" type="button" id="logoutBtnSide"
+                style="background:none; border:none; width:100%; text-align:left; cursor:pointer; font-family:inherit; padding: 8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Settings
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="app-main">
+
+    <!-- Topbar -->
+    <div class="app-topbar">
+        <nav class="breadcrumb-nav">
+            <a href="/dashboard.html" style="color: var(--text-muted); text-decoration: none;">Team</a>
+            <span style="color: var(--border-dark);">›</span>
+            <span class="active" id="topbarTeamName">Loading…</span>
+        </nav>
+        <div class="topbar-right">
+            <div class="topbar-search">
+                <span class="topbar-search-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </span>
+                <input type="text" placeholder="Search..." onkeydown="if(event.key==='Enter'&&this.value) window.location.href='/search.html?q='+encodeURIComponent(this.value)">
             </div>
-        </div>
-
-        <div class="card" style="margin-bottom: 16px;">
-            <h2>Pending Join Requests</h2>
-            <table>
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Requested</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody id="pendingTbody"></tbody>
-            </table>
-            <p id="pendingEmpty" class="muted" style="display:none; margin-top: 10px;">No pending requests.</p>
+            <!-- Notification icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);cursor:pointer;">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <!-- Help icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);cursor:pointer;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div id="topAvatar" class="member-avatar" style="cursor:pointer;" onclick="window.location.href='/profile.html'">?</div>
         </div>
     </div>
 
-    <div class="row" style="align-items:flex-start;">
-        <!-- LEFT: Spaces -->
-        <div style="flex: 1; min-width: 320px;">
-            <div class="card" style="margin-bottom: 16px;">
-                <h2>Spaces</h2>
+    <!-- Content -->
+    <div class="app-content">
 
-                <form id="createSpaceForm" style="margin: 12px 0;">
-                    <div style="margin-bottom: 8px;">
-                        <label class="muted">Space name</label>
-                        <input id="spaceNameInput" type="text" placeholder="e.g. Platform" required />
-                    </div>
+        <div id="errorBox" class="error-box"></div>
 
-                    <div style="margin-bottom: 8px;">
-                        <label class="muted">Description</label>
-                        <textarea id="spaceDescInput" placeholder="e.g. Core infrastructure docs"></textarea>
-                    </div>
+        <!-- Page heading -->
+        <div class="page-breadcrumb">
+            Team &rsaquo; <span id="teamBreadcrumb">…</span>
+        </div>
+        <div class="page-header" style="margin-bottom: 16px;">
+            <h1 class="page-title" id="teamName">Loading…</h1>
+            <p class="page-description" id="teamDescription"></p>
+        </div>
 
-                    <button class="btn" type="submit">+ Create Space</button>
-                </form>
+        <!-- Action buttons row (Create Space + Invite Member) -->
+        <div class="team-actions" style="margin-bottom: 28px;">
+            <button class="btn btn-primary" type="button" id="toggleCreateSpaceBtn">+ Create Space</button>
+            <button class="btn btn-outline" type="button" id="generateInviteBtn" style="display:none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                </svg>
+                Invite Member
+            </button>
+        </div>
 
+        <!-- Two-column layout -->
+        <div class="team-page-grid">
+
+            <!-- ── LEFT COLUMN ── -->
+            <div>
+
+                <!-- SPACES -->
+                <div class="section-label">Spaces</div>
                 <div id="spacesContainer" class="spaces-grid"></div>
-                <p id="spacesEmpty" class="muted" style="display:none; margin-top: 10px;">No spaces yet.</p>
+                <p id="spacesEmpty" style="display:none; color:var(--text-muted); font-size:13px; margin-top:8px;">No spaces yet.</p>
+
+                <!-- MEMBERS -->
+                <div class="section-label" style="margin-top: 32px;">Members</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody id="membersTbody"></tbody>
+                    </table>
+                </div>
+                <p id="membersEmpty" style="display:none; color:var(--text-muted); font-size:13px; margin-top:8px;">No members found.</p>
+
+            </div>
+
+            <!-- ── RIGHT RAIL ── -->
+            <div>
+
+                <!-- Quick Create Space -->
+                <div class="rail-widget" id="createSpaceWrap" style="display:none;">
+                    <div class="rail-widget-title">Quick Create Space</div>
+                    <form id="createSpaceForm">
+                        <input class="rail-form-input" id="spaceNameInput" type="text" placeholder="Space Name" required />
+                        <textarea class="rail-form-input" id="spaceDescInput" placeholder="Description (optional)"></textarea>
+                        <button type="submit" class="rail-create-link">Create</button>
+                    </form>
+                </div>
+
+                <!-- Invite Link -->
+                <div class="rail-widget" id="inviteLinkBox" style="display:none;">
+                    <div class="rail-widget-title">Invite Link</div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5;">
+                        Share this link to allow others to request access to this team.
+                    </p>
+                    <div class="invite-link-row">
+                        <input id="inviteLinkInput" type="text" readonly />
+                        <button id="copyInviteBtn" class="invite-copy-btn" type="button" title="Copy link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pending Join Requests -->
+                <div class="rail-widget" id="adminPanel" style="display:none;">
+                    <div class="rail-widget-title" id="pendingRequestsTitle">Pending Join Requests</div>
+                    <div id="pendingTbody"></div>
+                    <p id="pendingEmpty" style="display:none; font-size:12px; color:var(--text-muted);">No pending requests.</p>
+                </div>
+
             </div>
         </div>
 
-        <!-- RIGHT: Members -->
-        <div style="flex: 1; min-width: 320px;">
-            <div class="card">
-                <h2>Members</h2>
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody id="membersTbody"></tbody>
-                </table>
-                <p id="membersEmpty" class="muted" style="display:none; margin-top: 10px;">No members found.</p>
-            </div>
-        </div>
     </div>
 </div>
 
 <script>
     const errorBox = document.getElementById("errorBox");
     let myEmail = null;
+    let myFullName = null;
+    let myProfilePicture = null;
     let isAdmin = false;
 
     function showError(msg) {
@@ -135,37 +496,47 @@
         errorBox.textContent = "";
     }
 
+    function initials(fullName, email) {
+        const name = (fullName || "").trim();
+        if (name) {
+            const parts = name.split(" ");
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        }
+        const em = (email || "").trim();
+        if (em) return em.substring(0, 2).toUpperCase();
+        return "?";
+    }
+
+    function renderTopAvatar() {
+        const el = document.getElementById("topAvatar");
+        el.innerHTML = "";
+        if (myProfilePicture) {
+            const img = document.createElement("img");
+            img.src = myProfilePicture;
+            img.alt = "Me";
+            img.onerror = () => { el.textContent = initials(myFullName, myEmail); };
+            el.appendChild(img);
+        } else {
+            el.textContent = initials(myFullName, myEmail);
+        }
+    }
+
     function getTeamIdFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-        return params.get("id");
+        return new URLSearchParams(window.location.search).get("id");
     }
 
     async function fetchJson(url, options = {}) {
-        const res = await fetch(url, {
-            credentials: "include",
-            ...options
-        });
-
-        if (res.status === 401) {
-            window.location.href = "/login.html";
-            return null;
-        }
+        const res = await fetch(url, { credentials: "include", ...options });
+        if (res.status === 401) { window.location.href = "/login.html"; return null; }
 
         const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
-
-        // If server returned HTML (login page), treat as session expired
         const looksLikeHtml = contentType.includes("text/html") || (text && text.trim().startsWith("<"));
-        if (res.ok && looksLikeHtml) {
-            window.location.href = "/login.html";
-            return null;
-        }
+        if (res.ok && looksLikeHtml) { window.location.href = "/login.html"; return null; }
 
-        // Parse JSON if present
         let data = null;
-        if (text) {
-            try { data = JSON.parse(text); } catch (e) { data = null; }
-        }
+        if (text) { try { data = JSON.parse(text); } catch (e) { data = null; } }
 
         if (!res.ok) {
             const msg = (data && (data.message || data.error))
@@ -173,86 +544,126 @@
                 : ("Request failed: " + res.status);
             throw new Error(msg);
         }
-
-        // success but empty body (204 etc.)
         if (!text) return null;
-
-        // success but not JSON
-        if (data === null) {
-            throw new Error("Unexpected response (not JSON). Please log in again.");
-        }
-
+        if (data === null) throw new Error("Unexpected response (not JSON). Please log in again.");
         return data;
     }
 
     async function loadMe() {
         const me = await fetchJson("/api/me");
-        if (!me || !me.email) {
-            throw new Error("Could not load current user. Please log in again.");
-        }
+        if (!me || !me.email) throw new Error("Could not load current user.");
         myEmail = me.email;
+        myFullName = me.fullName || "";
+        myProfilePicture = me.profilePicture || null;
+        renderTopAvatar();
+    }
+
+    function renderSidebarTeams(teams, currentTeamId) {
+        const box = document.getElementById("sidebarTeams");
+        box.innerHTML = "";
+        if (!teams || teams.length === 0) {
+            box.innerHTML = `<div style="padding:6px 8px;font-size:12px;color:var(--text-muted);">No teams</div>`;
+            return;
+        }
+        teams.forEach(t => {
+            const item = document.createElement("a");
+            item.href = "/team.html?id=" + t.id;
+            item.style.cssText = "display:block;padding:6px 8px;font-size:12px;color:var(--text-main);text-decoration:none;";
+            if (t.id === currentTeamId) {
+                item.style.color = "var(--primary)";
+                item.style.fontWeight = "700";
+                item.style.background = "var(--bg-active)";
+            }
+            item.textContent = "• " + (t.name || "(Unnamed)");
+            item.onmouseover = () => { if (t.id !== currentTeamId) item.style.background = "var(--bg-active)"; };
+            item.onmouseout  = () => { if (t.id !== currentTeamId) item.style.background = ""; };
+            box.appendChild(item);
+        });
+    }
+
+    async function loadSidebarTeams() {
+        const teamId = getTeamIdFromUrl();
+        const teams = await fetchJson("/api/teams");
+        if (teams && Array.isArray(teams)) renderSidebarTeams(teams, teamId);
+    }
+
+    /* ── Render role badge ── */
+    function roleBadge(role) {
+        const r = (role || "").toUpperCase();
+        if (r === "ADMIN")  return `<span class="badge badge-admin">Admin</span>`;
+        if (r === "EDITOR") return `<span class="badge badge-editor">Editor</span>`;
+        return `<span class="badge badge-viewer">Viewer</span>`;
     }
 
     async function loadTeam(teamId) {
         const data = await fetchJson(`/api/teams/${teamId}`);
+        if (!data) return;
 
-        document.getElementById("teamName").textContent = data.team?.name ?? "(No name)";
+        const teamName = data.team?.name ?? "(No name)";
+        document.getElementById("teamName").textContent = teamName;
         document.getElementById("teamDescription").textContent = data.team?.description ?? "";
+        document.getElementById("topbarTeamName").textContent = teamName;
+        document.getElementById("teamBreadcrumb").textContent = teamName;
 
         const members = data.teamMembers || [];
-
-        // IMPORTANT: compute isAdmin BEFORE rendering rows
         const myMembership = members.find(m => m.email === myEmail);
         isAdmin = !!(myMembership && myMembership.role === "ADMIN");
-        document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
 
+        document.getElementById("adminPanel").style.display     = isAdmin ? "block" : "none";
+        document.getElementById("generateInviteBtn").style.display = isAdmin ? "inline-flex" : "none";
+
+        // ── Members table ──
         const tbody = document.getElementById("membersTbody");
         const empty = document.getElementById("membersEmpty");
         tbody.innerHTML = "";
 
-        if (members.length === 0) {
-            empty.style.display = "block";
-            return;
-        }
+        if (members.length === 0) { empty.style.display = "block"; return; }
         empty.style.display = "none";
 
         for (const m of members) {
-            const tr = document.createElement("tr");
             const isSelf = m.email === myEmail;
+            const tr = document.createElement("tr");
 
-            tr.innerHTML = `
-              <td>${m.fullName ?? ""}</td>
-              <td>${m.email ?? ""}</td>
-              <td>${m.role ?? ""}</td>
-              <td>
-                ${isAdmin && !isSelf ? `
-                  <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
-                    <select class="roleSelect" style="min-width:130px;">
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="EDITOR">EDITOR</option>
-                      <option value="VIEWER">VIEWER</option>
-                    </select>
-
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                      <button class="btn small updateRoleBtn" type="button">Update</button>
-                      <button class="btn small reject removeBtn" type="button">Remove</button>
+            // Avatar cell
+            const avatarHtml = `
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="member-avatar">
+                        ${m.profilePicture
+                ? `<img src="${m.profilePicture}" alt="" onerror="this.parentElement.textContent='${initials(m.fullName,m.email)}'"/>`
+                : initials(m.fullName, m.email)}
                     </div>
-                  </div>
-                ` : ""}
-              </td>
-            `;
+                    <div class="member-info">
+                        <div class="member-name">${m.fullName ?? ""}</div>
+                        <div class="member-email">${m.email ?? ""}</div>
+                    </div>
+                </div>`;
 
+            // Role cell
+            const roleHtml = isAdmin && !isSelf
+                ? `<select class="role-select roleSelect">
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="EDITOR">EDITOR</option>
+                        <option value="VIEWER">VIEWER</option>
+                   </select>`
+                : roleBadge(m.role);
+
+            // Action cell
+            const actionHtml = isAdmin && !isSelf
+                ? `<div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn btn-sm btn-outline updateRoleBtn" type="button">Update</button>
+                        <button class="btn-remove-member removeBtn" type="button">Remove</button>
+                   </div>`
+                : `<span style="color:var(--text-muted);font-size:12px;">${isSelf ? "(you)" : ""}</span>`;
+
+            tr.innerHTML = `<td>${avatarHtml}</td><td>${roleHtml}</td><td>${actionHtml}</td>`;
+
+            // Bind buttons
             if (isAdmin && !isSelf) {
-                // If userId is missing, stop silently failing
-                if (!m.userId) {
-                    showError("Member userId is missing in /api/teams/{id} response. TeamMemberDTO must include userId.");
-                }
-
                 const roleSelect = tr.querySelector(".roleSelect");
                 roleSelect.value = m.role || "VIEWER";
 
                 tr.querySelector(".updateRoleBtn").addEventListener("click", async () => {
-                    if (!m.userId) return;
+                    if (!m.userId) return showError("Member userId missing.");
                     clearError();
                     try {
                         await fetchJson(`/api/teams/${teamId}/members/${m.userId}/role`, {
@@ -261,21 +672,17 @@
                             body: JSON.stringify({ role: roleSelect.value })
                         });
                         await loadTeam(teamId);
-                    } catch (err) {
-                        showError(err.message);
-                    }
+                    } catch (err) { showError(err.message); }
                 });
 
                 tr.querySelector(".removeBtn").addEventListener("click", async () => {
-                    if (!m.userId) return;
+                    if (!m.userId) return showError("Member userId missing.");
                     if (!confirm(`Remove ${m.fullName} from this team?`)) return;
                     clearError();
                     try {
                         await fetchJson(`/api/teams/${teamId}/members/${m.userId}`, { method: "DELETE" });
                         await loadTeam(teamId);
-                    } catch (err) {
-                        showError(err.message);
-                    }
+                    } catch (err) { showError(err.message); }
                 });
             }
 
@@ -291,126 +698,118 @@
         const empty = document.getElementById("spacesEmpty");
         container.innerHTML = "";
 
-        if (!spaces.length) {
-            empty.style.display = "block";
-            return;
-        }
+        if (!spaces.length) { empty.style.display = "block"; return; }
         empty.style.display = "none";
 
-        for (const s of spaces) {
+        // Icons cycle
+        const icons = ["⚗️", "🔬", "📊", "📁", "🗂️", "📐", "🧪", "💡"];
+        spaces.forEach((s, i) => {
             const spaceId = s.id || s._id;
+            const docCount = s.documentCount ?? "";
             const card = document.createElement("div");
-            card.className = "card";
+            card.className = "space-card";
             card.innerHTML = `
-              <h3 style="margin-top:0;">${s.name ?? "(No name)"}</h3>
-              <p class="muted">${s.description ?? ""}</p>
-              <button class="btn secondary" type="button">Open</button>
+                <div class="space-card-meta">${docCount ? docCount + " Docs" : ""}</div>
+                <div class="space-card-icon">${icons[i % icons.length]}</div>
+                <div class="space-card-name">${s.name ?? "(No name)"}</div>
             `;
-
-            card.querySelector("button").addEventListener("click", () => {
-                window.location.href = `/space.html?id=${spaceId}`;
-            });
-
+            card.addEventListener("click", () => { window.location.href = `/space.html?id=${spaceId}`; });
             container.appendChild(card);
-        }
-    }
-
-    async function createSpace(teamId, name, description) {
-        return fetchJson(`/api/teams/${teamId}/spaces`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, description })
         });
     }
 
     async function loadPendingRequests(teamId) {
         if (!isAdmin) return;
-
         const requests = await fetchJson(`/api/teams/${teamId}/join-requests`);
-
-        const tbody = document.getElementById("pendingTbody");
-        const empty = document.getElementById("pendingEmpty");
+        const tbody  = document.getElementById("pendingTbody");
+        const empty  = document.getElementById("pendingEmpty");
+        const title  = document.getElementById("pendingRequestsTitle");
         tbody.innerHTML = "";
 
         if (!requests || requests.length === 0) {
             empty.style.display = "block";
+            title.textContent = "Pending Join Requests";
             return;
         }
         empty.style.display = "none";
+        title.textContent = `Pending Join Requests (${requests.length})`;
 
         for (const r of requests) {
             const requestId = r.id || r._id;
-            const tr = document.createElement("tr");
+            const date = r.requestedAt
+                ? new Date(r.requestedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : "";
 
-            tr.innerHTML = `
-              <td>${r.fullName ?? ""}</td>
-              <td>${r.email ?? ""}</td>
-              <td>${r.requestedAt ? new Date(r.requestedAt).toLocaleString() : ""}</td>
-              <td>
-                <button class="btn small acceptBtn">Accept</button>
-                <button class="btn small reject rejectBtn">Reject</button>
-              </td>
+            const card = document.createElement("div");
+            card.className = "request-card";
+            card.innerHTML = `
+                <div class="request-card-header">
+                    <div class="request-name">${r.fullName ?? ""}</div>
+                    <div class="request-date">${date}</div>
+                </div>
+                <div class="request-email">${r.email ?? ""}</div>
+                <div class="request-actions">
+                    <button class="btn-reject rejectBtn" type="button">Reject</button>
+                    <button class="btn-accept acceptBtn" type="button">Accept</button>
+                </div>
             `;
 
-            tr.querySelector(".acceptBtn").addEventListener("click", async () => {
+            card.querySelector(".acceptBtn").addEventListener("click", async () => {
                 clearError();
                 try {
                     await fetchJson(`/api/teams/${teamId}/join-requests/${requestId}/accept`, { method: "POST" });
                     await loadPendingRequests(teamId);
                     await loadTeam(teamId);
-                } catch (err) {
-                    showError(err.message);
-                }
+                } catch (err) { showError(err.message); }
             });
 
-            tr.querySelector(".rejectBtn").addEventListener("click", async () => {
+            card.querySelector(".rejectBtn").addEventListener("click", async () => {
                 clearError();
                 try {
                     await fetchJson(`/api/teams/${teamId}/join-requests/${requestId}/reject`, { method: "POST" });
                     await loadPendingRequests(teamId);
-                } catch (err) {
-                    showError(err.message);
-                }
+                } catch (err) { showError(err.message); }
             });
 
-            tbody.appendChild(tr);
+            tbody.appendChild(card);
         }
     }
 
-    async function generateInvite(teamId) {
-        const invite = await fetchJson(`/api/teams/${teamId}/invite`, { method: "POST" });
-        const code = invite.inviteCode;
-        const link = `${window.location.origin}/join.html?code=${code}`;
+    /* ── Event listeners ── */
+    document.getElementById("toggleCreateSpaceBtn").addEventListener("click", () => {
+        const wrap = document.getElementById("createSpaceWrap");
+        wrap.style.display = wrap.style.display === "none" ? "block" : "none";
+    });
 
-        document.getElementById("inviteLinkInput").value = link;
-        document.getElementById("inviteLinkBox").style.display = "flex";
-    }
+    document.getElementById("sidebarNewSpaceBtn").addEventListener("click", () => {
+        const wrap = document.getElementById("createSpaceWrap");
+        wrap.style.display = "block";
+        wrap.scrollIntoView({ behavior: "smooth" });
+    });
 
     document.getElementById("generateInviteBtn").addEventListener("click", async () => {
         clearError();
         const teamId = getTeamIdFromUrl();
         try {
-            await generateInvite(teamId);
-        } catch (err) {
-            showError(err.message);
-        }
+            const invite = await fetchJson(`/api/teams/${teamId}/invite`, { method: "POST" });
+            const code = invite.inviteCode;
+            const link = `${window.location.origin}/join.html?code=${code}`;
+            document.getElementById("inviteLinkInput").value = link;
+            document.getElementById("inviteLinkBox").style.display = "block";
+        } catch (err) { showError(err.message); }
     });
 
     document.getElementById("copyInviteBtn").addEventListener("click", async () => {
         const input = document.getElementById("inviteLinkInput");
-        const text = input.value;
-
         try {
-            await navigator.clipboard.writeText(text);
-            alert("Invite link copied!");
+            await navigator.clipboard.writeText(input.value);
         } catch (e) {
             input.select();
             document.execCommand("copy");
-            alert("Invite link copied!");
         }
     });
 
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
+    document.getElementById("logoutBtnSide").addEventListener("click", async () => {
         try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch (e) {}
         window.location.href = "/login.html";
     });
@@ -418,39 +817,36 @@
     document.getElementById("createSpaceForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         clearError();
-
         const teamId = getTeamIdFromUrl();
         const name = document.getElementById("spaceNameInput").value.trim();
         const description = document.getElementById("spaceDescInput").value.trim();
-
         try {
-            await createSpace(teamId, name, description);
+            await fetchJson(`/api/teams/${teamId}/spaces`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, description })
+            });
             document.getElementById("spaceNameInput").value = "";
             document.getElementById("spaceDescInput").value = "";
+            document.getElementById("createSpaceWrap").style.display = "none";
             await loadSpaces(teamId);
-        } catch (err) {
-            showError(err.message);
-        }
+        } catch (err) { showError(err.message); }
     });
 
+    /* ── Boot ── */
     (async function init() {
         clearError();
-
         const teamId = getTeamIdFromUrl();
-        if (!teamId) {
-            showError("Missing team id in URL. Expected: /team.html?id=...");
-            return;
-        }
-
+        if (!teamId) { showError("Missing team id in URL. Expected: /team.html?id=..."); return; }
         try {
             await loadMe();
+            await loadSidebarTeams();
             await loadTeam(teamId);
             await loadSpaces(teamId);
             await loadPendingRequests(teamId);
-        } catch (err) {
-            showError(err.message);
-        }
+        } catch (err) { showError(err.message); }
     })();
 </script>
+
 </body>
 </html>

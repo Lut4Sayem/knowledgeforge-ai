@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>KnowledgeForge - Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+
+    <style>
+        /* ── Profile-page only styles ── */
+
+        .error-box {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .profile-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2.2fr) 320px;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        @media (max-width: 960px) {
+            .profile-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .profile-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .profile-avatar-lg {
+            width: 96px;
+            height: 96px;
+            border-radius: 4px;
+            background: var(--bg-active);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-serif);
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--primary);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar-lg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-name {
+            font-family: var(--font-serif);
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 6px;
+        }
+
+        .profile-email {
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .profile-badge-row {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .profile-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .profile-badge-primary {
+            background: var(--bg-active);
+            color: var(--primary);
+        }
+
+        .profile-badge-muted {
+            background: #F1F3F4;
+            color: #5F6368;
+        }
+
+        .profile-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 720px) {
+            .profile-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .profile-actions-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .affiliation-item {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .affiliation-item:last-child {
+            border-bottom: none;
+        }
+
+        .affiliation-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+
+        .affiliation-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .security-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .security-row:last-child {
+            border-bottom: none;
+        }
+
+        .security-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+
+        .security-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .security-status {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 3px 8px;
+            border-radius: 2px;
+        }
+
+        .security-status-on {
+            background: var(--badge-green-bg);
+            color: var(--badge-green-text);
+        }
+
+        .security-status-off {
+            background: var(--badge-gray-bg);
+            color: var(--badge-gray-text);
+        }
+    </style>
+</head>
+
+<body class="app-body">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">KF</div>
+        <div class="brand-text">
+            <h2>KnowledgeForge</h2>
+            <p>Digital Craftsmanship</p>
+        </div>
+    </div>
+
+    <div class="sidebar-action">
+        <a href="/dashboard.html" class="btn btn-primary btn-full">+ New Space</a>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a class="nav-item" href="/dashboard.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </a>
+        <a class="nav-item" href="/dashboard.html#teamsSection">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Teams
+        </a>
+        <a class="nav-item" href="/search.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Search
+        </a>
+
+        <!-- My Teams section (needed for JS renderSidebarTeams) -->
+        <div style="padding: 20px 20px 6px; font-size: 10px; font-weight: 700;
+                    text-transform: uppercase; letter-spacing: 0.8px;
+                    color: var(--text-muted);">
+            My Teams
+        </div>
+        <div id="sidebarTeams" style="padding: 0 12px;">
+            <div style="padding: 6px 8px; font-size: 12px; color: var(--text-muted);">
+                Loading...
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a class="nav-item active" href="/profile.html" style="padding:8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Settings
+        </a>
+        <button class="nav-item" type="button" onclick="logout()"
+                style="background:none;border:none;width:100%;text-align:left;
+                       cursor:pointer;font-family:inherit;padding:8px 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Log out
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="app-main">
+
+    <div class="app-topbar">
+        <div class="breadcrumb-nav">
+            <span class="active">Profile</span>
+        </div>
+        <div class="topbar-right">
+            <div id="topbarUser" style="font-size:12px;color:var(--text-muted);"></div>
+        </div>
+    </div>
+
+    <div class="app-content">
+
+        <div id="errorBox" class="error-box"></div>
+
+        <div class="profile-layout">
+
+            <!-- LEFT COLUMN -->
+            <div>
+
+                <div class="card">
+                    <div class="profile-header">
+                        <div class="profile-avatar-lg" id="avatarBox">?</div>
+                        <div>
+                            <div id="nameText" class="profile-name">Loading...</div>
+                            <div id="emailText" class="profile-email"></div>
+                            <div class="profile-badge-row">
+                                <span class="profile-badge profile-badge-primary">Member</span>
+                                <span class="profile-badge profile-badge-muted">Workspace</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="widget-title" style="margin-top:0;margin-bottom:16px;">
+                        Profile Identity
+                    </h3>
+
+                    <div class="profile-form-grid">
+                        <div class="form-group">
+                            <label for="fullNameInput" class="form-label">Full Name</label>
+                            <input id="fullNameInput" type="text" class="form-control"
+                                   placeholder="Your name" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="text" class="form-control" id="emailReadOnly" readonly />
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:16px;">
+                        <label for="picInput" class="form-label">Profile Picture URL</label>
+                        <input id="picInput" type="text" class="form-control" placeholder="https://..." />
+                    </div>
+
+                    <div class="profile-actions-row">
+                        <button id="saveBtn" type="button" class="btn btn-primary">
+                            Save Profile
+                        </button>
+                        <span id="saveMsg" style="font-size:13px;color:var(--badge-green-text);"></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div>
+
+                <div class="card">
+                    <h3 class="widget-title" style="margin-top:0;margin-bottom:12px;">
+                        Team Affiliations
+                    </h3>
+                    <div id="myTeamsBox" style="font-size:13px;color:var(--text-muted);">
+                        Loading...
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="widget-title" style="margin-top:0;margin-bottom:12px;">
+                        Account Security
+                    </h3>
+
+                    <div class="security-row">
+                        <div>
+                            <div class="security-label">Two-Factor Authentication</div>
+                            <div class="security-meta">
+                                Add an extra layer of security to your account.
+                            </div>
+                        </div>
+                        <span class="security-status security-status-off">Disabled</span>
+                    </div>
+
+                    <div class="security-row">
+                        <div>
+                            <div class="security-label">Last Login</div>
+                            <div class="security-meta">
+                                Tracked by your authentication provider.
+                            </div>
+                        </div>
+                        <span class="security-status security-status-off">—</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const errorBox = document.getElementById("errorBox");
+
+    function showError(msg) {
+        errorBox.style.display = "block";
+        errorBox.textContent = msg;
+    }
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+
+    async function fetchJson(url, options = {}) {
+        const res = await fetch(url, { credentials: "include", ...options });
+        if (res.status === 401) { window.location.href = "/login.html"; return null; }
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch(e) {}
+
+        if (!res.ok) {
+            const msg = (data && (data.message || data.error))
+                ? (data.message || data.error)
+                : ("Request failed: " + res.status);
+            throw new Error(msg);
+        }
+        if (!text) return null;
+        return data;
+    }
+
+    function openTeam(teamId) {
+        window.location.href = "/team.html?id=" + teamId;
+    }
+
+    function renderSidebarTeams(teams) {
+        const box = document.getElementById("sidebarTeams");
+        box.innerHTML = "";
+        if (!teams || teams.length === 0) {
+            box.innerHTML = `<div style="padding:6px 8px;font-size:12px;color:var(--text-muted);">No teams</div>`;
+            return;
+        }
+        teams.forEach(t => {
+            const item = document.createElement("a");
+            item.href = "/team.html?id=" + t.id;
+            item.style.cssText = "display:block;padding:6px 8px;font-size:12px;color:var(--text-main);text-decoration:none;";
+            item.textContent = "• " + (t.name || "(Unnamed)");
+            item.onmouseover = () => item.style.background = "var(--bg-active)";
+            item.onmouseout  = () => item.style.background = "";
+            box.appendChild(item);
+        });
+    }
+
+    function renderAvatar(fullName, profilePicture) {
+        const avatarBox = document.getElementById("avatarBox");
+        avatarBox.innerHTML = "";
+
+        if (profilePicture) {
+            const img = document.createElement("img");
+            img.src = profilePicture;
+            img.alt = "Profile";
+            img.onerror = () => {
+                avatarBox.textContent = (fullName ? fullName.trim().charAt(0).toUpperCase() : "?");
+            };
+            avatarBox.appendChild(img);
+            return;
+        }
+
+        avatarBox.textContent = (fullName ? fullName.trim().charAt(0).toUpperCase() : "?");
+    }
+
+    async function loadProfile() {
+        const me = await fetchJson("/api/me");
+        if (!me) return;
+
+        document.getElementById("topbarUser").textContent = me.email || "";
+        document.getElementById("nameText").textContent   = me.fullName || "(No name)";
+        document.getElementById("emailText").textContent  = me.email || "";
+        document.getElementById("emailReadOnly").value    = me.email || "";
+
+        document.getElementById("fullNameInput").value = me.fullName || "";
+        document.getElementById("picInput").value      = me.profilePicture || "";
+
+        renderAvatar(me.fullName, me.profilePicture);
+    }
+
+    async function loadMyTeamsWithRoles() {
+        const list = await fetchJson("/api/me/teams");
+        const box  = document.getElementById("myTeamsBox");
+        box.innerHTML = "";
+
+        const arr = Array.isArray(list) ? list : [];
+        if (arr.length === 0) {
+            box.textContent = "You are not in any teams yet.";
+            return;
+        }
+
+        arr.forEach(t => {
+            const div = document.createElement("div");
+            div.className = "affiliation-item";
+            div.innerHTML = `
+                <div class="affiliation-name">${t.teamName || ""}</div>
+                <div class="affiliation-meta">${t.role || ""}</div>
+            `;
+            box.appendChild(div);
+        });
+    }
+
+    async function loadSidebarTeamsList() {
+        const teams = await fetchJson("/api/teams");
+        if (teams && Array.isArray(teams)) renderSidebarTeams(teams);
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", async () => {
+        clearError();
+        document.getElementById("saveMsg").textContent = "";
+
+        const fullName       = document.getElementById("fullNameInput").value.trim();
+        const profilePicture = document.getElementById("picInput").value.trim();
+
+        try {
+            const updated = await fetchJson("/api/me", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fullName, profilePicture })
+            });
+
+            document.getElementById("saveMsg").textContent = "Saved!";
+            document.getElementById("nameText").textContent = updated.fullName || "(No name)";
+            renderAvatar(updated.fullName, updated.profilePicture);
+
+            setTimeout(() => { document.getElementById("saveMsg").textContent = ""; }, 2000);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    async function logout() {
+        try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch(e) {}
+        window.location.href = "/login.html";
+    }
+
+    (async function init() {
+        try {
+            await loadProfile();
+            await loadMyTeamsWithRoles();
+            await loadSidebarTeamsList();
+        } catch (err) {
+            showError(err.message);
+        }
+    })();
+</script>
+
+</body>
+</html>
