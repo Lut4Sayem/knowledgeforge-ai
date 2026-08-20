@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Search</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .page { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+        .card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; background: #fff; margin-bottom: 16px; }
+        .muted { color: #666; }
+        .btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #222; background: #222; color: #fff; cursor: pointer; }
+        input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 8px; }
+        .result { padding: 12px 0; border-bottom: 1px solid #eee; }
+        .result:last-child { border-bottom: none; }
+        .tag { display: inline-block; background: #eee; padding: 3px 8px; margin-right: 5px; border-radius: 12px; font-size: 0.85em; }
+        .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; margin-bottom: 12px; display:none; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <a href="/dashboard.html" class="muted">← Back to Dashboard</a>
+        <button id="logoutBtn" class="btn" type="button">Log out</button>
+    </div>
+
+    <div id="errorBox" class="error"></div>
+
+    <div class="card">
+        <h1>Search</h1>
+        <form id="searchForm">
+            <input id="qInput" type="text" placeholder="Search title, content, tags..." />
+            <button class="btn" type="submit">Search</button>
+        </form>
+        <p class="muted" style="margin-top:8px;">Searches across documents in teams you belong to.</p>
+    </div>
+
+    <div class="card">
+        <h2>Results</h2>
+        <div id="results"></div>
+        <p id="empty" class="muted" style="display:none;">No results.</p>
+    </div>
+</div>
+
+<script>
+    const errorBox = document.getElementById("errorBox");
+
+    function showError(msg) {
+        errorBox.style.display = "block";
+        errorBox.textContent = msg;
+    }
+    function clearError() {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+    }
+
+    async function fetchJson(url, options = {}) {
+        const res = await fetch(url, { credentials: "include", ...options });
+        if (res.status === 401) { window.location.href = "/login.html"; return; }
+        const text = await res.text();
+        let data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) {}
+        if (!res.ok) throw new Error((data && (data.message || data.error)) ? (data.message || data.error) : ("Request failed: " + res.status));
+        return data;
+    }
+
+    function renderResults(list) {
+        const box = document.getElementById("results");
+        const empty = document.getElementById("empty");
+        box.innerHTML = "";
+
+        const arr = Array.isArray(list) ? list : [];
+        if (arr.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+        empty.style.display = "none";
+
+        for (const r of arr) {
+            const div = document.createElement("div");
+            div.className = "result";
+
+            const tags = (r.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
+
+            div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+          <div>
+            <div style="font-weight:bold; font-size:1.05em;">${r.title || "(No title)"}</div>
+            <div class="muted" style="margin-top:4px;">Space: ${r.spaceName || ""} | Status: ${r.status || ""}</div>
+            <div style="margin-top:6px;">${tags}</div>
+            <div class="muted" style="margin-top:8px;">${r.excerpt || ""}</div>
+          </div>
+          <div>
+            <button class="btn openBtn" type="button">Open</button>
+          </div>
+        </div>
+      `;
+
+            div.querySelector(".openBtn").addEventListener("click", () => {
+                window.location.href = `/document.html?id=${r.documentId}&mode=view`;
+            });
+
+            box.appendChild(div);
+        }
+    }
+
+    document.getElementById("searchForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+        const q = document.getElementById("qInput").value.trim();
+        try {
+            const data = await fetchJson(`/api/search?q=${encodeURIComponent(q)}`);
+            renderResults(data);
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+        try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch (e) {}
+        window.location.href = "/login.html";
+    });
+</script>
+</body>
+</html>

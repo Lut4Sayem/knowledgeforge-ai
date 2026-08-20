@@ -59,7 +59,8 @@ public class SecurityConfig {
                                 "/style.css",
                                 "/favicon.ico",
                                 "/api/auth/register",
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/search.html"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

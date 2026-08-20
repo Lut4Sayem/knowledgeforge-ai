@@ -208,6 +208,8 @@
 
 </div>
 
+<!-- Markdown renderer -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
 
@@ -268,6 +270,14 @@
         return data;
     }
 
+    function renderMarkdown(md) {
+        if (window.marked) {
+            marked.setOptions({ breaks: true });
+            return marked.parse(md || "");
+        }
+        return (md || "");
+    }
+
 
     function updatePreview() {
 
@@ -289,7 +299,7 @@
 
 
         document.getElementById("previewContent")
-            .textContent = content;
+            .innerHTML = renderMarkdown(content);
 
 
         document.getElementById("previewStatus")
@@ -380,7 +390,7 @@
 
 
             document.getElementById("viewContent")
-                .textContent = doc.content || "";
+                .innerHTML = renderMarkdown(doc.content || "");
 
 
             document.getElementById("viewStatus")
@@ -392,6 +402,7 @@
             const tagsContainer =
                 document.getElementById("viewTags");
 
+            tagsContainer.innerHTML = "";
 
             for (const tag of (doc.tags || [])) {
 
