@@ -1,5 +1,6 @@
 package com.knowledgeforge.knowledgeforge.documentPkg;
 
+import com.knowledgeforge.knowledgeforge.activity.ActivityLogService;
 import com.knowledgeforge.knowledgeforge.documentVersion.DocumentVersion;
 import com.knowledgeforge.knowledgeforge.documentVersion.DocumentVersionRepository;
 import com.knowledgeforge.knowledgeforge.space.Space;
@@ -23,19 +24,22 @@ public class DocumentService {
     final UserRepository userRepository;
     final SpaceRepository spaceRepository;
     final DocumentVersionRepository documentVersionRepository;
+    final ActivityLogService activityLogService;
 
     public DocumentService(
             DocumentRepository documentRepository,
             SpaceRepository spaceRepository,
             TeamMemberRepository teamMemberRepository,
             UserRepository userRepository,
-            DocumentVersionRepository documentVersionRepository
+            DocumentVersionRepository documentVersionRepository,
+            ActivityLogService activityLogService
     ) {
         this.documentRepository = documentRepository;
         this.spaceRepository = spaceRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userRepository = userRepository;
         this.documentVersionRepository = documentVersionRepository;
+        this.activityLogService = activityLogService;
     }
 
     public DocumentEntity createDocument(String spaceId, CreateDocumentRequest request) {
@@ -63,7 +67,18 @@ public class DocumentService {
         documentEntity.setCreatedAt(new Date());
         documentEntity.setUpdatedAt(new Date());
 
-        return documentRepository.save(documentEntity);
+        DocumentEntity saved = documentRepository.save(documentEntity);
+
+        activityLogService.log(
+                space.getTeamId(),
+                user.getId(),
+                "CREATE_DOCUMENT",
+                "DOCUMENT",
+                saved.getId(),
+                saved.getTitle()
+        );
+
+        return saved;
     }
 
     public List<DocumentEntity> getDocuments(String spaceId) {
@@ -88,7 +103,6 @@ public class DocumentService {
                 .orElseThrow(() -> new RuntimeException("Document not found"));
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -97,10 +111,7 @@ public class DocumentService {
 
         boolean isMember = teamMemberRepository.existsByTeamIdAndUserId(space.getTeamId(), user.getId());
         if (!isMember) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "You are not a member of this team"
-            );
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this team");
         }
 
         return document;
@@ -108,30 +119,72 @@ public class DocumentService {
 
     public DocumentEntity updateDocument(String documentId, UpdateDocumentRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
         DocumentEntity document = getDocumentByID(documentId);
+
+        // Save OLD state before changing it
         saveVersionSnapshot(document, user.getId());
+
         document.setTitle(request.getTitle());
         document.setContent(request.getContent());
         document.setStatus(request.getStatus());
         document.setTags(request.getTags());
         document.setUpdatedBy(user.getId());
         document.setUpdatedAt(new Date());
-        return documentRepository.save(document);
+
+        DocumentEntity saved = documentRepository.save(document);
+
+        Space space = spaceRepository.findById(saved.getSpaceId())
+                .orElseThrow(() -> new RuntimeException("Space not found"));
+
+        activityLogService.log(
+                space.getTeamId(),
+                user.getId(),
+                "UPDATE_DOCUMENT",
+                "DOCUMENT",
+                saved.getId(),
+                saved.getTitle()
+        );
+
+        return saved;
     }
 
     public void deleteDocument(String documentId) {
-        getDocumentByID(documentId);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        DocumentEntity document = getDocumentByID(documentId);
+
+        Space space = spaceRepository.findById(document.getSpaceId())
+                .orElseThrow(() -> new RuntimeException("Space not found"));
+
+        activityLogService.log(
+                space.getTeamId(),
+                user.getId(),
+                "DELETE_DOCUMENT",
+                "DOCUMENT",
+                document.getId(),
+                document.getTitle()
+        );
+
         documentRepository.deleteById(documentId);
     }
 
     private void saveVersionSnapshot(DocumentEntity doc, String userId) {
         int nextNumber = 1;
-        var lastOpt = documentVersionRepository.findTopByDocumentIdOrderByVersionNumberDesc(doc.getId());
+
+        var lastOpt = documentVersionRepository
+                .findTopByDocumentIdOrderByVersionNumberDesc(doc.getId());
+
         if (lastOpt.isPresent() && lastOpt.get().getVersionNumber() != null) {
             nextNumber = lastOpt.get().getVersionNumber() + 1;
         }
+
         DocumentVersion v = new DocumentVersion();
         v.setDocumentId(doc.getId());
         v.setTitle(doc.getTitle());
@@ -139,6 +192,7 @@ public class DocumentService {
         v.setVersionNumber(nextNumber);
         v.setSavedBy(userId);
         v.setSavedAt(new Date());
+
         documentVersionRepository.save(v);
     }
 }

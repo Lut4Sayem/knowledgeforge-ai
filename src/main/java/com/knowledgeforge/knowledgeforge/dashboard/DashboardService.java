@@ -12,6 +12,8 @@ import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import com.knowledgeforge.knowledgeforge.activity.ActivityLog;
+import com.knowledgeforge.knowledgeforge.activity.ActivityLogRepository;
 
 import java.util.*;
 
@@ -23,19 +25,19 @@ public class DashboardService {
     private final TeamRepository teamRepository;
     private final SpaceRepository spaceRepository;
     private final DocumentRepository documentRepository;
+    private final ActivityLogRepository activityLogRepository;
 
-    public DashboardService(
-            UserRepository userRepository,
-            TeamMemberRepository teamMemberRepository,
-            TeamRepository teamRepository,
+    public DashboardService(UserRepository userRepository, TeamMemberRepository teamMemberRepository, TeamRepository teamRepository,
             SpaceRepository spaceRepository,
-            DocumentRepository documentRepository
+            DocumentRepository documentRepository,
+                            ActivityLogRepository activityLogRepository
     ) {
         this.userRepository = userRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.teamRepository = teamRepository;
         this.spaceRepository = spaceRepository;
         this.documentRepository = documentRepository;
+        this.activityLogRepository = activityLogRepository;
     }
 
     public DashboardResponseDTO getDashboard() {
@@ -54,6 +56,31 @@ public class DashboardService {
 
         Map<String, Team> teamMap = new HashMap<>();
         for (Team t : teams) teamMap.put(t.getId(), t);
+        List<ActivityLog> logs = teamIds.isEmpty()
+                ? List.of()
+                : activityLogRepository.findTop20ByTeamIdInOrderByCreatedAtDesc(teamIds);
+
+        List<RecentActivityDTO> activityOut = new ArrayList<>();
+        for (ActivityLog log : logs) {
+            RecentActivityDTO dto = new RecentActivityDTO();
+            dto.setId(log.getId());
+            dto.setTeamId(log.getTeamId());
+            dto.setAction(log.getAction());
+            dto.setTargetId(log.getTargetId());
+            dto.setTargetTitle(log.getTargetTitle());
+            dto.setCreatedAt(log.getCreatedAt());
+            dto.setActorUserId(log.getUserId());
+
+            Team t = teamMap.get(log.getTeamId());
+            if (t != null) dto.setTeamName(t.getName());
+
+            userRepository.findById(log.getUserId()).ifPresent(u -> {
+                dto.setActorFullName(u.getFullName());
+                dto.setActorEmail(u.getEmail());
+            });
+
+            activityOut.add(dto);
+        }
 
         Map<String, Space> spaceMap = new HashMap<>();
         List<String> spaceIds = new ArrayList<>();
@@ -108,6 +135,7 @@ public class DashboardService {
         resp.setSpaceCount(spaces.size());
         resp.setDocumentCount(docs.size());
         resp.setRecentDocuments(recent);
+        resp.setRecentActivity(activityOut);
         return resp;
     }
 }

@@ -52,6 +52,14 @@
 
     <hr>
 
+    <!-- RECENT ACTIVITY -->
+    <h3>Recent Activity</h3>
+    <div id="activityContainer" style="display:flex; flex-direction:column; gap:10px;">
+        <p>Loading activity...</p>
+    </div>
+
+    <hr>
+
     <h3>My Teams</h3>
 
     <div id="teamsContainer" style="display: flex; gap: 15px; flex-wrap: wrap;">
@@ -112,22 +120,29 @@
         return data;
     }
 
-    // Check if user is logged in
     async function checkAuth() {
         const data = await fetchJson("/api/me");
         if (!data) return;
 
-        // show fullName if available, else email
         const label = data.fullName ? data.fullName : data.email;
         welcomeText.innerText = "Welcome, " + label;
     }
 
-    // Load dashboard summary + recent documents
+    function formatAction(action) {
+        if (!action) return "";
+        if (action === "CREATE_DOCUMENT") return "created a document";
+        if (action === "UPDATE_DOCUMENT") return "updated a document";
+        if (action === "DELETE_DOCUMENT") return "deleted a document";
+        if (action === "RESTORE_DOCUMENT") return "restored a document version";
+        return action;
+    }
+
     async function loadDashboard() {
         const teamCountEl = document.getElementById("teamCount");
         const spaceCountEl = document.getElementById("spaceCount");
         const documentCountEl = document.getElementById("documentCount");
         const recentBox = document.getElementById("recentDocsContainer");
+        const activityBox = document.getElementById("activityContainer");
 
         try {
             const data = await fetchJson("/api/dashboard");
@@ -137,64 +152,115 @@
             spaceCountEl.textContent = data.spaceCount ?? 0;
             documentCountEl.textContent = data.documentCount ?? 0;
 
+            // ----- recent documents -----
             const recent = Array.isArray(data.recentDocuments) ? data.recentDocuments : [];
             recentBox.innerHTML = "";
 
             if (recent.length === 0) {
                 recentBox.innerHTML = "<p>No documents yet.</p>";
-                return;
+            } else {
+                recent.forEach(r => {
+                    const div = document.createElement("div");
+                    div.style.border = "1px solid #ccc";
+                    div.style.padding = "12px";
+                    div.style.borderRadius = "8px";
+                    div.style.backgroundColor = "#f9f9f9";
+
+                    const updated = r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "";
+                    const teamName = r.teamName || "";
+                    const spaceName = r.spaceName || "";
+                    const status = r.status || "";
+                    const title = r.title || "(No title)";
+                    const docId = r.documentId || r.id || r._id;
+
+                    const tags = Array.isArray(r.tags) ? r.tags : [];
+                    const tagsHtml = tags.length
+                        ? tags.map(t => `<span style="display:inline-block; background:#eee; padding:3px 8px; border-radius:12px; margin-right:6px; font-size:12px;">${t}</span>`).join("")
+                        : "";
+
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                            <div style="flex:1;">
+                                <div style="font-weight:bold; font-size:16px;">${title}</div>
+                                <div style="font-size:13px; color:#555; margin-top:4px;">
+                                    ${teamName ? (teamName + " • ") : ""}${spaceName ? spaceName : ""}${status ? (" • " + status) : ""}
+                                </div>
+                                <div style="margin-top:8px;">${tagsHtml}</div>
+                                <div style="font-size:12px; color:#777; margin-top:8px;">
+                                    Updated: ${updated}
+                                </div>
+                            </div>
+                            <div>
+                                <button type="button" class="openDocBtn">Open</button>
+                            </div>
+                        </div>
+                    `;
+
+                    div.querySelector(".openDocBtn").addEventListener("click", () => {
+                        window.location.href = `/document.html?id=${docId}&mode=view`;
+                    });
+
+                    recentBox.appendChild(div);
+                });
             }
 
-            recent.forEach(r => {
-                const div = document.createElement("div");
-                div.style.border = "1px solid #ccc";
-                div.style.padding = "12px";
-                div.style.borderRadius = "8px";
-                div.style.backgroundColor = "#f9f9f9";
+            // ----- recent activity -----
+            const activity = Array.isArray(data.recentActivity) ? data.recentActivity : [];
+            activityBox.innerHTML = "";
 
-                const updated = r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "";
-                const teamName = r.teamName || "";
-                const spaceName = r.spaceName || "";
-                const status = r.status || "";
-                const title = r.title || "(No title)";
-                const docId = r.documentId || r.id || r._id;
+            if (activity.length === 0) {
+                activityBox.innerHTML = "<p>No activity yet.</p>";
+            } else {
+                activity.forEach(a => {
+                    const div = document.createElement("div");
+                    div.style.border = "1px solid #ccc";
+                    div.style.padding = "12px";
+                    div.style.borderRadius = "8px";
+                    div.style.backgroundColor = "#f9f9f9";
 
-                const tags = Array.isArray(r.tags) ? r.tags : [];
-                const tagsHtml = tags.length
-                    ? tags.map(t => `<span style="display:inline-block; background:#eee; padding:3px 8px; border-radius:12px; margin-right:6px; font-size:12px;">${t}</span>`).join("")
-                    : "";
+                    const when = a.createdAt ? new Date(a.createdAt).toLocaleString() : "";
+                    const actor = a.actorFullName || a.actorEmail || "Someone";
+                    const teamName = a.teamName || "";
+                    const actionText = formatAction(a.action);
+                    const title = a.targetTitle || "(Untitled)";
+                    const docId = a.targetId;
 
-                div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-                        <div style="flex:1;">
-                            <div style="font-weight:bold; font-size:16px;">${title}</div>
-                            <div style="font-size:13px; color:#555; margin-top:4px;">
-                                ${teamName ? (teamName + " • ") : ""}${spaceName ? spaceName : ""}${status ? (" • " + status) : ""}
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                            <div style="flex:1;">
+                                <div style="font-weight:bold; font-size:15px;">
+                                    ${actor} ${actionText}
+                                </div>
+                                <div style="margin-top:6px;">
+                                    <span style="font-weight:bold;">${title}</span>
+                                </div>
+                                <div style="font-size:12px; color:#777; margin-top:6px;">
+                                    ${teamName ? ("Team: " + teamName + " • ") : ""}${when}
+                                </div>
                             </div>
-                            <div style="margin-top:8px;">${tagsHtml}</div>
-                            <div style="font-size:12px; color:#777; margin-top:8px;">
-                                Updated: ${updated}
+                            <div>
+                                ${docId ? `<button type="button" class="openFromActivityBtn">Open</button>` : ""}
                             </div>
                         </div>
-                        <div>
-                            <button type="button" class="openDocBtn">Open</button>
-                        </div>
-                    </div>
-                `;
+                    `;
 
-                div.querySelector(".openDocBtn").addEventListener("click", () => {
-                    window.location.href = `/document.html?id=${docId}&mode=view`;
+                    const btn = div.querySelector(".openFromActivityBtn");
+                    if (btn) {
+                        btn.addEventListener("click", () => {
+                            window.location.href = `/document.html?id=${docId}&mode=view`;
+                        });
+                    }
+
+                    activityBox.appendChild(div);
                 });
-
-                recentBox.appendChild(div);
-            });
+            }
 
         } catch (err) {
             recentBox.innerHTML = `<p style="color:red;">Failed to load dashboard: ${err.message}</p>`;
+            activityBox.innerHTML = `<p style="color:red;">Failed to load activity: ${err.message}</p>`;
         }
     }
 
-    // Load teams belonging to logged-in user
     async function loadTeams() {
         const teamsContainer = document.getElementById("teamsContainer");
 
@@ -243,12 +309,10 @@
         }
     }
 
-    // Open selected team page
     function openTeam(teamId) {
         window.location.href = "/team.html?id=" + teamId;
     }
 
-    // Create Team
     const teamForm = document.getElementById("teamForm");
     const teamMessage = document.getElementById("teamMessage");
 
@@ -282,7 +346,6 @@
         }
     });
 
-    // Logout
     async function logout() {
         try {
             await fetch("/logout", { method: "POST", credentials: "include" });
@@ -290,7 +353,6 @@
         window.location.href = "/login.html";
     }
 
-    // Run when dashboard loads
     (async function init() {
         await checkAuth();
         await loadDashboard();
