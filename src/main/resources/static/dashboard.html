@@ -9,8 +9,46 @@
 
 <div class="dashboard-container">
 
-    <h2>KnowledgeForge AI</h2>
-    <p id="welcomeText"></p>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+            <h2 style="margin-bottom:6px;">KnowledgeForge AI</h2>
+            <p id="welcomeText" style="margin-top:0;"></p>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+            <a href="/search.html" style="text-decoration:none;">
+                <button type="button">Search</button>
+            </a>
+            <button onclick="logout()">Log out</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- SUMMARY -->
+    <h3>Summary</h3>
+    <div id="summaryRow" style="display:flex; gap: 15px; flex-wrap: wrap;">
+        <div style="border:1px solid #ccc; padding:12px; border-radius:8px; min-width:160px; background:#f9f9f9;">
+            <div style="font-size:13px; color:#555;">Teams</div>
+            <div id="teamCount" style="font-size:22px; font-weight:bold;">0</div>
+        </div>
+        <div style="border:1px solid #ccc; padding:12px; border-radius:8px; min-width:160px; background:#f9f9f9;">
+            <div style="font-size:13px; color:#555;">Spaces</div>
+            <div id="spaceCount" style="font-size:22px; font-weight:bold;">0</div>
+        </div>
+        <div style="border:1px solid #ccc; padding:12px; border-radius:8px; min-width:160px; background:#f9f9f9;">
+            <div style="font-size:13px; color:#555;">Documents</div>
+            <div id="documentCount" style="font-size:22px; font-weight:bold;">0</div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- RECENT DOCS -->
+    <h3>Recently Updated Documents</h3>
+    <div id="recentDocsContainer" style="display:flex; flex-direction:column; gap:10px;">
+        <p>Loading recent documents...</p>
+    </div>
 
     <hr>
 
@@ -36,63 +74,142 @@
 
     <p id="teamMessage"></p>
 
-    <br>
-
-    <button onclick="logout()">Log out</button>
-
 </div>
 
 <script>
-
     const welcomeText = document.getElementById("welcomeText");
+
+    async function fetchJson(url, options = {}) {
+        const res = await fetch(url, { credentials: "include", ...options });
+
+        if (res.status === 401) {
+            window.location.href = "/login.html";
+            return null;
+        }
+
+        const text = await res.text();
+        let data = null;
+
+        if (text) {
+            try { data = JSON.parse(text); } catch (e) { data = null; }
+        }
+
+        if (!res.ok) {
+            const msg = (data && (data.message || data.error))
+                ? (data.message || data.error)
+                : ("Request failed: " + res.status);
+            throw new Error(msg);
+        }
+
+        // success but empty body
+        if (!text) return null;
+
+        // success but not JSON
+        if (data === null) {
+            throw new Error("Unexpected response (not JSON). Please log in again.");
+        }
+
+        return data;
+    }
 
     // Check if user is logged in
     async function checkAuth() {
+        const data = await fetchJson("/api/me");
+        if (!data) return;
 
-        const response = await fetch("/api/me", {
-            credentials: "include"
-        });
+        // show fullName if available, else email
+        const label = data.fullName ? data.fullName : data.email;
+        welcomeText.innerText = "Welcome, " + label;
+    }
 
-        if (response.ok) {
+    // Load dashboard summary + recent documents
+    async function loadDashboard() {
+        const teamCountEl = document.getElementById("teamCount");
+        const spaceCountEl = document.getElementById("spaceCount");
+        const documentCountEl = document.getElementById("documentCount");
+        const recentBox = document.getElementById("recentDocsContainer");
 
-            const data = await response.json();
+        try {
+            const data = await fetchJson("/api/dashboard");
+            if (!data) return;
 
-            welcomeText.innerText = "Welcome, " + data.email;
+            teamCountEl.textContent = data.teamCount ?? 0;
+            spaceCountEl.textContent = data.spaceCount ?? 0;
+            documentCountEl.textContent = data.documentCount ?? 0;
 
-        } else {
+            const recent = Array.isArray(data.recentDocuments) ? data.recentDocuments : [];
+            recentBox.innerHTML = "";
 
-            window.location.href = "/login.html";
+            if (recent.length === 0) {
+                recentBox.innerHTML = "<p>No documents yet.</p>";
+                return;
+            }
+
+            recent.forEach(r => {
+                const div = document.createElement("div");
+                div.style.border = "1px solid #ccc";
+                div.style.padding = "12px";
+                div.style.borderRadius = "8px";
+                div.style.backgroundColor = "#f9f9f9";
+
+                const updated = r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "";
+                const teamName = r.teamName || "";
+                const spaceName = r.spaceName || "";
+                const status = r.status || "";
+                const title = r.title || "(No title)";
+                const docId = r.documentId || r.id || r._id;
+
+                const tags = Array.isArray(r.tags) ? r.tags : [];
+                const tagsHtml = tags.length
+                    ? tags.map(t => `<span style="display:inline-block; background:#eee; padding:3px 8px; border-radius:12px; margin-right:6px; font-size:12px;">${t}</span>`).join("")
+                    : "";
+
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold; font-size:16px;">${title}</div>
+                            <div style="font-size:13px; color:#555; margin-top:4px;">
+                                ${teamName ? (teamName + " • ") : ""}${spaceName ? spaceName : ""}${status ? (" • " + status) : ""}
+                            </div>
+                            <div style="margin-top:8px;">${tagsHtml}</div>
+                            <div style="font-size:12px; color:#777; margin-top:8px;">
+                                Updated: ${updated}
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" class="openDocBtn">Open</button>
+                        </div>
+                    </div>
+                `;
+
+                div.querySelector(".openDocBtn").addEventListener("click", () => {
+                    window.location.href = `/document.html?id=${docId}&mode=view`;
+                });
+
+                recentBox.appendChild(div);
+            });
+
+        } catch (err) {
+            recentBox.innerHTML = `<p style="color:red;">Failed to load dashboard: ${err.message}</p>`;
         }
     }
 
-
     // Load teams belonging to logged-in user
     async function loadTeams() {
-
         const teamsContainer = document.getElementById("teamsContainer");
 
-        const response = await fetch("/api/teams", {
-            credentials: "include"
-        });
-
-        if (response.ok) {
-
-            const teams = await response.json();
+        try {
+            const teams = await fetchJson("/api/teams");
+            if (!teams) return;
 
             teamsContainer.innerHTML = "";
 
             if (teams.length === 0) {
-
-                teamsContainer.innerHTML =
-                    "<p>You are not in any teams yet.</p>";
-
+                teamsContainer.innerHTML = "<p>You are not in any teams yet.</p>";
                 return;
             }
 
-
-            // Create one card for every team
             teams.forEach(team => {
-
                 const teamCard = document.createElement("div");
 
                 teamCard.style.border = "1px solid #ccc";
@@ -100,7 +217,6 @@
                 teamCard.style.borderRadius = "8px";
                 teamCard.style.minWidth = "200px";
                 teamCard.style.backgroundColor = "#f9f9f9";
-
 
                 teamCard.innerHTML = `
                     <h4 style="margin-top: 0;">
@@ -118,104 +234,68 @@
                     </button>
                 `;
 
-
                 teamsContainer.appendChild(teamCard);
             });
 
-        } else {
-
+        } catch (err) {
             teamsContainer.innerHTML =
                 "<p style='color: red;'>Failed to load teams.</p>";
         }
     }
 
-
     // Open selected team page
     function openTeam(teamId) {
-
-        window.location.href =
-            "/team.html?id=" + teamId;
+        window.location.href = "/team.html?id=" + teamId;
     }
-
 
     // Create Team
     const teamForm = document.getElementById("teamForm");
     const teamMessage = document.getElementById("teamMessage");
 
-
     teamForm.addEventListener("submit", async function (event) {
-
         event.preventDefault();
 
+        const teamName = document.getElementById("teamName").value;
+        const teamDescription = document.getElementById("teamDescription").value;
 
-        const teamName =
-            document.getElementById("teamName").value;
+        try {
+            await fetchJson("/api/teams", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    teamName: teamName,
+                    teamDescription: teamDescription
+                })
+            });
 
-        const teamDescription =
-            document.getElementById("teamDescription").value;
-
-
-        const response = await fetch("/api/teams", {
-
-            method: "POST",
-
-            credentials: "include",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-
-                teamName: teamName,
-                teamDescription: teamDescription
-
-            })
-        });
-
-
-        if (response.ok) {
-
-            teamMessage.innerText =
-                "Team created successfully ✅";
-
+            teamMessage.innerText = "Team created successfully ✅";
             teamMessage.style.color = "green";
-
             teamForm.reset();
 
-
-            // Reload teams so the new team immediately appears
+            // Reload data
             loadTeams();
+            loadDashboard();
 
-        } else {
-
-            teamMessage.innerText =
-                "Failed to create team.";
-
+        } catch (err) {
+            teamMessage.innerText = "Failed to create team: " + err.message;
             teamMessage.style.color = "red";
         }
     });
 
-
     // Logout
     async function logout() {
-
-        await fetch("/logout", {
-
-            method: "POST",
-
-            credentials: "include"
-        });
-
-
+        try {
+            await fetch("/logout", { method: "POST", credentials: "include" });
+        } catch (e) {}
         window.location.href = "/login.html";
     }
 
-
     // Run when dashboard loads
-    checkAuth();
-    loadTeams();
-
+    (async function init() {
+        await checkAuth();
+        await loadDashboard();
+        await loadTeams();
+    })();
 </script>
 
 </body>

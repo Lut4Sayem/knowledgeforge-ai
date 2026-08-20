@@ -53,6 +53,10 @@
             resize: vertical;
         }
 
+        textarea.comment-box {
+            min-height: 80px;
+        }
+
         .btn {
             padding: 9px 16px;
             border: none;
@@ -83,6 +87,19 @@
             padding: 4px 9px;
             margin-right: 5px;
             border-radius: 12px;
+        }
+
+        .muted {
+            color: #666;
+        }
+
+        .comment {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+
+        .comment:last-child {
+            border-bottom: none;
         }
 
         .error {
@@ -156,6 +173,34 @@
                     </button>
 
                     <span id="saveMessage" class="success"></span>
+
+                    <hr style="margin:16px 0;">
+
+                    <h3>Attachments (Links)</h3>
+
+                    <label for="attachNameInput">Name</label>
+                    <input id="attachNameInput" type="text" placeholder="e.g. architecture-diagram.png">
+
+                    <label for="attachUrlInput">URL</label>
+                    <input id="attachUrlInput" type="text" placeholder="https://...">
+
+                    <button class="btn secondary" id="addAttachmentBtn" type="button" style="margin-top:10px;">
+                        + Add Attachment Link
+                    </button>
+
+                    <div style="margin-top:14px;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead>
+                            <tr>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Name</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">URL</th>
+                                <th style="text-align:left; padding:8px; border-bottom:1px solid #eee;">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="attachmentsEditTbody"></tbody>
+                        </table>
+                        <p id="attachmentsEditEmpty" class="muted" style="display:none; margin-top:10px;">No attachments.</p>
+                    </div>
                 </div>
 
             </div>
@@ -176,6 +221,24 @@
                         id="previewContent"
                         class="preview">
                 </div>
+
+                <hr style="margin:16px 0;">
+
+                <h3>Comments</h3>
+
+                <div id="commentsBox"></div>
+
+                <div style="margin-top:10px;">
+                    <textarea id="commentInput" class="comment-box" placeholder="Write a comment..."></textarea>
+                    <button class="btn secondary" id="addCommentBtn" type="button" style="margin-top:8px;">
+                        Add Comment
+                    </button>
+                </div>
+
+                <hr style="margin:16px 0;">
+
+                <h3>Version History</h3>
+                <div id="versionsBox"></div>
 
             </div>
 
@@ -202,6 +265,28 @@
                     class="preview">
             </div>
 
+            <hr style="margin:16px 0;">
+            <h3>Attachments</h3>
+            <div id="attachmentsViewList"></div>
+            <p id="attachmentsViewEmpty" class="muted" style="display:none; margin-top:10px;">No attachments.</p>
+
+            <hr style="margin:16px 0;">
+            <h3>Comments</h3>
+
+            <div id="commentsBoxView"></div>
+
+            <div style="margin-top:10px;">
+                <textarea id="commentInputView" class="comment-box" placeholder="Write a comment..."></textarea>
+                <button class="btn secondary" id="addCommentBtnView" type="button" style="margin-top:8px;">
+                    Add Comment
+                </button>
+            </div>
+
+            <hr style="margin:16px 0;">
+
+            <h3>Version History</h3>
+            <div id="versionsBoxView"></div>
+
         </div>
 
     </div>
@@ -212,58 +297,50 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
-
-    const params =
-        new URLSearchParams(window.location.search);
-
+    const params = new URLSearchParams(window.location.search);
     const documentId = params.get("id");
-
-    const mode =
-        params.get("mode") || "view";
-
+    const mode = params.get("mode") || "view";
 
     function showError(message) {
-
-        const box =
-            document.getElementById("errorBox");
-
+        const box = document.getElementById("errorBox");
         box.style.display = "block";
         box.textContent = message;
     }
 
+    function clearError() {
+        const box = document.getElementById("errorBox");
+        box.style.display = "none";
+        box.textContent = "";
+    }
 
     async function fetchJson(url, options = {}) {
-
-        const response =
-            await fetch(url, {
-                credentials: "include",
-                ...options
-            });
+        const response = await fetch(url, {
+            credentials: "include",
+            ...options
+        });
 
         if (response.status === 401) {
             window.location.href = "/login.html";
-            return;
+            return null;
         }
 
-        const text =
-            await response.text();
+        const text = await response.text();
+
+        // success but empty body (rare, but safe)
+        if (response.ok && !text) return null;
 
         let data = null;
-
         try {
-            data =
-                text ? JSON.parse(text) : null;
-        }
-        catch (e) {
+            data = text ? JSON.parse(text) : null;
+        } catch (e) {
+            data = null;
         }
 
         if (!response.ok) {
-
             throw new Error(
-                data?.message ||
-                data?.error ||
-                "Request failed: " +
-                response.status
+                (data && (data.message || data.error))
+                    ? (data.message || data.error)
+                    : ("Request failed: " + response.status)
             );
         }
 
@@ -278,281 +355,407 @@
         return (md || "");
     }
 
+    /* ---------------- ATTACHMENTS ---------------- */
+
+    async function loadAttachments() {
+        const list = await fetchJson(`/api/documents/${documentId}/attachments`);
+        renderAttachments(list || []);
+    }
+
+    function renderAttachments(list) {
+        // EDIT table
+        const tbody = document.getElementById("attachmentsEditTbody");
+        const emptyEdit = document.getElementById("attachmentsEditEmpty");
+
+        if (tbody && emptyEdit) {
+            tbody.innerHTML = "";
+            if (!list.length) {
+                emptyEdit.style.display = "block";
+            } else {
+                emptyEdit.style.display = "none";
+                for (const a of list) {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                      <td style="padding:8px; border-bottom:1px solid #f2f2f2;">${a.originalName || ""}</td>
+                      <td style="padding:8px; border-bottom:1px solid #f2f2f2;">
+                        <a href="${a.url || "#"}" target="_blank">${a.url || ""}</a>
+                      </td>
+                      <td style="padding:8px; border-bottom:1px solid #f2f2f2;">
+                        <button class="btn secondary delAttachBtn" type="button" style="color:#c00; border-color:#c00;">Delete</button>
+                      </td>
+                    `;
+                    tr.querySelector(".delAttachBtn").addEventListener("click", async () => {
+                        if (!confirm("Delete this attachment?")) return;
+                        clearError();
+                        try {
+                            await fetchJson(`/api/attachments/${a.id || a._id}`, { method: "DELETE" });
+                            await loadAttachments();
+                        } catch (err) {
+                            showError(err.message);
+                        }
+                    });
+                    tbody.appendChild(tr);
+                }
+            }
+        }
+
+        // VIEW list
+        const viewList = document.getElementById("attachmentsViewList");
+        const emptyView = document.getElementById("attachmentsViewEmpty");
+
+        if (viewList && emptyView) {
+            viewList.innerHTML = "";
+            if (!list.length) {
+                emptyView.style.display = "block";
+            } else {
+                emptyView.style.display = "none";
+                for (const a of list) {
+                    const div = document.createElement("div");
+                    div.style.padding = "6px 0";
+                    div.innerHTML = `<a href="${a.url || "#"}" target="_blank">${a.originalName || a.url || ""}</a>`;
+                    viewList.appendChild(div);
+                }
+            }
+        }
+    }
+
+    async function addAttachment() {
+        const name = document.getElementById("attachNameInput").value.trim();
+        const url = document.getElementById("attachUrlInput").value.trim();
+
+        if (!name || !url) {
+            showError("Attachment name and URL are required.");
+            return;
+        }
+
+        clearError();
+
+        try {
+            await fetchJson(`/api/documents/${documentId}/attachments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ originalName: name, url })
+            });
+
+            document.getElementById("attachNameInput").value = "";
+            document.getElementById("attachUrlInput").value = "";
+
+            await loadAttachments();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    /* ---------------- COMMENTS ---------------- */
+
+    async function loadComments() {
+        const list = await fetchJson(`/api/documents/${documentId}/comments`);
+        renderComments(Array.isArray(list) ? list : []);
+    }
+
+    function renderComments(list) {
+        const boxEdit = document.getElementById("commentsBox");
+        const boxView = document.getElementById("commentsBoxView");
+
+        function renderInto(box) {
+            if (!box) return;
+
+            box.innerHTML = "";
+
+            if (list.length === 0) {
+                box.innerHTML = `<p class="muted">No comments yet.</p>`;
+                return;
+            }
+
+            for (const c of list) {
+                const div = document.createElement("div");
+                div.className = "comment";
+
+                const name = c.createdByFullName || c.createdByEmail || "Unknown";
+                const when = c.createdAt ? new Date(c.createdAt).toLocaleString() : "";
+
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+                        <div>
+                            <div style="font-weight:bold;">${name}</div>
+                            <div class="muted" style="font-size:12px;">${when}</div>
+                        </div>
+                        <div>
+                            <button class="btn secondary delCommentBtn" type="button" style="color:#c00; border-color:#c00;">Delete</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px; white-space:pre-wrap;">${c.content || ""}</div>
+                `;
+
+                div.querySelector(".delCommentBtn").addEventListener("click", async () => {
+                    if (!confirm("Delete this comment? (You can only delete your own)")) return;
+                    clearError();
+                    try {
+                        await fetchJson(`/api/comments/${c.id}`, { method: "DELETE" });
+                        await loadComments();
+                    } catch (err) {
+                        showError(err.message);
+                    }
+                });
+
+                box.appendChild(div);
+            }
+        }
+
+        renderInto(boxEdit);
+        renderInto(boxView);
+    }
+
+    async function addCommentFrom(textareaId) {
+        const ta = document.getElementById(textareaId);
+        if (!ta) return;
+
+        const content = ta.value.trim();
+        if (!content) {
+            showError("Comment cannot be empty");
+            return;
+        }
+
+        clearError();
+
+        try {
+            await fetchJson(`/api/documents/${documentId}/comments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content })
+            });
+
+            ta.value = "";
+            await loadComments();
+
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    /* ---------------- VERSIONS ---------------- */
+
+    async function loadVersions() {
+        const list = await fetchJson(`/api/documents/${documentId}/versions`);
+        renderVersions(Array.isArray(list) ? list : []);
+    }
+
+    function renderVersions(list) {
+        const boxEdit = document.getElementById("versionsBox");
+        const boxView = document.getElementById("versionsBoxView");
+
+        function renderInto(box) {
+            if (!box) return;
+
+            box.innerHTML = "";
+
+            if (list.length === 0) {
+                box.innerHTML = `<p class="muted">No versions yet.</p>`;
+                return;
+            }
+
+            for (const v of list) {
+                const div = document.createElement("div");
+                div.style.borderBottom = "1px solid #eee";
+                div.style.padding = "8px 0";
+
+                const who = v.savedByFullName || v.savedByEmail || "Unknown";
+                const when = v.savedAt ? new Date(v.savedAt).toLocaleString() : "";
+
+                div.innerHTML = `
+              <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+                <div>
+                  <div style="font-weight:bold;">Version ${v.versionNumber ?? ""}</div>
+                  <div class="muted" style="font-size:12px;">Saved by ${who} • ${when}</div>
+                </div>
+
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <button class="btn secondary previewVersionBtn" type="button">Preview</button>
+                  ${mode === "edit" ? `<button class="btn secondary restoreBtn" type="button">Restore</button>` : ""}
+                </div>
+              </div>
+
+              <div class="versionPreview" style="display:none; margin-top:10px; padding:10px; background:#f9f9f9; border:1px solid #eee; border-radius:6px;">
+                  <div class="muted" style="font-size:12px; margin-bottom:6px;">Saved snapshot:</div>
+                  <h4 style="margin-top:0;">${v.title || "(No title)"}</h4>
+                  <div class="preview">${renderMarkdown(v.content || "")}</div>
+              </div>
+            `;
+
+                div.querySelector(".previewVersionBtn").addEventListener("click", () => {
+                    const preview = div.querySelector(".versionPreview");
+
+                    if (preview.style.display === "none") {
+                        preview.style.display = "block";
+                    } else {
+                        preview.style.display = "none";
+                    }
+                });
+
+                if (mode === "edit") {
+                    div.querySelector(".restoreBtn").addEventListener("click", async () => {
+                        if (!confirm(`Restore version ${v.versionNumber}?`)) return;
+                        clearError();
+                        try {
+                            await fetchJson(`/api/documents/${documentId}/versions/${v.id}/restore`, {
+                                method: "POST"
+                            });
+                            await loadDocument();
+                        } catch (err) {
+                            showError(err.message);
+                        }
+                    });
+                }
+
+                box.appendChild(div);
+            }
+        }
+
+        renderInto(boxEdit);
+        renderInto(boxView);
+    }
+    /* ---------------- PREVIEW ---------------- */
 
     function updatePreview() {
+        const title = document.getElementById("titleInput").value;
+        const content = document.getElementById("contentInput").value;
+        const tagsText = document.getElementById("tagsInput").value;
+        const status = document.getElementById("statusInput").value;
 
-        const title =
-            document.getElementById("titleInput").value;
+        document.getElementById("previewTitle").textContent = title;
+        document.getElementById("previewContent").innerHTML = renderMarkdown(content);
+        document.getElementById("previewStatus").textContent = "Status: " + status;
 
-        const content =
-            document.getElementById("contentInput").value;
-
-        const tagsText =
-            document.getElementById("tagsInput").value;
-
-        const status =
-            document.getElementById("statusInput").value;
-
-
-        document.getElementById("previewTitle")
-            .textContent = title;
-
-
-        document.getElementById("previewContent")
-            .innerHTML = renderMarkdown(content);
-
-
-        document.getElementById("previewStatus")
-            .textContent = "Status: " + status;
-
-
-        const tagsContainer =
-            document.getElementById("previewTags");
-
+        const tagsContainer = document.getElementById("previewTags");
         tagsContainer.innerHTML = "";
 
-
-        const tags =
-            tagsText.split(",")
-                .map(tag => tag.trim())
-                .filter(tag => tag !== "");
-
+        const tags = tagsText.split(",")
+            .map(tag => tag.trim())
+            .filter(tag => tag !== "");
 
         for (const tag of tags) {
-
-            const span =
-                document.createElement("span");
-
+            const span = document.createElement("span");
             span.className = "tag";
-
             span.textContent = tag;
-
             tagsContainer.appendChild(span);
         }
     }
 
+    /* ---------------- LOAD DOCUMENT ---------------- */
 
     async function loadDocument() {
-
         if (!documentId) {
-
-            showError(
-                "Document ID is missing from URL."
-            );
-
+            showError("Document ID is missing from URL.");
             return;
         }
 
-
-        const doc =
-            await fetchJson(
-                `/api/documents/${documentId}`
-            );
-
+        const doc = await fetchJson(`/api/documents/${documentId}`);
+        if (!doc) return;
 
         if (mode === "edit") {
+            document.getElementById("editorSection").style.display = "block";
+            document.getElementById("viewSection").style.display = "none";
 
-            document.getElementById("editorSection")
-                .style.display = "block";
-
-            document.getElementById("viewSection")
-                .style.display = "none";
-
-
-            document.getElementById("titleInput")
-                .value = doc.title || "";
-
-            document.getElementById("contentInput")
-                .value = doc.content || "";
-
-            document.getElementById("tagsInput")
-                .value =
-                (doc.tags || []).join(", ");
-
-            document.getElementById("statusInput")
-                .value = doc.status || "DRAFT";
-
+            document.getElementById("titleInput").value = doc.title || "";
+            document.getElementById("contentInput").value = doc.content || "";
+            document.getElementById("tagsInput").value = (doc.tags || []).join(", ");
+            document.getElementById("statusInput").value = doc.status || "DRAFT";
 
             updatePreview();
+        } else {
+            document.getElementById("editorSection").style.display = "none";
+            document.getElementById("viewSection").style.display = "block";
 
-        }
-        else {
+            document.getElementById("viewTitle").textContent = doc.title || "Untitled";
+            document.getElementById("viewContent").innerHTML = renderMarkdown(doc.content || "");
+            document.getElementById("viewStatus").textContent = "Status: " + (doc.status || "DRAFT");
 
-            document.getElementById("editorSection")
-                .style.display = "none";
-
-            document.getElementById("viewSection")
-                .style.display = "block";
-
-
-            document.getElementById("viewTitle")
-                .textContent = doc.title || "Untitled";
-
-
-            document.getElementById("viewContent")
-                .innerHTML = renderMarkdown(doc.content || "");
-
-
-            document.getElementById("viewStatus")
-                .textContent =
-                "Status: " +
-                (doc.status || "DRAFT");
-
-
-            const tagsContainer =
-                document.getElementById("viewTags");
-
+            const tagsContainer = document.getElementById("viewTags");
             tagsContainer.innerHTML = "";
 
             for (const tag of (doc.tags || [])) {
-
-                const span =
-                    document.createElement("span");
-
+                const span = document.createElement("span");
                 span.className = "tag";
-
                 span.textContent = tag;
-
                 tagsContainer.appendChild(span);
             }
         }
+
+        await loadAttachments();
+        await loadComments();
+        await loadVersions();
     }
 
+    /* ---------------- SAVE DOCUMENT ---------------- */
 
     async function saveDocument() {
+        const title = document.getElementById("titleInput").value.trim();
+        const content = document.getElementById("contentInput").value;
+        const status = document.getElementById("statusInput").value;
 
-        const title =
-            document.getElementById("titleInput")
-                .value.trim();
+        const tags = document.getElementById("tagsInput").value
+            .split(",")
+            .map(tag => tag.trim())
+            .filter(tag => tag !== "");
 
-        const content =
-            document.getElementById("contentInput")
-                .value;
-
-        const status =
-            document.getElementById("statusInput")
-                .value;
-
-
-        const tags =
-            document.getElementById("tagsInput")
-                .value
-                .split(",")
-                .map(tag => tag.trim())
-                .filter(tag => tag !== "");
-
+        clearError();
 
         try {
+            await fetchJson(`/api/documents/${documentId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, content, tags, status })
+            });
 
-            await fetchJson(
-                `/api/documents/${documentId}`,
-                {
-                    method: "PUT",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-                        title,
-                        content,
-                        tags,
-                        status
-                    })
-                }
-            );
-
-
-            document.getElementById("saveMessage")
-                .textContent = "Saved!";
-
+            document.getElementById("saveMessage").textContent = "Saved!";
             setTimeout(() => {
-                document.getElementById(
-                    "saveMessage"
-                ).textContent = "";
+                document.getElementById("saveMessage").textContent = "";
             }, 2000);
 
-        }
-        catch (error) {
+            // reload versions list after saving (new version snapshot is created)
+            await loadVersions();
 
+        } catch (error) {
             showError(error.message);
         }
     }
 
+    /* ---------------- EVENT LISTENERS ---------------- */
 
-    document.getElementById("saveButton")
-        .addEventListener(
-            "click",
-            saveDocument
-        );
+    const addAttachmentBtn = document.getElementById("addAttachmentBtn");
+    if (addAttachmentBtn) addAttachmentBtn.addEventListener("click", addAttachment);
 
+    const addCommentBtn = document.getElementById("addCommentBtn");
+    if (addCommentBtn) addCommentBtn.addEventListener("click", () => addCommentFrom("commentInput"));
 
-    document.getElementById("titleInput")
-        .addEventListener(
-            "input",
-            updatePreview
-        );
+    const addCommentBtnView = document.getElementById("addCommentBtnView");
+    if (addCommentBtnView) addCommentBtnView.addEventListener("click", () => addCommentFrom("commentInputView"));
 
+    const saveBtn = document.getElementById("saveButton");
+    if (saveBtn) saveBtn.addEventListener("click", saveDocument);
 
-    document.getElementById("contentInput")
-        .addEventListener(
-            "input",
-            updatePreview
-        );
+    const titleInput = document.getElementById("titleInput");
+    if (titleInput) titleInput.addEventListener("input", updatePreview);
 
+    const contentInput = document.getElementById("contentInput");
+    if (contentInput) contentInput.addEventListener("input", updatePreview);
 
-    document.getElementById("tagsInput")
-        .addEventListener(
-            "input",
-            updatePreview
-        );
+    const tagsInput = document.getElementById("tagsInput");
+    if (tagsInput) tagsInput.addEventListener("input", updatePreview);
 
+    const statusInput = document.getElementById("statusInput");
+    if (statusInput) statusInput.addEventListener("change", updatePreview);
 
-    document.getElementById("statusInput")
-        .addEventListener(
-            "change",
-            updatePreview
-        );
+    document.getElementById("backButton").addEventListener("click", () => history.back());
 
+    document.getElementById("logoutButton").addEventListener("click", async () => {
+        try {
+            await fetch("/logout", { method: "POST", credentials: "include" });
+        } catch (e) {}
+        window.location.href = "/login.html";
+    });
 
-    document.getElementById("backButton")
-        .addEventListener(
-            "click",
-            () => history.back()
-        );
-
-
-    document.getElementById("logoutButton")
-        .addEventListener(
-            "click",
-            async () => {
-
-                try {
-
-                    await fetch(
-                        "/logout",
-                        {
-                            method: "POST",
-                            credentials: "include"
-                        }
-                    );
-
-                }
-                catch (e) {
-                }
-
-                window.location.href =
-                    "/login.html";
-            }
-        );
-
-
-    loadDocument()
-        .catch(error =>
-            showError(error.message)
-        );
-
+    loadDocument().catch(error => showError(error.message));
 </script>
 
 </body>

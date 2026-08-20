@@ -19,11 +19,12 @@
         input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
         textarea { min-height: 80px; resize: vertical; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
         .error { background: #ffecec; border: 1px solid #ffbdbd; padding: 10px; border-radius: 6px; }
         .topbar { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
         .invite-box { display: flex; gap: 8px; margin-top: 10px; }
         .invite-box input { flex: 1; background: #f5f5f5; }
+        select { padding: 6px; border-radius: 6px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -153,16 +154,14 @@
         const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
 
-        const looksLikeHtml =
-            contentType.includes("text/html") ||
-            (text && text.trim().startsWith("<"));
-
+        // If server returned HTML (login page), treat as session expired
+        const looksLikeHtml = contentType.includes("text/html") || (text && text.trim().startsWith("<"));
         if (res.ok && looksLikeHtml) {
             window.location.href = "/login.html";
             return null;
         }
 
-        // Try parse JSON if body exists
+        // Parse JSON if present
         let data = null;
         if (text) {
             try { data = JSON.parse(text); } catch (e) { data = null; }
@@ -175,10 +174,10 @@
             throw new Error(msg);
         }
 
-        // SUCCESS but empty body (DELETE 204 etc.)
+        // success but empty body (204 etc.)
         if (!text) return null;
 
-        // SUCCESS but not JSON (unexpected)
+        // success but not JSON
         if (data === null) {
             throw new Error("Unexpected response (not JSON). Please log in again.");
         }
@@ -202,10 +201,9 @@
 
         const members = data.teamMembers || [];
 
-        // IMPORTANT: compute isAdmin BEFORE rendering members table
+        // IMPORTANT: compute isAdmin BEFORE rendering rows
         const myMembership = members.find(m => m.email === myEmail);
         isAdmin = !!(myMembership && myMembership.role === "ADMIN");
-
         document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
 
         const tbody = document.getElementById("membersTbody");
@@ -216,7 +214,6 @@
             empty.style.display = "block";
             return;
         }
-
         empty.style.display = "none";
 
         for (const m of members) {
@@ -228,26 +225,54 @@
               <td>${m.email ?? ""}</td>
               <td>${m.role ?? ""}</td>
               <td>
-                ${isAdmin && !isSelf
-                ? `<button class="btn small reject removeBtn">Remove</button>`
-                : ""}
+                ${isAdmin && !isSelf ? `
+                  <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+                    <select class="roleSelect" style="min-width:130px;">
+                      <option value="ADMIN">ADMIN</option>
+                      <option value="EDITOR">EDITOR</option>
+                      <option value="VIEWER">VIEWER</option>
+                    </select>
+
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                      <button class="btn small updateRoleBtn" type="button">Update</button>
+                      <button class="btn small reject removeBtn" type="button">Remove</button>
+                    </div>
+                  </div>
+                ` : ""}
               </td>
             `;
 
             if (isAdmin && !isSelf) {
-                const btn = tr.querySelector(".removeBtn");
-                btn.addEventListener("click", async () => {
-                    if (!m.userId) {
-                        showError("Missing userId for this member. Backend TeamMemberDTO must include userId.");
-                        return;
+                // If userId is missing, stop silently failing
+                if (!m.userId) {
+                    showError("Member userId is missing in /api/teams/{id} response. TeamMemberDTO must include userId.");
+                }
+
+                const roleSelect = tr.querySelector(".roleSelect");
+                roleSelect.value = m.role || "VIEWER";
+
+                tr.querySelector(".updateRoleBtn").addEventListener("click", async () => {
+                    if (!m.userId) return;
+                    clearError();
+                    try {
+                        await fetchJson(`/api/teams/${teamId}/members/${m.userId}/role`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ role: roleSelect.value })
+                        });
+                        await loadTeam(teamId);
+                    } catch (err) {
+                        showError(err.message);
                     }
+                });
 
+                tr.querySelector(".removeBtn").addEventListener("click", async () => {
+                    if (!m.userId) return;
                     if (!confirm(`Remove ${m.fullName} from this team?`)) return;
-
                     clearError();
                     try {
                         await fetchJson(`/api/teams/${teamId}/members/${m.userId}`, { method: "DELETE" });
-                        await loadTeam(teamId); // refresh immediately
+                        await loadTeam(teamId);
                     } catch (err) {
                         showError(err.message);
                     }

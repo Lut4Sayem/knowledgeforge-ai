@@ -39,5 +39,15 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{teamId}/members/{userId}/role")
+    public ResponseEntity<?> updateMemberRole(
+            @PathVariable String teamId,
+            @PathVariable String userId,
+            @RequestBody UpdateMemberRoleRequest request
+    ) {
+        teamService.updateMemberRole(teamId, userId, request.getRole());
+        return ResponseEntity.ok(java.util.Map.of("message", "Role updated"));
+    }
+
 
 }

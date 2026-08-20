@@ -114,4 +114,26 @@ public class TeamService {
         teamMemberRepository.delete(memberToRemove);
     }
 
+    public void updateMemberRole(String teamId, String userIdToUpdate, String newRole) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        TeamMember currentMembership = teamMemberRepository
+                .findByTeamIdAndUserId(teamId, currentUser.getId())
+                .orElseThrow(() -> new RuntimeException("You are not a member of this team"));
+        if (!"ADMIN".equals(currentMembership.getRole())) {
+            throw new RuntimeException("Only an ADMIN can change roles");
+        }
+        if (currentUser.getId().equals(userIdToUpdate)) {
+            throw new RuntimeException("You cannot change your own role");
+        }
+        if (!"ADMIN".equals(newRole) && !"EDITOR".equals(newRole) && !"VIEWER".equals(newRole)) {
+            throw new RuntimeException("Invalid role: " + newRole);
+        }
+        TeamMember targetMembership = teamMemberRepository.findByTeamIdAndUserId(teamId, userIdToUpdate)
+                .orElseThrow(() -> new RuntimeException("That user is not a member of this team"));
+        targetMembership.setRole(newRole);
+        teamMemberRepository.save(targetMembership);
+    }
+
 }
