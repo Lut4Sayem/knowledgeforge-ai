@@ -105,5 +105,13 @@ public class DocumentService {
         return documentRepository.save(document);
     }
 
+    public void deleteDocument(String documentId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        DocumentEntity document = getDocumentByID(documentId);
+        documentRepository.deleteById(documentId);
+    }
+
 
 }

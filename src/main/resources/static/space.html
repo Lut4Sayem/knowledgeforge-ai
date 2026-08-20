@@ -132,13 +132,14 @@
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-        <td>${d.title ?? "(No title)"}</td>
-        <td><span class="badge ${status}">${status}</span></td>
-        <td>
-          <button class="btn secondary viewBtn" style="margin-right:6px;">View</button>
-          <button class="btn editBtn">Edit</button>
-        </td>
-      `;
+  <td>${d.title ?? "(No title)"}</td>
+  <td><span class="badge ${status}">${status}</span></td>
+  <td>
+    <button class="btn secondary viewBtn" style="margin-right:6px;">View</button>
+    <button class="btn editBtn" style="margin-right:6px;">Edit</button>
+    <button class="btn secondary deleteBtn" style="color:#c00; border-color:#c00;">Delete</button>
+  </td>
+`;
 
             tr.querySelector(".viewBtn").addEventListener("click", () => {
                 window.location.href = `/document.html?id=${docId}&mode=view`;
@@ -146,6 +147,16 @@
 
             tr.querySelector(".editBtn").addEventListener("click", () => {
                 window.location.href = `/document.html?id=${docId}&mode=edit`;
+            });
+
+            tr.querySelector(".deleteBtn").addEventListener("click", async () => {
+                if (!confirm(`Delete "${d.title}"? This cannot be undone.`)) return;
+                try {
+                    await fetchJson(`/api/documents/${docId}`, { method: "DELETE" });
+                    await loadDocuments(spaceId); // just reload the table, same pattern as create
+                } catch (err) {
+                    showError(err.message);
+                }
             });
 
             tbody.appendChild(tr);

@@ -34,4 +34,10 @@ public class DocumentController {
         DocumentEntity body = documentService.updateDocument(documentId, updateDocumentRequest);
         return ResponseEntity.status(200).body(body);
     }
+
+    @DeleteMapping("/api/documents/{documentId}")
+    public ResponseEntity<Void> deleteDocument(@PathVariable String documentId) {
+        documentService.deleteDocument(documentId);
+        return ResponseEntity.noContent().build();
+    }
 }
