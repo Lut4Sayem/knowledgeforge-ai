@@ -87,6 +87,7 @@ public class TeamService {
                 MemberDTO.setFullName(user.getFullName());
                 MemberDTO.setEmail(user.getEmail());
                 MemberDTO.setRole(teamMember.getRole());
+                MemberDTO.setUserId(user.getId());
                 smallMemberDTOs.add(MemberDTO);
             }
         }
@@ -94,6 +95,23 @@ public class TeamService {
         response.setTeam(team);
         response.setTeamMembers(smallMemberDTOs);
         return  response;
+    }
+
+    public void removeMember(String teamId, String userIdToRemove) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        TeamMember currentMembership = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId())
+                .orElseThrow(() -> new RuntimeException("You are not a member of this team"));
+        if (!currentMembership.getRole().equals("ADMIN")) {
+            throw new RuntimeException("Only an ADMIN can remove members");
+        }
+        if (currentUser.getId().equals(userIdToRemove)) {
+            throw new RuntimeException("You cannot remove yourself");
+        }
+        TeamMember memberToRemove = teamMemberRepository.findByTeamIdAndUserId(teamId, userIdToRemove)
+                .orElseThrow(() -> new RuntimeException("That user is not a member of this team"));
+        teamMemberRepository.delete(memberToRemove);
     }
 
 }

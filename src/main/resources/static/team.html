@@ -108,6 +108,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody id="membersTbody"></tbody>
@@ -144,24 +145,28 @@
             ...options
         });
 
-        // not logged in
         if (res.status === 401) {
             window.location.href = "/login.html";
-            return;
+            return null;
         }
 
         const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
 
-        // If server returned HTML (often a login page), treat as session expired
-        const looksLikeHtml = contentType.includes("text/html") || (text && text.trim().startsWith("<"));
+        const looksLikeHtml =
+            contentType.includes("text/html") ||
+            (text && text.trim().startsWith("<"));
+
         if (res.ok && looksLikeHtml) {
             window.location.href = "/login.html";
-            return;
+            return null;
         }
 
+        // Try parse JSON if body exists
         let data = null;
-        try { data = text ? JSON.parse(text) : null; } catch (e) {}
+        if (text) {
+            try { data = JSON.parse(text); } catch (e) { data = null; }
+        }
 
         if (!res.ok) {
             const msg = (data && (data.message || data.error))
@@ -170,6 +175,10 @@
             throw new Error(msg);
         }
 
+        // SUCCESS but empty body (DELETE 204 etc.)
+        if (!text) return null;
+
+        // SUCCESS but not JSON (unexpected)
         if (data === null) {
             throw new Error("Unexpected response (not JSON). Please log in again.");
         }
@@ -191,30 +200,62 @@
         document.getElementById("teamName").textContent = data.team?.name ?? "(No name)";
         document.getElementById("teamDescription").textContent = data.team?.description ?? "";
 
-        const tbody = document.getElementById("membersTbody");
-        const empty = document.getElementById("membersEmpty");
-        tbody.innerHTML = "";
-
         const members = data.teamMembers || [];
-        if (members.length === 0) {
-            empty.style.display = "block";
-        } else {
-            empty.style.display = "none";
-            for (const m of members) {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                  <td>${m.fullName ?? ""}</td>
-                  <td>${m.email ?? ""}</td>
-                  <td>${m.role ?? ""}</td>
-                `;
-                tbody.appendChild(tr);
-            }
-        }
 
+        // IMPORTANT: compute isAdmin BEFORE rendering members table
         const myMembership = members.find(m => m.email === myEmail);
         isAdmin = !!(myMembership && myMembership.role === "ADMIN");
 
         document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
+
+        const tbody = document.getElementById("membersTbody");
+        const empty = document.getElementById("membersEmpty");
+        tbody.innerHTML = "";
+
+        if (members.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+
+        empty.style.display = "none";
+
+        for (const m of members) {
+            const tr = document.createElement("tr");
+            const isSelf = m.email === myEmail;
+
+            tr.innerHTML = `
+              <td>${m.fullName ?? ""}</td>
+              <td>${m.email ?? ""}</td>
+              <td>${m.role ?? ""}</td>
+              <td>
+                ${isAdmin && !isSelf
+                ? `<button class="btn small reject removeBtn">Remove</button>`
+                : ""}
+              </td>
+            `;
+
+            if (isAdmin && !isSelf) {
+                const btn = tr.querySelector(".removeBtn");
+                btn.addEventListener("click", async () => {
+                    if (!m.userId) {
+                        showError("Missing userId for this member. Backend TeamMemberDTO must include userId.");
+                        return;
+                    }
+
+                    if (!confirm(`Remove ${m.fullName} from this team?`)) return;
+
+                    clearError();
+                    try {
+                        await fetchJson(`/api/teams/${teamId}/members/${m.userId}`, { method: "DELETE" });
+                        await loadTeam(teamId); // refresh immediately
+                    } catch (err) {
+                        showError(err.message);
+                    }
+                });
+            }
+
+            tbody.appendChild(tr);
+        }
     }
 
     async function loadSpaces(teamId) {
@@ -291,7 +332,7 @@
                 try {
                     await fetchJson(`/api/teams/${teamId}/join-requests/${requestId}/accept`, { method: "POST" });
                     await loadPendingRequests(teamId);
-                    await loadTeam(teamId); // refresh members
+                    await loadTeam(teamId);
                 } catch (err) {
                     showError(err.message);
                 }
@@ -338,7 +379,6 @@
             await navigator.clipboard.writeText(text);
             alert("Invite link copied!");
         } catch (e) {
-            // fallback
             input.select();
             document.execCommand("copy");
             alert("Invite link copied!");
@@ -378,8 +418,8 @@
         }
 
         try {
-            await loadMe();            // loads myEmail safely
-            await loadTeam(teamId);    // sets isAdmin
+            await loadMe();
+            await loadTeam(teamId);
             await loadSpaces(teamId);
             await loadPendingRequests(teamId);
         } catch (err) {
