@@ -281,7 +281,7 @@ http://localhost:8080/login.html
 ## AI Usage
 
 AI tools were used during development as a learning and debugging assistant.  
-See [`docs/AI_Declaration.txt`](Docs/AI_Declaration.txt) for the full declaration.
+See [`Docs/AI_Declaration.txt`](Docs/AI_Declaration.txt) for the full declaration.
 
 ---
 
