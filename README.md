@@ -15,9 +15,9 @@ Deployed on Render:
 
 ## Screenshots
 
-| Login | Dashboard | Team |
-|---|---|---|
-| ![Login](docs/screenshots/login.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Team](docs/screenshots/team.png) |
+| Login                                | Dashboard                                    | Team                               |
+|--------------------------------------|----------------------------------------------|------------------------------------|
+| ![Login](Docs/screenshots/login.png) | ![Dashboard](Docs/screenshots/dashboard.png) | ![Team](Docs/screenshots/team.png) |
 
 ---
 
@@ -281,7 +281,7 @@ http://localhost:8080/login.html
 ## AI Usage
 
 AI tools were used during development as a learning and debugging assistant.  
-See [`docs/AI_Declaration.txt`](docs/AI_Declaration.txt) for the full declaration.
+See [`docs/AI_Declaration.txt`](Docs/AI_Declaration.txt) for the full declaration.
 
 ---
 
