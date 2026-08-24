@@ -1,0 +1,84 @@
+============================================================
+           AI USAGE DECLARATION
+============================================================
+
+Name:        MD. LUTFUR RAHMAN
+Student ID:  23101029
+Assignment:  KnowledgeForge — Collaborative Knowledge Management Platform
+Course:      CSE391
+Date:        24-08-2026
+
+------------------------------------------------------------
+1. AI TOOLS USED (check all that apply)
+------------------------------------------------------------
+[ ] None
+[x] ChatGPT
+[ ] GitHub Copilot
+[ ] Google Gemini
+[ ] Claude
+[ ] Cursor
+[ ] Other: ________________
+
+------------------------------------------------------------
+2. PURPOSE OF AI USE (check all that apply)
+------------------------------------------------------------
+[x] Learning/understanding concepts
+[x] Debugging my code
+[] Generating code snippets
+[ ] Writing text content
+[x] Design/styling ideas
+[ ] Image generation
+[ ] Other: ________________
+
+------------------------------------------------------------
+3. DESCRIPTION OF AI USE
+------------------------------------------------------------
+I used ChatGPT as a learning and debugging assistant throughout
+the development of KnowledgeForge. Specifically:
+
+- I asked ChatGPT to explain concepts such as Spring Security
+  session management, BCrypt password hashing, and MongoDB
+  document modeling as I was implementing them.
+
+- When my code produced errors (e.g., a NullPointerException
+  in UserController caused by Map.of() not supporting null
+  values), I shared the stack trace with ChatGPT to understand
+  the cause and fix it correctly.
+
+- For the frontend UI, I described the layout I wanted and
+  used ChatGPT to help generate consistent HTML and CSS
+  structure across pages. I reviewed and tested every file
+  before including it in my submission.
+
+At no point did I blindly copy code without understanding it.
+Every feature was implemented by me with AI used as a tutor
+and assistant, not as a replacement for my own work.
+
+------------------------------------------------------------
+4. AI-ASSISTED SECTIONS
+------------------------------------------------------------
+List specific files/sections where AI helped significantly:
+
+File: style.css                  Section: CSS design tokens and layout system
+File: dashboard.html             Section: HTML structure and JS rendering logic
+File: team.html                  Section: Members table, role update, join requests UI
+File: space.html                 Section: Document table and empty state UI
+File: document.html              Section: Markdown editor layout and version history UI
+File: search.html                Section: Filter tabs, result cards, pagination UI
+File: profile.html               Section: Two-column profile layout and team affiliations
+File: login.html                 Section: Auth card layout and error banner
+File: register.html              Section: Auth card layout and success/error states
+File: join.html                  Section: Invite card layout and join request flow
+File: UserController.java        Section: Debugging null value crash in /api/me response
+
+------------------------------------------------------------
+5. DECLARATION
+------------------------------------------------------------
+I declare that:
+- This disclosure is complete and accurate
+- I understand all code in my submission
+- I can explain and modify my work if asked
+- I take full responsibility for my submission
+
+Signature: MD. LUTFUR RAHMAN
+Date:      24-08-2026

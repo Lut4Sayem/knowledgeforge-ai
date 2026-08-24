@@ -7,4 +7,5 @@ import java.util.List;
 public interface DocumentRepository extends MongoRepository<DocumentEntity, String> {
     List<DocumentEntity> findBySpaceId(String spaceId);
     List<DocumentEntity> findBySpaceIdIn(List<String> spaceIds);
+//    DocumentEntity getDocumentById(String id);
 }
