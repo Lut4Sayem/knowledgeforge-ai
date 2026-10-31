@@ -217,13 +217,13 @@ src/
 1. **Clone the repository**
 ```bash
 git clone https://github.com/Lut4Sayem/knowledgeforge-ai.git
-cd knowledgeforge
+cd knowledgeforge-ai
 ```
 
 2. **Configure MongoDB**  
-   Open `src/main/resources/application.properties` and set:
-```properties
-spring.data.mongodb.uri=mongodb+srv://username:password@your-cluster.mongodb.net/knowledgeforge
+   Set the `MONGODB_URI` environment variable to your Atlas connection string (the app reads it in `application.properties`):
+```bash
+export MONGODB_URI="mongodb+srv://username:password@your-cluster.mongodb.net/knowledgeforge"
 ```
 
 3. **Run the application**
@@ -244,7 +244,7 @@ http://localhost:8080/login.html
 2. Create a new **Web Service** on [Render](https://render.com).
 3. Set the build command: `./mvnw clean package -DskipTests`
 4. Set the start command: `java -jar target/*.jar`
-5. Add environment variable: `SPRING_DATA_MONGODB_URI` = Atlas connection string.
+5. Add environment variable: `MONGODB_URI` = Atlas connection string.
 
 ---
 
