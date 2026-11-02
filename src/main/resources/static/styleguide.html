@@ -132,7 +132,10 @@
       <div>
         <div class="field">
           <label class="label" for="i4">Password</label>
-          <input class="input" id="i4" type="password" value="hunter22" aria-describedby="i4h">
+          <div class="input-group">
+            <input class="input" id="i4" type="password" value="hunter22" aria-describedby="i4h">
+            <button type="button" class="btn btn--ghost btn--icon btn--sm input-group__btn" data-toggle-password="i4" aria-pressed="false" aria-label="Show password">${eye}</button>
+          </div>
           <p class="hint" id="i4h">At least 8 characters.</p>
         </div>
         <div class="field">
@@ -458,7 +461,7 @@ git push origin main</code></pre>
   const main = document.getElementById("main");
   const map = {
     plus: KF.icon("plus"), download: KF.icon("download"), upload: KF.icon("upload"), more: KF.icon("more"),
-    pencil: KF.icon("pencil"), trash: KF.icon("trash"), copy: KF.icon("copy"), search: KF.icon("search"),
+    pencil: KF.icon("pencil"), eye: KF.icon("eye"), trash: KF.icon("trash"), copy: KF.icon("copy"), search: KF.icon("search"),
     x: KF.icon("x"), xs: KF.icon("x", "icon--sm"), chevron: KF.icon("chevron-down", "icon--sm"),
     alertc: KF.icon("alert-circle"), checkc: KF.icon("check-circle"), refresh: KF.icon("refresh", "icon--sm"),
     filetext: KF.icon("file-text", "list-row__icon text-steel"),

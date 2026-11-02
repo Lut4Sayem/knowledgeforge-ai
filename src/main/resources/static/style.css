@@ -356,6 +356,11 @@ kbd {
   font-family: var(--font-sans); font-size: 11px; font-weight: 500; line-height: 1;
 }
 
+/* Input with a trailing icon button (e.g. show password) */
+.input-group { position: relative; }
+.input-group .input { padding-right: 44px; }
+.input-group__btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); }
+
 /* Invite link box: read-only input + copy button */
 .copy-box { display: flex; gap: var(--space-2); }
 .copy-box .input { font-family: var(--font-mono); font-size: 13px; }
@@ -566,13 +571,13 @@ a.tag:hover { filter: brightness(0.96); }
 .skeleton-row .skeleton--line { flex: 1; }
 
 .error-state {
-  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  display: flex; align-items: flex-start; gap: var(--space-3); flex-wrap: wrap;
   padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
   background: var(--color-error-soft); color: var(--color-error-ink); font-size: 14px;
 }
-.error-state .icon { color: var(--color-error-text); }
+.error-state .icon { color: var(--color-error-text); margin-top: 2px; } /* sits on the first line of a wrapped message */
 .error-state__msg { flex: 1; min-width: 160px; }
-.error-state .btn { --spinner-color: var(--color-error-ink); }
+.error-state .btn { --spinner-color: var(--color-error-ink); align-self: center; }
 
 .notice { display: flex; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-slate); font-size: 14px; }
 

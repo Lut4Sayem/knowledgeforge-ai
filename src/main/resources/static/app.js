@@ -47,6 +47,7 @@
     message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
     eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+    "eye-off": '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
     tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5"/>',
     clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     refresh: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
@@ -341,7 +342,20 @@
     }
   });
 
-  /* ---------- Tabs: <div role="tablist"><button role="tab" aria-controls="p1">..</button></div> ---------- */
+  /* ---------- Show/hide password: <button data-toggle-password="inputId" aria-pressed="false"> ---------- */
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-toggle-password]");
+    if (!btn) return;
+    const input = document.getElementById(btn.getAttribute("data-toggle-password"));
+    if (!input) return;
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    btn.setAttribute("aria-pressed", String(show));
+    btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    btn.innerHTML = icon(show ? "eye-off" : "eye");
+  });
+
+  /* ---------- Tabs:<div role="tablist"><button role="tab" aria-controls="p1">..</button></div> ---------- */
   function initTabs(tablist, onChange) {
     const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
     function select(tab, focus) {
