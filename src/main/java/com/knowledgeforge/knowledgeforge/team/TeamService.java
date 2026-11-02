@@ -78,6 +78,12 @@ public class TeamService {
         if (teamOpt.isEmpty()){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Team Not Found");
         }
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this team");
+        }
         Team team = teamOpt.get();
         List<TeamMember> teamMembers = teamMemberRepository.findByTeamId(team.getId());
         List<TeamMemberDTO> smallMemberDTOs = new ArrayList<>();
