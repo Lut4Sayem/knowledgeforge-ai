@@ -62,6 +62,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/search.html",
                                 "/profile.html",
+                                "/error", // so real errors (e.g. 500) aren't masked as 401 on public endpoints
                                 "/google557de5fbfde00618.html"
 
                         ).permitAll()
