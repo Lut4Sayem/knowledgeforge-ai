@@ -345,6 +345,59 @@
             background: var(--primary-hover);
             text-decoration: none;
         }
+
+        /* Export menu (native <details> = keyboard accessible, no JS toggle needed) */
+        .export-menu { position: relative; }
+        .export-menu > summary {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            background: transparent;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            cursor: pointer;
+        }
+        .export-menu > summary::-webkit-details-marker { display: none; }
+        .export-menu > summary:hover { background: var(--bg-active); }
+        .export-items {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            z-index: 20;
+            min-width: 170px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .export-items button {
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            border: none;
+            background: none;
+            text-align: left;
+            font-size: 13px;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+        .export-items button:hover,
+        .export-items button:focus-visible { background: var(--bg-active); }
+
+        /* PDF export = browser print: show only the document itself */
+        @media print {
+            .app-sidebar, .app-topbar, #errorBox, #editorSection,
+            .doc-article .doc-section { display: none !important; }
+            .app-main { margin-left: 0 !important; }
+            .app-content { padding: 0 !important; max-width: none !important; }
+            .doc-article { border: none !important; padding: 0 !important; max-width: none !important; }
+            body, .doc-article { background: #fff !important; }
+        }
     </style>
 </head>
 
@@ -460,6 +513,22 @@
                 </svg>
                 Edit
             </button>
+            <!-- Export (view mode only, available to every member) -->
+            <details class="export-menu" id="exportMenu" style="display:none;">
+                <summary>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export
+                </summary>
+                <div class="export-items">
+                    <button type="button" id="exportMdBtn">Markdown (.md)</button>
+                    <button type="button" id="exportPdfBtn">PDF (print)</button>
+                </div>
+            </details>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2"
                  style="color:var(--text-muted);cursor:pointer;">
@@ -1067,6 +1136,7 @@
 
         const doc = await fetchJson(`/api/documents/${documentId}`);
         if (!doc) return;
+        currentDoc = doc;
 
         /* Viewers never get edit mode (that also hides restore + attachment controls) */
         const canEdit = await canEditSpace(doc.spaceId);
@@ -1094,6 +1164,7 @@
             document.getElementById("editorSection").style.display = "none";
             document.getElementById("viewSection").style.display   = "block";
             document.getElementById("editModeBtn").style.display   = canEdit ? "inline-flex" : "none";
+            document.getElementById("exportMenu").style.display    = "block";
 
             /* Tags + status row */
             const tagsRow = document.getElementById("viewTags");
@@ -1152,6 +1223,47 @@
             await loadVersions();
         } catch (error) { showError(error.message); }
     }
+
+    /* ══════════════════════════════════════
+       EXPORT
+    ══════════════════════════════════════ */
+    let currentDoc = null;
+
+    function closeExportMenu() {
+        document.getElementById("exportMenu").open = false;
+    }
+
+    function exportMarkdown() {
+        if (!currentDoc) return;
+        const title = currentDoc.title || "Untitled";
+        const md = `# ${title}\n\n${currentDoc.content || ""}\n`;
+        // Strip characters Windows/macOS don't allow in file names
+        const fileName = (title.replace(/[\\/:*?"<>|]+/g, "").trim() || "document") + ".md";
+
+        const url = URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" }));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        closeExportMenu();
+    }
+
+    function exportPdf() {
+        closeExportMenu();
+        window.print(); // user picks "Save as PDF"; @media print hides everything but the document
+    }
+
+    document.getElementById("exportMdBtn").addEventListener("click", exportMarkdown);
+    document.getElementById("exportPdfBtn").addEventListener("click", exportPdf);
+    // Close the menu on outside click or Escape
+    document.addEventListener("click", e => {
+        const menu = document.getElementById("exportMenu");
+        if (menu.open && !menu.contains(e.target)) menu.open = false;
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeExportMenu(); });
 
     /* ══════════════════════════════════════
        EVENT LISTENERS
