@@ -63,7 +63,7 @@
     </div>
   </section>
 
-  <p class="auth__footer">Don't have an account? <a class="link" href="/register.html" id="register-link">Create one</a></p>
+  <p class="auth__footer">Don't have an account? <a class="link" href="/register.html">Create one</a></p>
 </main>
 <footer class="site-footer" data-kf-footer></footer>
 
@@ -77,8 +77,6 @@
 
     document.getElementById("form-error-icon").outerHTML = KF.icon("alert-circle");
     document.getElementById("bad-icon").outerHTML = KF.icon("alert-circle");
-    // Logged-out visitors can create an account and come straight back here.
-    document.getElementById("register-link").href = "/register.html";
 
     function show(name) {
       states.forEach(function (s) { document.getElementById("state-" + s).hidden = s !== name; });
