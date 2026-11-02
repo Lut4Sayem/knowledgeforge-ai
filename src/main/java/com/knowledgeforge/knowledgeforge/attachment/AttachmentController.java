@@ -1,8 +1,14 @@
 package com.knowledgeforge.knowledgeforge.attachment;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +34,29 @@ public class AttachmentController {
     ) {
         Attachment saved = attachmentService.addAttachment(documentId, request);
         return ResponseEntity.status(201).body(saved);
+    }
+
+    @PostMapping(value = "/documents/{documentId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Attachment> uploadFile(
+            @PathVariable String documentId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        return ResponseEntity.status(201).body(attachmentService.uploadFile(documentId, file));
+    }
+
+    @GetMapping("/attachments/{attachmentId}/download")
+    public ResponseEntity<Resource> download(@PathVariable String attachmentId) {
+        AttachmentService.FileDownload file = attachmentService.download(attachmentId);
+        Attachment a = file.attachment();
+
+        // Always a download (never rendered inline) + nosniff, so uploaded content can't run on our origin.
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(a.getContentType()))
+                .contentLength(a.getSize())
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(a.getOriginalName(), StandardCharsets.UTF_8).build().toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .body(file.content());
     }
 
     @DeleteMapping("/attachments/{attachmentId}")

@@ -67,7 +67,7 @@ Deployed on Render:
 - Delete your own comments
 
 ### Attachments
-- Add link-based attachments (name + URL) to documents
+- Attach files (PDF, images, Office docs, text; up to 5 MB, stored in MongoDB GridFS) or links to documents
 - View and delete attachments
 
 ### Search
@@ -195,7 +195,9 @@ src/
 |---|---|---|
 | GET | `/api/documents/{id}/attachments` | List attachments |
 | POST | `/api/documents/{id}/attachments` | Add an attachment link |
-| DELETE | `/api/attachments/{id}` | Delete an attachment |
+| POST | `/api/documents/{id}/attachments/upload` | Upload a file (multipart `file`, editors only) |
+| GET | `/api/attachments/{id}/download` | Download a file |
+| DELETE | `/api/attachments/{id}` | Delete an attachment (and its stored file) |
 
 ### Search & Dashboard
 | Method | Endpoint | Description |
@@ -251,7 +253,7 @@ http://localhost:8080/login.html
 ## Known Limitations
 
 - No real-time collaboration (changes require a page refresh to see others' edits).
-- Attachments are link-based only; actual file upload is not supported.
+- Uploaded files are not scanned for malware (no scanning service on the free hosting tier). Uploads are limited to an allowlist of file types, 5 MB each, and are always served as downloads.
 - Search is keyword-based with no advanced filters.
 
 ---
@@ -261,7 +263,7 @@ http://localhost:8080/login.html
 - Real-time collaborative editing via WebSockets
 - Rich text editor (TipTap or Quill)
 - Email notifications for invite and approval events
-- Actual file upload via cloud storage (AWS S3 or Cloudinary)
+- Move file storage from MongoDB GridFS to S3 or Cloudflare R2
 - Document-level permissions (not just team-level)
 - Advanced search with filters (status, tag, date range)
 - Two-factor authentication (2FA)

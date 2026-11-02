@@ -13,12 +13,25 @@ public class Attachment {
 
     private String documentId;
 
-    //link-based attachments:
+    // Display name for both kinds. Link attachments set url; file attachments set fileId/contentType/size.
     private String originalName;
     private String url;
 
+    private String fileId;       // GridFS id
+    private String contentType;  // from our extension allowlist, never from the client
+    private Long size;           // bytes
+
     private String uploadedBy;
     private Date uploadedAt;
+
+    public String getFileId() { return fileId; }
+    public void setFileId(String fileId) { this.fileId = fileId; }
+
+    public String getContentType() { return contentType; }
+    public void setContentType(String contentType) { this.contentType = contentType; }
+
+    public Long getSize() { return size; }
+    public void setSize(Long size) { this.size = size; }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

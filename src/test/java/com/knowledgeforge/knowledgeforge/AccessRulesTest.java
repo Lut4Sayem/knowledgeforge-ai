@@ -1,6 +1,8 @@
 package com.knowledgeforge.knowledgeforge;
 
 import com.knowledgeforge.knowledgeforge.activity.ActivityLogService;
+import com.knowledgeforge.knowledgeforge.attachment.AttachmentRepository;
+import com.knowledgeforge.knowledgeforge.attachment.AttachmentStorageService;
 import com.knowledgeforge.knowledgeforge.documentPkg.*;
 import com.knowledgeforge.knowledgeforge.documentVersion.DocumentVersionRepository;
 import com.knowledgeforge.knowledgeforge.space.CreateSpaceRequest;
@@ -38,7 +40,8 @@ class AccessRulesTest {
     TeamJoinRequestRepository joinRequests = mock(TeamJoinRequestRepository.class);
 
     DocumentService documentService = new DocumentService(documents, spaces, members, users,
-            mock(DocumentVersionRepository.class), mock(ActivityLogService.class));
+            mock(DocumentVersionRepository.class), mock(ActivityLogService.class),
+            mock(AttachmentRepository.class), mock(AttachmentStorageService.class));
 
     @BeforeEach
     void setUp() {

@@ -1,6 +1,9 @@
 package com.knowledgeforge.knowledgeforge.documentPkg;
 
 import com.knowledgeforge.knowledgeforge.activity.ActivityLogService;
+import com.knowledgeforge.knowledgeforge.attachment.Attachment;
+import com.knowledgeforge.knowledgeforge.attachment.AttachmentRepository;
+import com.knowledgeforge.knowledgeforge.attachment.AttachmentStorageService;
 import com.knowledgeforge.knowledgeforge.documentVersion.DocumentVersion;
 import com.knowledgeforge.knowledgeforge.documentVersion.DocumentVersionRepository;
 import com.knowledgeforge.knowledgeforge.space.Space;
@@ -25,6 +28,8 @@ public class DocumentService {
     final SpaceRepository spaceRepository;
     final DocumentVersionRepository documentVersionRepository;
     final ActivityLogService activityLogService;
+    final AttachmentRepository attachmentRepository;
+    final AttachmentStorageService attachmentStorage;
 
     public DocumentService(
             DocumentRepository documentRepository,
@@ -32,7 +37,9 @@ public class DocumentService {
             TeamMemberRepository teamMemberRepository,
             UserRepository userRepository,
             DocumentVersionRepository documentVersionRepository,
-            ActivityLogService activityLogService
+            ActivityLogService activityLogService,
+            AttachmentRepository attachmentRepository,
+            AttachmentStorageService attachmentStorage
     ) {
         this.documentRepository = documentRepository;
         this.spaceRepository = spaceRepository;
@@ -40,6 +47,8 @@ public class DocumentService {
         this.userRepository = userRepository;
         this.documentVersionRepository = documentVersionRepository;
         this.activityLogService = activityLogService;
+        this.attachmentRepository = attachmentRepository;
+        this.attachmentStorage = attachmentStorage;
     }
 
     public DocumentEntity createDocument(String spaceId, CreateDocumentRequest request) {
@@ -182,6 +191,11 @@ public class DocumentService {
                 document.getId(),
                 document.getTitle()
         );
+
+        // Remove its attachments and their stored files, so nothing is left orphaned
+        List<Attachment> attachments = attachmentRepository.findByDocumentId(documentId);
+        attachmentRepository.deleteAll(attachments);
+        attachments.forEach(a -> attachmentStorage.delete(a.getFileId()));
 
         documentRepository.deleteById(documentId);
     }
