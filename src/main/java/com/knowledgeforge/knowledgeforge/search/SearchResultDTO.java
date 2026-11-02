@@ -17,6 +17,10 @@ public class SearchResultDTO {
     private List<String> tags;
     private String excerpt;
 
+    private String type;          // DOCUMENT | TEAM | SPACE
+    private String teamName;
+    private String updatedByName;
+
     public String getDocumentId() { return documentId; }
     public void setDocumentId(String documentId) { this.documentId = documentId; }
 
@@ -43,4 +47,13 @@ public class SearchResultDTO {
 
     public String getExcerpt() { return excerpt; }
     public void setExcerpt(String excerpt) { this.excerpt = excerpt; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getTeamName() { return teamName; }
+    public void setTeamName(String teamName) { this.teamName = teamName; }
+
+    public String getUpdatedByName() { return updatedByName; }
+    public void setUpdatedByName(String updatedByName) { this.updatedByName = updatedByName; }
 }

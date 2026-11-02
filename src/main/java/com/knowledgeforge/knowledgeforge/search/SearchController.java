@@ -16,7 +16,11 @@ public class SearchController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<SearchResultDTO>> search(@RequestParam(name = "q") String q) {
-        return ResponseEntity.ok(searchService.search(q));
+    public ResponseEntity<List<SearchResultDTO>> search(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "type", required = false) String type,
+            @RequestParam(name = "tag", required = false) String tag,
+            @RequestParam(name = "status", required = false) String status) {
+        return ResponseEntity.ok(searchService.search(q, type, tag, status));
     }
 }
