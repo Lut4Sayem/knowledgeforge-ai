@@ -177,6 +177,32 @@
             font-size: 11px;
             color: var(--text-muted);
             background: var(--bg-canvas);
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .result-tag:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* Status dropdown + active tag chip in the filter row */
+        .filter-select {
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            font-size: 12px;
+            font-family: inherit;
+            color: var(--text-main);
+            margin-left: auto;
+        }
+        .active-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid var(--primary);
+            background: var(--bg-active);
+            color: var(--primary);
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
         }
 
         /* Updated meta */
@@ -412,6 +438,13 @@
             <button class="filter-tab" data-filter="document">Documents</button>
             <button class="filter-tab" data-filter="team">Teams</button>
             <button class="filter-tab" data-filter="space">Spaces</button>
+            <button type="button" class="active-tag" id="activeTag" style="display:none;"
+                    aria-label="Remove tag filter"></button>
+            <select id="statusSelect" class="filter-select" aria-label="Document status">
+                <option value="">Any status</option>
+                <option value="DRAFT">Draft</option>
+                <option value="PUBLISHED">Published</option>
+            </select>
         </div>
 
         <!-- Results count -->
@@ -440,6 +473,7 @@
     const errorBox = document.getElementById("errorBox");
     let allResults  = [];   /* keep full result set for client-side filtering */
     let currentFilter = "all";
+    let currentTag    = null;   /* set by clicking a #tag on a result */
 
     /* ── Pagination state ── */
     const PAGE_SIZE = 5;
@@ -523,12 +557,19 @@
         return "document";
     }
 
-    /* ── Highlight search term in text ── */
+    /* User content goes into innerHTML, so always escape it first */
+    function escapeHtml(s) {
+        return String(s ?? "").replace(/[&<>"']/g, c =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    }
+
+    /* ── Highlight search term in text (returns safe HTML) ── */
     function highlight(text, query) {
-        if (!query || !text) return text || "";
-        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const safe = escapeHtml(text);
+        if (!query || !safe) return safe;
+        const escaped = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         const regex = new RegExp(`(${escaped})`, "gi");
-        return String(text).replace(regex,
+        return safe.replace(regex,
             `<mark style="background:#FFF3C4;color:inherit;padding:0 1px;">$1</mark>`);
     }
 
@@ -568,7 +609,7 @@
             div.className = "result-card";
 
             const tags = (r.tags || [])
-                .map(t => `<span class="result-tag">#${t}</span>`)
+                .map(t => `<button type="button" class="result-tag" data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</button>`)
                 .join("");
 
             const type     = getResultType(r);
@@ -594,8 +635,7 @@
                    </svg>`;
 
             const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-            const teamName  = r.teamName  || r.team  || "";
-            const spaceName = r.spaceName || r.space || "";
+            const teamName  = escapeHtml(r.teamName || "");
 
             /* Updated meta */
             let updatedText = "";
@@ -608,8 +648,8 @@
                 else updatedText = "Updated " + d.toLocaleDateString("en-US",
                         { month: "short", day: "numeric" });
 
-                if (r.updatedByFullName || r.updatedByEmail) {
-                    updatedText += " by " + (r.updatedByFullName || r.updatedByEmail);
+                if (r.updatedByName) {
+                    updatedText += " by " + escapeHtml(r.updatedByName);
                 }
             }
 
@@ -640,17 +680,22 @@
                 : ""}
                     <div class="result-meta">${updatedText}</div>
                 </div>
-                ${r.thumbnail
-                ? `<img class="result-thumb" src="${r.thumbnail}" alt="">`
-                : ""}
             `;
 
-            /* Click whole card to open doc */
+            /* Click a #tag: search by that tag (don't open the card) */
+            div.querySelectorAll(".result-tag").forEach(btn =>
+                btn.addEventListener("click", e => {
+                    e.stopPropagation();
+                    currentTag = btn.dataset.tag;
+                    runSearch();
+                }));
+
+            /* Click card: open the team, space or document */
+            const href = type === "team"  ? `/team.html?id=${encodeURIComponent(r.teamId)}`
+                       : type === "space" ? `/space.html?id=${encodeURIComponent(r.spaceId)}`
+                       : `/document.html?id=${encodeURIComponent(r.documentId)}&mode=view`;
             div.style.cursor = "pointer";
-            div.addEventListener("click", () => {
-                const id = r.documentId || r.id || r._id;
-                if (id) window.location.href = `/document.html?id=${id}&mode=view`;
-            });
+            div.addEventListener("click", () => { window.location.href = href; });
 
             box.appendChild(div);
         }
@@ -695,38 +740,59 @@
         });
     }
 
-    /* ── Search submit ── */
-    document.getElementById("searchForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
+    /* ── Search: text + optional tag + optional status (type tabs filter client-side) ── */
+    async function runSearch() {
         clearError();
-        const q = document.getElementById("qInput").value.trim();
+        const q      = document.getElementById("qInput").value.trim();
+        const status = document.getElementById("statusSelect").value;
 
-        /* Show/hide clear button */
-        document.getElementById("clearSearchBtn").style.display = q ? "block" : "none";
+        document.getElementById("clearSearchBtn").style.display = (q || currentTag) ? "block" : "none";
         document.getElementById("initialPrompt").style.display = "none";
 
-        if (!q) {
+        const tagChip = document.getElementById("activeTag");
+        tagChip.style.display = currentTag ? "inline-flex" : "none";
+        tagChip.textContent   = currentTag ? `#${currentTag} ✕` : "";
+
+        if (!q && !currentTag) {
             allResults = [];
             renderResults("");
             return;
         }
 
+        const params = new URLSearchParams();
+        if (q)          params.set("q", q);
+        if (currentTag) params.set("tag", currentTag);
+        if (status)     params.set("status", status);
+
         try {
-            const data = await fetchJson(
-                `/api/search?q=${encodeURIComponent(q)}`
-            );
+            const data  = await fetchJson(`/api/search?${params}`);
             allResults  = Array.isArray(data) ? data : [];
             currentPage = 1;
             renderResults(q);
         } catch (err) {
             showError(err.message);
         }
+    }
+
+    /* Enter in the input submits the form natively, so this is the only trigger */
+    document.getElementById("searchForm").addEventListener("submit", e => {
+        e.preventDefault();
+        runSearch();
+    });
+
+    document.getElementById("statusSelect").addEventListener("change", runSearch);
+
+    document.getElementById("activeTag").addEventListener("click", () => {
+        currentTag = null;
+        runSearch();
     });
 
     /* ── Clear button ── */
     document.getElementById("clearSearchBtn").addEventListener("click", () => {
         document.getElementById("qInput").value = "";
         document.getElementById("clearSearchBtn").style.display = "none";
+        currentTag  = null;
+        document.getElementById("activeTag").style.display = "none";
         allResults  = [];
         currentPage = 1;
         document.getElementById("results").innerHTML = "";
@@ -734,14 +800,6 @@
         document.getElementById("emptyState").style.display = "none";
         const old = document.getElementById("paginationRow");
         if (old) old.remove();
-    });
-
-    /* ── Search on Enter in topbar quick-search ── */
-    document.getElementById("qInput").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            document.getElementById("searchForm")
-                .dispatchEvent(new Event("submit"));
-        }
     });
 
     /* ── Filter tabs ── */
@@ -774,9 +832,7 @@
 
         if (qParam) {
             document.getElementById("qInput").value = qParam;
-            document.getElementById("clearSearchBtn").style.display = "block";
-            document.getElementById("searchForm")
-                .dispatchEvent(new Event("submit"));
+            runSearch();
         } else {
             /* Show hint */
             document.getElementById("initialPrompt").style.display = "none";
