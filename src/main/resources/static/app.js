@@ -393,8 +393,9 @@
     const teamLinks = teams.length
       ? teams.map(function (t) {
           const on = active === t.teamId;
-          return '<a class="nav-item' + (on ? " is-active" : "") + '" href="/team.html?id=' + encodeURIComponent(t.teamId) + '" title="' + escapeHtml(t.teamName) + '"' +
-            (on ? ' aria-current="page"' : "") + ">" + teamIcon(t.teamName, "sm") + '<span class="nav-item__label">' + escapeHtml(t.teamName) + "</span></a>";
+          const name = t.teamName || "Untitled team";
+          return '<a class="nav-item' + (on ? " is-active" : "") + '" href="/team.html?id=' + encodeURIComponent(t.teamId) + '" title="' + escapeHtml(name) + '"' +
+            (on ? ' aria-current="page"' : "") + ">" + teamIcon(t.teamName, "sm") + '<span class="nav-item__label">' + escapeHtml(name) + "</span></a>";
         }).join("")
       : '<p class="sidebar__empty">No teams yet</p>';
     const name = (me && (me.fullName || me.email)) || "";

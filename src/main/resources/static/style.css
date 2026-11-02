@@ -128,6 +128,7 @@ input, textarea { caret-color: var(--color-primary); }
 .text-error { color: var(--color-error-text); }
 .num { font-variant-numeric: tabular-nums; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 
 .link, .prose a {
   color: var(--color-link);
@@ -231,6 +232,9 @@ input, textarea { caret-color: var(--color-primary); }
 .page-header__meta { margin-top: var(--space-1); color: var(--color-slate); }
 .section + .section { margin-top: var(--space-10); }
 .section__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+/* Main column + narrow side column (dashboard activity). Stacks below desktop. */
+.layout-aside { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-10); align-items: start; }
+.layout-aside > * { min-width: 0; }
 
 .drawer-backdrop { display: none; }
 
@@ -743,6 +747,7 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 @media (max-width: 1023px) {
   .grid--3, .grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .editor-split { grid-template-columns: 1fr; }
+  .layout-aside { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Tablet 640-1023: icon rail sidebar (labels stay readable by screen readers) */
@@ -795,6 +800,7 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
   .modal__footer { flex-direction: column-reverse; }
   .modal__footer .btn { width: 100%; }
   .file-chip__name { max-width: 50vw; }
+  .hide-phone { display: none !important; }
 
   /* Tables become stacked rows: add data-label to each <td> */
   .table--stack thead { display: none; }
