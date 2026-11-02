@@ -252,7 +252,6 @@ http://localhost:8080/login.html
 
 - No real-time collaboration (changes require a page refresh to see others' edits).
 - Attachments are link-based only; actual file upload is not supported.
-- Two-factor authentication is shown in the UI but not yet implemented.
 - Search is keyword-based with no advanced filters.
 
 ---
