@@ -223,7 +223,8 @@ input, textarea { caret-color: var(--color-primary); }
 .topbar .topbar__menu { display: none; }
 .topbar__actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); flex: none; }
 
-.sheet { grid-area: sheet; background: var(--color-canvas); min-width: 0; }
+.sheet { grid-area: sheet; background: var(--color-canvas); min-width: 0; display: flex; flex-direction: column; }
+.sheet > main { flex: 1; width: 100%; } /* pushes the footer to the bottom on short pages */
 .page { max-width: var(--content-max); margin: 0 auto; padding: var(--page-pad); }
 .page--reading { max-width: calc(var(--reading-max) + 2 * var(--page-pad)); }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
@@ -232,6 +233,22 @@ input, textarea { caret-color: var(--color-primary); }
 .section__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 
 .drawer-backdrop { display: none; }
+
+/* Site footer: on every page. Filled by app.js into <footer class="site-footer" data-kf-footer>. */
+.site-footer {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2) var(--space-4);
+  width: 100%; max-width: var(--content-max); margin: 0 auto;
+  padding: var(--space-5) var(--page-pad) var(--space-6);
+  border-top: 1px solid var(--color-hairline-soft);
+  font-size: 13px; color: var(--color-steel);
+}
+.site-footer a { color: var(--color-steel); text-decoration: underline; text-decoration-color: var(--color-hairline); text-underline-offset: 2px; }
+.site-footer a:hover { color: var(--color-ink); text-decoration-color: currentColor; }
+.site-footer__links { display: flex; gap: var(--space-4); }
+/* On auth pages the footer sits quietly under the card, no rule */
+body:has(> .auth) { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; background: var(--color-surface); }
+body:has(> .auth) > .auth { flex: 1; min-height: 0; }
+.auth ~ .site-footer { border-top: 0; justify-content: center; padding-top: 0; }
 
 /* Auth pages: no sidebar, centred card */
 .auth {
@@ -801,7 +818,7 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 /* ---------- 15. Print (document export to PDF) ---------- */
 @media print {
   body, .app, .sheet { background: #fff; }
-  .sidebar, .topbar, .drawer-backdrop, .toast-region, .no-print { display: none !important; }
+  .sidebar, .topbar, .drawer-backdrop, .toast-region, .site-footer, .no-print { display: none !important; }
   .app { display: block; }
   .page { padding: 0; max-width: none; }
 }

@@ -18,6 +18,8 @@ Filled in during the redesign. Anything here wins over the rest of this file.
   Active nav uses pressed-blue text on soft (5.33:1); plain primary on soft is only 4.53:1.
 - **Surfaces / ink (Notion-warm):** `--color-surface` **#f7f7f5**, `--color-surface-soft` **#fbfbfa**, `--color-hover` **#efefed**, `--color-ink` **#37352f** (one warm ink for headings and body).
 - **Shell:** flush. The warm-grey sidebar has a 1px right hairline. The white top bar has a soft bottom hairline and stays put when you scroll. The white page runs edge to edge, with no floating rounded "sheet".
+- **Footer (every page, no exceptions):** "© {year} KnowledgeForge" + "Source on GitHub" link, caption size, steel text. Rendered only by `app.js`:
+  logged-in pages get it from `KF.initShell` (bottom of the content area, top hairline); auth pages add `<footer class="site-footer" data-kf-footer></footer>` after `<main>` (centred, no rule). Hidden in print.
 - **Logo:** "stacked pages" mark (three layered sheets, Lucide `layers` glyph) in white on a 24px primary rounded square, next to the "KnowledgeForge" wordmark in 15/600.
 - **Art direction:** "Team wiki." It should feel like opening Notion or Confluence: a warm-grey sidebar holding the map of teams and spaces, and a plain white page where the document is the brightest thing.
   One knowledge-base blue marks the single main action and where you are. Nothing else takes colour except tags and people.

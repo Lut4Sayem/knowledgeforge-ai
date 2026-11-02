@@ -424,6 +424,24 @@
     }).join("") + "</ol></nav>";
   }
 
+  /* ---------- Site footer (every page) ---------- */
+  const REPO_URL = "https://github.com/Lut4Sayem/knowledgeforge-ai";
+
+  function footerHtml() {
+    return '<span>&copy; ' + new Date().getFullYear() + " KnowledgeForge</span>" +
+      '<nav class="site-footer__links" aria-label="Footer"><a href="' + REPO_URL + '" target="_blank" rel="noopener">Source on GitHub</a></nav>';
+  }
+
+  /** Fill every <footer data-kf-footer> on the page (auth pages place one by hand; the shell adds its own). */
+  function renderFooters() {
+    document.querySelectorAll("[data-kf-footer]").forEach(function (f) {
+      f.classList.add("site-footer");
+      f.innerHTML = footerHtml();
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", renderFooters);
+  else renderFooters();
+
   /** Update breadcrumbs after data loads (e.g. team name known). */
   function setBreadcrumbs(items) {
     const slot = document.getElementById("kf-breadcrumbs");
@@ -478,6 +496,10 @@
     document.body.insertBefore(skip, document.body.firstChild);
     main.parentNode.insertBefore(app, main);
     app.querySelector(".sheet").appendChild(main);
+    const footer = document.createElement("footer");
+    footer.className = "site-footer";
+    footer.innerHTML = footerHtml();
+    app.querySelector(".sheet").appendChild(footer);
     ensureToastRegion();
 
     document.getElementById("kf-menu-btn").addEventListener("click", function () {
