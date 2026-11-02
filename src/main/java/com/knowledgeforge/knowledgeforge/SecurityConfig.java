@@ -62,7 +62,6 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/search.html",
                                 "/profile.html",
-                                "/sidebar.js",
                                 "/google557de5fbfde00618.html"
 
                         ).permitAll()

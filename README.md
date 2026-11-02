@@ -26,7 +26,7 @@ Deployed on Render:
 | Layer | Technology |
 |---|---|
 | Language | Java 17 |
-| Framework | Spring Boot 3 |
+| Framework | Spring Boot 4.1 |
 | Security | Spring Security (session-based auth) |
 | Database | MongoDB Atlas |
 | Frontend | Plain HTML + CSS + JavaScript (no framework) |
