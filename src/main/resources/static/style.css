@@ -6,25 +6,25 @@
 /* ---------- 1. Tokens ---------- */
 :root {
   /* Primary */
-  --color-primary: #1b6e66;
-  --color-primary-pressed: #18615a;
-  --color-primary-deep: #14534d;
-  --color-primary-soft: #e8f1f0;
-  --color-primary-ring: rgba(27, 110, 102, 0.35);
+  --color-primary: #1d6fcb;
+  --color-primary-pressed: #1a64b8;
+  --color-primary-deep: #15528f;
+  --color-primary-soft: #eef4fc;
+  --color-primary-ring: rgba(29, 111, 203, 0.35);
   --color-on-primary: #ffffff;
   --color-link: var(--color-primary-pressed);
 
   /* Surfaces & lines */
   --color-canvas: #ffffff;
-  --color-surface: #f6f5f4;
-  --color-surface-soft: #fafaf9;
-  --color-hover: #efeeec;
+  --color-surface: #f7f7f5;
+  --color-surface-soft: #fbfbfa;
+  --color-hover: #efefed;
   --color-hairline: #e5e3df;
   --color-hairline-soft: #ede9e4;
   --color-hairline-strong: #8f8b84;
 
   /* Text */
-  --color-ink: #1a1a1a;
+  --color-ink: #37352f;
   --color-charcoal: #37352f;
   --color-slate: #5d5b54;
   --color-steel: #6b6964;
@@ -77,7 +77,6 @@
   --sidebar-width: 248px;
   --sidebar-rail: 64px;
   --topbar-height: 56px;
-  --sheet-inset: 8px;
   --content-max: 1120px;
   --reading-max: 720px;
   --page-pad: 32px;
@@ -110,7 +109,7 @@ body {
 h1, h2, h3, h4 { font-weight: 600; color: var(--color-ink); text-wrap: balance; }
 code, pre, samp { font-family: var(--font-mono); font-size: 0.9em; }
 /* Browser surfaces themed from the palette */
-::selection { background: rgba(27, 110, 102, 0.2); color: var(--color-ink); }
+::selection { background: rgba(29, 111, 203, 0.2); color: var(--color-ink); }
 html { scrollbar-color: var(--color-stone) transparent; }
 input, textarea { caret-color: var(--color-primary); }
 
@@ -156,7 +155,7 @@ input, textarea { caret-color: var(--color-primary); }
 .icon--sm { width: 14px; height: 14px; }
 .icon--lg { width: 20px; height: 20px; }
 
-/* ---------- 4. App shell: stone frame + white sheet ---------- */
+/* ---------- 4. App shell: flush, Notion-style (warm sidebar | white page) ---------- */
 .app {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -164,7 +163,7 @@ input, textarea { caret-color: var(--color-primary); }
   grid-template-areas: "sidebar topbar" "sidebar sheet";
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--color-surface);
+  background: var(--color-canvas);
 }
 
 .sidebar {
@@ -174,6 +173,7 @@ input, textarea { caret-color: var(--color-primary); }
   display: flex; flex-direction: column;
   padding: var(--space-3) var(--space-2) var(--space-2);
   background: var(--color-surface);
+  border-right: 1px solid var(--color-hairline);
   overflow-y: auto;
 }
 .sidebar__brand {
@@ -206,29 +206,24 @@ input, textarea { caret-color: var(--color-primary); }
 }
 .nav-item .icon { color: var(--color-steel); }
 .nav-item:hover { background: var(--color-hover); color: var(--color-ink); }
-.nav-item.is-active, .nav-item[aria-current="page"] { background: var(--color-primary-soft); color: var(--color-primary); }
-.nav-item.is-active .icon, .nav-item[aria-current="page"] .icon { color: var(--color-primary); }
+.nav-item.is-active, .nav-item[aria-current="page"] { background: var(--color-primary-soft); color: var(--color-primary-pressed); }
+.nav-item.is-active .icon, .nav-item[aria-current="page"] .icon { color: var(--color-primary-pressed); }
 .nav-item__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .topbar {
   grid-area: topbar;
   display: flex; align-items: center; gap: var(--space-3);
+  position: sticky; top: 0; z-index: 20;
   height: var(--topbar-height);
-  padding: 0 calc(var(--sheet-inset) + var(--space-4)) 0 var(--space-4);
-  background: var(--color-surface);
+  padding: 0 var(--space-4);
+  background: var(--color-canvas);
+  border-bottom: 1px solid var(--color-hairline-soft);
   min-width: 0;
 }
 .topbar .topbar__menu { display: none; }
 .topbar__actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); flex: none; }
 
-.sheet {
-  grid-area: sheet;
-  margin: 0 var(--sheet-inset) var(--sheet-inset) 0;
-  background: var(--color-canvas);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-lg);
-  min-width: 0;
-}
+.sheet { grid-area: sheet; background: var(--color-canvas); min-width: 0; }
 .page { max-width: var(--content-max); margin: 0 auto; padding: var(--page-pad); }
 .page--reading { max-width: calc(var(--reading-max) + 2 * var(--page-pad)); }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
@@ -747,9 +742,9 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 @media (max-width: 639px) {
   :root { --page-pad: 16px; --topbar-height: 52px; }
   .app { display: block; }
-  .topbar { position: sticky; top: 0; z-index: 20; padding: 0 var(--space-2); }
+  .topbar { padding: 0 var(--space-2); }
   .topbar .topbar__menu { display: inline-flex; }
-  .sheet { margin: 0; border: 0; border-radius: 0; border-top: 1px solid var(--color-hairline); min-height: calc(100dvh - var(--topbar-height)); }
+  .sheet { min-height: calc(100dvh - var(--topbar-height)); }
   .sidebar {
     position: fixed; inset: 0 auto 0 0; z-index: 60;
     width: min(288px, 85vw); align-items: stretch;
@@ -803,6 +798,5 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
   body, .app, .sheet { background: #fff; }
   .sidebar, .topbar, .drawer-backdrop, .toast-region, .no-print { display: none !important; }
   .app { display: block; }
-  .sheet { border: 0; margin: 0; }
   .page { padding: 0; max-width: none; }
 }

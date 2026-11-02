@@ -50,7 +50,7 @@
     tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5"/>',
     clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     refresh: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
-    book: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'
+    layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>'
   };
 
   /** Inline SVG icon. Decorative by default (aria-hidden); pass a label to make it meaningful. */
@@ -385,7 +385,7 @@
       : '<p class="sidebar__empty">No teams yet</p>';
     const name = (me && (me.fullName || me.email)) || "";
 
-    return '<a class="sidebar__brand" href="/dashboard.html" title="KnowledgeForge"><span class="brand-mark">' + icon("book") + '</span><span class="sidebar__brand-name">KnowledgeForge</span></a>' +
+    return '<a class="sidebar__brand" href="/dashboard.html" title="KnowledgeForge"><span class="brand-mark">' + icon("layers") + '</span><span class="sidebar__brand-name">KnowledgeForge</span></a>' +
       '<nav class="sidebar__section" aria-label="Main">' +
         nav("/dashboard.html", "Dashboard", "home", "dashboard") +
         nav("/search.html", "Search", "search", "search") +
