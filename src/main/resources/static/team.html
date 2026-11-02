@@ -612,6 +612,11 @@
         document.getElementById("adminPanel").style.display     = isAdmin ? "block" : "none";
         document.getElementById("generateInviteBtn").style.display = isAdmin ? "inline-flex" : "none";
 
+        // Viewers can't create spaces (API enforces it; this just hides the buttons)
+        const canEdit = isAdmin || (myMembership && myMembership.role === "EDITOR");
+        ["toggleCreateSpaceBtn", "sidebarNewSpaceBtn"].forEach(id =>
+            document.getElementById(id).style.display = canEdit ? "" : "none");
+
         // ── Members table ──
         const tbody = document.getElementById("membersTbody");
         const empty = document.getElementById("membersEmpty");

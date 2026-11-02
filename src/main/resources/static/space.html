@@ -144,7 +144,7 @@
     </div>
 
     <div class="sidebar-action">
-        <button type="button" class="btn btn-primary btn-full" id="sidebarCreateDocBtn">+ New Space</button>
+        <button type="button" class="btn btn-primary btn-full" id="sidebarCreateDocBtn">+ New Document</button>
     </div>
 
     <nav class="sidebar-nav">
@@ -441,6 +441,16 @@
         document.getElementById("spaceName").textContent     = space.name ?? "(No name)";
         document.getElementById("spaceDescription").textContent = space.description ?? "";
         document.getElementById("topbarSpaceName").textContent  = space.name ?? "";
+
+        /* Only hides UI; the API enforces roles anyway. */
+        let canEdit = false;
+        try {
+            const teams = await fetchJson("/api/me/teams");
+            const role  = (teams || []).find(t => t.teamId === space.teamId)?.role;
+            canEdit = role === "ADMIN" || role === "EDITOR";
+        } catch (e) {}
+        ["showCreateDocBtn", "emptyStateCreateBtn", "sidebarCreateDocBtn"].forEach(id =>
+            document.getElementById(id).style.display = canEdit ? "" : "none");
 
         if (space.teamId) {
             document.getElementById("breadcrumb").innerHTML =

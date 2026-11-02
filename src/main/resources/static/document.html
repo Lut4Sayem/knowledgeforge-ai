@@ -687,7 +687,7 @@
 <script>
     const params     = new URLSearchParams(window.location.search);
     const documentId = params.get("id");
-    const mode       = params.get("mode") || "view";
+    let   mode       = params.get("mode") || "view";
 
     /* ── Make documentId accessible to inline onclick ── */
     window.documentId = documentId;
@@ -738,6 +738,16 @@
             );
         }
         return data;
+    }
+
+    /* Only hides UI; the API enforces roles anyway. Any lookup failure counts as "can't edit". */
+    async function canEditSpace(spaceId) {
+        try {
+            const space = await fetchJson(`/api/spaces/${spaceId}`);
+            const teams = await fetchJson("/api/me/teams");
+            const role  = (teams || []).find(t => t.teamId === space?.teamId)?.role;
+            return role === "ADMIN" || role === "EDITOR";
+        } catch (e) { return false; }
     }
 
     function renderMarkdown(md) {
@@ -1058,6 +1068,10 @@
         const doc = await fetchJson(`/api/documents/${documentId}`);
         if (!doc) return;
 
+        /* Viewers never get edit mode (that also hides restore + attachment controls) */
+        const canEdit = await canEditSpace(doc.spaceId);
+        if (!canEdit) mode = "view";
+
         /* Update topbar breadcrumb */
         document.getElementById("topbarDocTitle").textContent =
             (doc.title || "Untitled").toUpperCase();
@@ -1079,7 +1093,7 @@
         } else {
             document.getElementById("editorSection").style.display = "none";
             document.getElementById("viewSection").style.display   = "block";
-            document.getElementById("editModeBtn").style.display   = "inline-flex";
+            document.getElementById("editModeBtn").style.display   = canEdit ? "inline-flex" : "none";
 
             /* Tags + status row */
             const tagsRow = document.getElementById("viewTags");
