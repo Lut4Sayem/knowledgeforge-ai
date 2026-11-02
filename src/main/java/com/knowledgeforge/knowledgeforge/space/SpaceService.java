@@ -30,12 +30,12 @@ public class SpaceService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> userEmail= userRepository.findByEmail(email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         String userId = user.getId();
         boolean exists = teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
 
         if(!exists){
-            throw new RuntimeException("User or Team Not Found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User or Team Not Found");
         }
 
         Space space = new Space();
@@ -53,7 +53,7 @@ public class SpaceService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> userEmail= userRepository.findByEmail(email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         String userId = user.getId();
         boolean exists = teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
         if(!exists){

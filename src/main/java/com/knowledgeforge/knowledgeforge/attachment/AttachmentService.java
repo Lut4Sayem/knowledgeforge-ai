@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.attachment;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
@@ -38,7 +40,7 @@ public class AttachmentService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         Attachment a = new Attachment();
         a.setDocumentId(documentId);
@@ -52,7 +54,7 @@ public class AttachmentService {
 
     public void deleteAttachment(String attachmentId) {
         Attachment a = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new RuntimeException("Attachment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attachment not found"));
 
         documentService.getDocumentByID(a.getDocumentId());
 

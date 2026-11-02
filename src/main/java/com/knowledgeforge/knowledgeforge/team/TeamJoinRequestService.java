@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.team;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,19 +30,19 @@ public class TeamJoinRequestService {
 
     public TeamJoinRequest requestToJoin(String inviteCode) {
         TeamInvite teamInvite = teamInviteRepository.findByInviteCode(inviteCode)
-                .orElseThrow(() -> new RuntimeException("Invite code not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invite code not found"));
         String teamId = teamInvite.getTeamId();
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         String userId= user.getId();
         boolean exists= teamMemberRepository.existsByTeamIdAndUserId(teamId, userId);
         if(exists){
-            throw new RuntimeException("You are already a member of this team");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already a member of this team");
         }
         boolean pending= teamJoinRequestRepository.existsByTeamIdAndUserIdAndStatus(teamId, userId, "PENDING");
         if(pending){
-            throw new RuntimeException("You are already invited");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already invited");
         }
         TeamJoinRequest teamJoinRequest = new TeamJoinRequest();
         teamJoinRequest.setTeamId(teamId);
@@ -54,13 +56,13 @@ public class TeamJoinRequestService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User adminUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         TeamMember teamMember = teamMemberRepository.findByTeamIdAndUserId(teamId, adminUser.getId())
-                .orElseThrow(() -> new RuntimeException("You are not a member of this team"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this team"));
 
         if (!teamMember.getRole().equals("ADMIN")) {
-            throw new RuntimeException("You are not allowed to view join requests");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to view join requests");
         }
 
         List<TeamJoinRequest> pending = teamJoinRequestRepository.findByTeamIdAndStatus(teamId, "PENDING");
@@ -92,17 +94,20 @@ public class TeamJoinRequestService {
     public TeamJoinRequest acceptRequest(String teamId, String requestId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> user = userRepository.findByEmail(email);
-        if(user.isEmpty()){throw new RuntimeException("User not found");}
+        if(user.isEmpty()){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found");}
         Optional<TeamMember> teamMember= teamMemberRepository.findByTeamIdAndUserId(teamId,user.get().getId());
-        String role= teamMember.get().getRole();
+        String role= teamMember.map(TeamMember::getRole).orElse("");
         if(!role.equals("ADMIN")){
-            throw new RuntimeException("You are not allowed to accept this team");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to accept this team");
         }
         TeamJoinRequest teamJoinRequest = teamJoinRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
+        if (!teamId.equals(teamJoinRequest.getTeamId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found");
+        }
         String status= teamJoinRequest.getStatus();
         if(!status.equals("PENDING")){
-            throw new RuntimeException("The request is not pending anymore");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request is not pending anymore");
         }
         teamJoinRequest.setStatus("ACCEPTED");
         TeamMember teamMember1 = new TeamMember();
@@ -119,17 +124,20 @@ public class TeamJoinRequestService {
     public TeamJoinRequest rejectRequest(String teamId, String requestId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> user = userRepository.findByEmail(email);
-        if(user.isEmpty()){throw new RuntimeException("User not found");}
+        if(user.isEmpty()){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found");}
         Optional<TeamMember> teamMember= teamMemberRepository.findByTeamIdAndUserId(teamId,user.get().getId());
-        String role= teamMember.get().getRole();
+        String role= teamMember.map(TeamMember::getRole).orElse("");
         if(!role.equals("ADMIN")){
-            throw new RuntimeException("You are not allowed to accept this team");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to accept this team");
         }
         TeamJoinRequest teamJoinRequest = teamJoinRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
+        if (!teamId.equals(teamJoinRequest.getTeamId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found");
+        }
         String status= teamJoinRequest.getStatus();
         if(!status.equals("PENDING")){
-            throw new RuntimeException("The request is not pending anymore");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The request is not pending anymore");
         }
         teamJoinRequest.setStatus("REJECTED");
 

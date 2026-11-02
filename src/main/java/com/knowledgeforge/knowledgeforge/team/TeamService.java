@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.team;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.user.User;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,7 +32,7 @@ public class TeamService {
         boolean emailNotInDB = userOpt.isEmpty();
 
         if(emailNotInDB){
-            throw new RuntimeException("User Not Found");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User Not Found");
         }
         String userId = userOpt.get().getId();
         Team team = new Team();
@@ -58,7 +60,7 @@ public class TeamService {
         Optional<User> userOpt = userRepository.findByEmail(email);
         boolean emailNotInDB = userOpt.isEmpty();
         if(emailNotInDB){
-            throw new RuntimeException("User Not Found");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User Not Found");
         }
         String userId = userOpt.get().getId();
         List<TeamMember> teamMembers = teamMemberRepository.findByUserId(userId);
@@ -74,7 +76,7 @@ public class TeamService {
     public TeamDetailsResponseDTO getTeamDetails(String teamId) {
         Optional<Team> teamOpt = teamRepository.findById(teamId);
         if (teamOpt.isEmpty()){
-            throw new RuntimeException("Team Not Found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Team Not Found");
         }
         Team team = teamOpt.get();
         List<TeamMember> teamMembers = teamMemberRepository.findByTeamId(team.getId());
@@ -100,38 +102,38 @@ public class TeamService {
     public void removeMember(String teamId, String userIdToRemove) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         TeamMember currentMembership = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("You are not a member of this team"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this team"));
         if (!currentMembership.getRole().equals("ADMIN")) {
-            throw new RuntimeException("Only an ADMIN can remove members");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only an ADMIN can remove members");
         }
         if (currentUser.getId().equals(userIdToRemove)) {
-            throw new RuntimeException("You cannot remove yourself");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot remove yourself");
         }
         TeamMember memberToRemove = teamMemberRepository.findByTeamIdAndUserId(teamId, userIdToRemove)
-                .orElseThrow(() -> new RuntimeException("That user is not a member of this team"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "That user is not a member of this team"));
         teamMemberRepository.delete(memberToRemove);
     }
 
     public void updateMemberRole(String teamId, String userIdToUpdate, String newRole) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         TeamMember currentMembership = teamMemberRepository
                 .findByTeamIdAndUserId(teamId, currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("You are not a member of this team"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this team"));
         if (!"ADMIN".equals(currentMembership.getRole())) {
-            throw new RuntimeException("Only an ADMIN can change roles");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only an ADMIN can change roles");
         }
         if (currentUser.getId().equals(userIdToUpdate)) {
-            throw new RuntimeException("You cannot change your own role");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot change your own role");
         }
         if (!"ADMIN".equals(newRole) && !"EDITOR".equals(newRole) && !"VIEWER".equals(newRole)) {
-            throw new RuntimeException("Invalid role: " + newRole);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid role: " + newRole);
         }
         TeamMember targetMembership = teamMemberRepository.findByTeamIdAndUserId(teamId, userIdToUpdate)
-                .orElseThrow(() -> new RuntimeException("That user is not a member of this team"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "That user is not a member of this team"));
         targetMembership.setRole(newRole);
         teamMemberRepository.save(targetMembership);
     }

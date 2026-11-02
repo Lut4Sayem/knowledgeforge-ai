@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.documentVersion;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentEntity;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentRepository;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
@@ -64,16 +66,16 @@ public class DocumentVersionService {
         DocumentEntity doc = documentService.getDocumentByID(documentId);
 
         DocumentVersion version = documentVersionRepository.findById(versionId)
-                .orElseThrow(() -> new RuntimeException("Version not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));
 
         if (!documentId.equals(version.getDocumentId())) {
-            throw new RuntimeException("Version does not belong to this document");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Version does not belong to this document");
         }
 
         // who is restoring
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         saveVersionSnapshot(doc, user.getId());
 
         // restore title/content

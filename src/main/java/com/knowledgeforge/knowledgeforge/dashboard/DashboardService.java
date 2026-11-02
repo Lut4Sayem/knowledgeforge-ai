@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.dashboard;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentEntity;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentRepository;
 import com.knowledgeforge.knowledgeforge.space.Space;
@@ -43,7 +45,7 @@ public class DashboardService {
     public DashboardResponseDTO getDashboard() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         List<TeamMember> memberships = teamMemberRepository.findByUserId(user.getId());
         List<String> teamIds = new ArrayList<>();

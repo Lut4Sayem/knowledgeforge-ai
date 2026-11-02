@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.user;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.team.Team;
 import com.knowledgeforge.knowledgeforge.team.TeamMember;
 import com.knowledgeforge.knowledgeforge.team.TeamMemberRepository;
@@ -35,7 +37,7 @@ public class UserController {
 
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         // IMPORTANT: HashMap allows null values; Map.of() does NOT.
         Map<String, Object> body = new HashMap<>();
@@ -56,7 +58,7 @@ public class UserController {
 
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         if (request.getFullName() != null) {
             user.setFullName(request.getFullName().trim());
@@ -87,7 +89,7 @@ public class UserController {
 
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         List<TeamMember> memberships = teamMemberRepository.findByUserId(user.getId());
 

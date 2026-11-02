@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.team;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,12 +25,12 @@ public class TeamInviteService {
     public TeamInvite createTeamInvite(String teamId){
         String email= SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         String userId = user.getId();
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new RuntimeException("User is not part of the team"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "User is not part of the team"));
         if(!(Objects.equals(member.getRole(), "ADMIN"))){
-            throw new RuntimeException("You are not allowed to invite a team member");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to invite a team member");
         }
         TeamInvite teamInvite = new TeamInvite();
         teamInvite.setTeamId(teamId);

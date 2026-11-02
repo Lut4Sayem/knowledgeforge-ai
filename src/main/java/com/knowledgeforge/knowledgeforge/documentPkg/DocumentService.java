@@ -46,14 +46,14 @@ public class DocumentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         Space space = spaceRepository.findById(spaceId)
-                .orElseThrow(() -> new RuntimeException("Space not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
 
         boolean exists = teamMemberRepository.existsByTeamIdAndUserId(space.getTeamId(), user.getId());
         if (!exists) {
-            throw new RuntimeException("Forbidden");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
         }
 
         DocumentEntity documentEntity = new DocumentEntity();
@@ -85,14 +85,14 @@ public class DocumentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         Space space = spaceRepository.findById(spaceId)
-                .orElseThrow(() -> new RuntimeException("Space not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
 
         boolean isMember = teamMemberRepository.existsByTeamIdAndUserId(space.getTeamId(), user.getId());
         if (!isMember) {
-            throw new RuntimeException("Forbidden");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
         }
 
         return documentRepository.findBySpaceId(spaceId);
@@ -100,14 +100,14 @@ public class DocumentService {
 
     public DocumentEntity getDocumentByID(String documentId) {
         DocumentEntity document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new RuntimeException("Document not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         Space space = spaceRepository.findById(document.getSpaceId())
-                .orElseThrow(() -> new RuntimeException("Space not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
 
         boolean isMember = teamMemberRepository.existsByTeamIdAndUserId(space.getTeamId(), user.getId());
         if (!isMember) {
@@ -121,7 +121,7 @@ public class DocumentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         DocumentEntity document = getDocumentByID(documentId);
 
@@ -138,7 +138,7 @@ public class DocumentService {
         DocumentEntity saved = documentRepository.save(document);
 
         Space space = spaceRepository.findById(saved.getSpaceId())
-                .orElseThrow(() -> new RuntimeException("Space not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
 
         activityLogService.log(
                 space.getTeamId(),
@@ -156,12 +156,12 @@ public class DocumentService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         DocumentEntity document = getDocumentByID(documentId);
 
         Space space = spaceRepository.findById(document.getSpaceId())
-                .orElseThrow(() -> new RuntimeException("Space not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
 
         activityLogService.log(
                 space.getTeamId(),

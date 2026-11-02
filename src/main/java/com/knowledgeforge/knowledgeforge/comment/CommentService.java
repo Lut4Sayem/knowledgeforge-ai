@@ -1,5 +1,7 @@
 package com.knowledgeforge.knowledgeforge.comment;
 
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
@@ -55,10 +57,10 @@ public class CommentService {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         if (request.getContent() == null || request.getContent().trim().isEmpty()) {
-            throw new RuntimeException("Comment cannot be empty");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment cannot be empty");
         }
 
         Comment c = new Comment();
@@ -81,17 +83,17 @@ public class CommentService {
 
     public void deleteMyComment(String commentId) {
         Comment c = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
 
         // membership check based on comment's document
         documentService.getDocumentByID(c.getDocumentId());
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         if (!user.getId().equals(c.getCreatedBy())) {
-            throw new RuntimeException("You can only delete your own comment");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own comment");
         }
 
         commentRepository.deleteById(commentId);
