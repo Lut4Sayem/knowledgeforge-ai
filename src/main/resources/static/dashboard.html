@@ -41,8 +41,7 @@
   </div>
 
   <div class="layout-aside" id="content">
-    <div>
-      <section class="section" aria-labelledby="recent-title">
+      <section aria-labelledby="recent-title">
         <div class="section__header">
           <h2 class="title-sm" id="recent-title">Recently updated</h2>
           <a class="link caption" href="/search.html">Search all documents</a>
@@ -54,19 +53,7 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="teams-title">
-        <div class="section__header">
-          <h2 class="title-sm" id="teams-title">Your teams</h2>
-        </div>
-        <div class="grid grid--3" id="teams" aria-busy="true">
-          <div class="skeleton skeleton--card"></div>
-          <div class="skeleton skeleton--card"></div>
-          <div class="skeleton skeleton--card"></div>
-        </div>
-      </section>
-    </div>
-
-    <aside class="section" aria-labelledby="activity-title">
+    <aside class="layout-aside__side" aria-labelledby="activity-title">
       <div class="section__header">
         <h2 class="title-sm" id="activity-title">Activity</h2>
       </div>
@@ -76,6 +63,16 @@
         <div class="skeleton-row" style="padding-inline: 0"><span class="skeleton skeleton--avatar"></span><span class="skeleton skeleton--line"></span></div>
       </div>
     </aside>
+
+    <section aria-labelledby="teams-title">
+      <div class="section__header">
+        <h2 class="title-sm" id="teams-title">Your teams</h2>
+      </div>
+      <div class="card card--flush" id="teams" aria-busy="true">
+        <div class="skeleton-row"><span class="skeleton skeleton--line"></span></div>
+        <div class="skeleton-row"><span class="skeleton skeleton--line"></span></div>
+      </div>
+    </section>
   </div>
 
   <dialog class="modal" id="team-modal" aria-labelledby="team-modal-title">
@@ -88,13 +85,12 @@
         <p style="margin-bottom: var(--space-4)">You'll be the team's admin. You can invite people from the team page.</p>
         <div class="field">
           <label class="label" for="team-name">Team name</label>
-          <input class="input" id="team-name" name="teamName" maxlength="80" autocomplete="off" placeholder="e.g. Platform" aria-describedby="team-name-error">
+          <input class="input" id="team-name" name="teamName" maxlength="80" autocomplete="off" placeholder="e.g. Platform" aria-required="true" aria-describedby="team-name-error">
           <p class="field__error" id="team-name-error" hidden></p>
         </div>
         <div class="field">
-          <label class="label" for="team-desc">Description</label>
-          <textarea class="textarea" id="team-desc" name="teamDescription" maxlength="500" rows="3" placeholder="What does this team write down?" aria-describedby="team-desc-error"></textarea>
-          <p class="field__error" id="team-desc-error" hidden></p>
+          <label class="label" for="team-desc">Description <span class="text-steel">(optional)</span></label>
+          <textarea class="textarea" id="team-desc" name="teamDescription" maxlength="500" rows="3" placeholder="What does this team write down?"></textarea>
         </div>
         <div class="error-state" id="team-form-error" role="alert" hidden style="margin-top: var(--space-4)">
           <span id="team-form-error-icon"></span><span class="error-state__msg" id="team-form-error-msg"></span>
@@ -166,13 +162,14 @@
         return;
       }
       box.innerHTML = '<ul class="list" role="list">' + recent.map(function (r) {
-        const where = [r.teamName, r.spaceName].filter(Boolean).join(" / ");
+        const where = esc([r.teamName, r.spaceName].filter(Boolean).join(" / "));
+        const when = r.updatedAt ? '<time datetime="' + esc(new Date(r.updatedAt).toISOString()) + '">' + esc(KF.relativeTime(r.updatedAt)) + "</time>" : "";
+        const caption = [where, when].filter(Boolean).join(" · ");
         return '<li><a class="list-row" href="' + esc(docHref(r.documentId)) + '">' +
           KF.icon("file-text", "text-steel") +
           '<span class="list-row__main"><span class="list-row__title">' + esc(r.title || "Untitled") + "</span>" +
-          (where ? '<span class="caption truncate">' + esc(where) + "</span>" : "") + "</span>" +
+          (caption ? '<span class="caption truncate">' + caption + "</span>" : "") + "</span>" +
           statusBadge(r.status) +
-          (r.updatedAt ? '<span class="list-row__meta hide-phone"><time datetime="' + esc(new Date(r.updatedAt).toISOString()) + '">' + esc(KF.relativeTime(r.updatedAt)) + "</time></span>" : "") +
           "</a></li>";
       }).join("") + "</ul>";
     }
@@ -192,8 +189,16 @@
         box.innerHTML = '<p class="caption">Nothing yet. Creating, editing and restoring documents shows up here.</p>';
         return;
       }
+      // Merge back-to-back repeats (same person, action and document on the same day) into one row with a count
+      const merged = [];
+      items.forEach(function (a) {
+        const prev = merged[merged.length - 1];
+        if (prev && prev.actorUserId === a.actorUserId && prev.action === a.action && prev.targetId === a.targetId &&
+            dayLabel(prev.createdAt) === dayLabel(a.createdAt)) prev.times++;
+        else merged.push(Object.assign({ times: 1 }, a));
+      });
       let lastDay = null;
-      box.innerHTML = items.slice(0, 10).map(function (a) {
+      box.innerHTML = merged.slice(0, 10).map(function (a) {
         const day = dayLabel(a.createdAt);
         const head = day !== lastDay ? '<p class="overline activity__day">' + esc(day) + "</p>" : "";
         lastDay = day;
@@ -204,36 +209,47 @@
         const target = a.targetId && a.action !== "DELETE_DOCUMENT"
           ? '<a class="link" href="' + esc(docHref(a.targetId)) + '">' + title + "</a>"
           : "<strong>" + title + "</strong>";
-        const time = day === "Today" || day === "Yesterday" ? KF.formatTime(a.createdAt) : "";
+        // Older days already have a date heading; only today's rows need a time
+        const time = day === "Today" ? KF.relativeTime(a.createdAt) : "";
         return head + '<div class="activity-item">' + KF.avatar({ fullName: actor }, "sm") +
           '<span class="activity-item__text"><strong>' + esc(actor) + "</strong> " + esc(verb) + " " + target +
+          (a.times > 1 ? ' <span class="text-steel num">(' + a.times + " times)</span>" : "") +
           (a.teamName ? ' <span class="text-steel">in ' + esc(a.teamName) + "</span>" : "") + "</span>" +
           (time ? '<span class="activity-item__time">' + esc(time) + "</span>" : "") + "</div>";
       }).join("");
     }
 
-    function renderTeams(teams, roles) {
+    function count(n, word) { return '<span class="num">' + n + "</span> " + word + (n === 1 ? "" : "s"); }
+
+    function renderTeams(teams) {
       const box = $("teams");
       box.removeAttribute("aria-busy");
-      box.innerHTML = teams.map(function (t) {
-        const role = roles[t.id];
-        return '<a class="card card--clickable" href="/team.html?id=' + encodeURIComponent(t.id) + '">' +
-          '<span class="btn-row" style="flex-wrap: nowrap; margin-bottom: var(--space-2)">' + KF.teamIcon(t.name) +
-          '<span class="title-sm truncate" style="flex: 1" title="' + esc(t.name || "Untitled team") + '">' + esc(t.name || "Untitled team") + "</span></span>" +
-          '<p class="caption line-clamp-2">' + (t.description ? esc(t.description) : "No description") + "</p>" +
-          (role ? '<span class="badge badge--' + esc(role.toLowerCase()) + '" style="margin-top: var(--space-3)">' + esc(role.charAt(0) + role.slice(1).toLowerCase()) + "</span>" : "") +
-          "</a>";
-      }).join("");
+      box.innerHTML = '<ul class="list" role="list">' + teams.map(function (t) {
+        const name = t.name || "Untitled team";
+        const desc = t.description && t.description.trim() !== name.trim() ? esc(t.description) : "";
+        const caption = [count(t.spaceCount || 0, "space") + " · " + count(t.documentCount || 0, "doc"), desc].filter(Boolean).join(" · ");
+        // Role only matters when it limits you; most people admin their own teams
+        const role = t.role && t.role !== "ADMIN"
+          ? '<span class="badge badge--' + esc(t.role.toLowerCase()) + '">' + esc(t.role.charAt(0) + t.role.slice(1).toLowerCase()) + "</span>" : "";
+        return '<li><a class="list-row" href="/team.html?id=' + encodeURIComponent(t.teamId) + '">' + KF.teamIcon(t.name) +
+          '<span class="list-row__main"><span class="list-row__title">' + esc(name) + "</span>" +
+          '<span class="caption truncate">' + caption + "</span></span>" + role + "</a></li>";
+      }).join("") + "</ul>";
     }
 
-    const roles = {};
+    function showLoadError(err) {
+      $("summary").textContent = "";
+      $("content").hidden = true;
+      $("no-teams").hidden = true;
+      $("load-error-msg").textContent = "Couldn't load your dashboard. " + err.message;
+      $("load-error").hidden = false;
+    }
 
     async function load() {
       $("load-error").hidden = true;
       try {
-        const res = await Promise.all([KF.api("/api/dashboard"), KF.api("/api/teams")]);
-        const d = res[0] || {};
-        const teams = Array.isArray(res[1]) ? res[1] : [];
+        const d = (await KF.api("/api/dashboard")) || {};
+        const teams = Array.isArray(d.teams) ? d.teams : [];
         const recent = Array.isArray(d.recentDocuments) ? d.recentDocuments : [];
         const activity = Array.isArray(d.recentActivity) ? d.recentActivity : [];
         d.teamCount = d.teamCount || 0; d.spaceCount = d.spaceCount || 0; d.documentCount = d.documentCount || 0;
@@ -246,17 +262,15 @@
         if (none) return;
         renderRecent(recent);
         renderActivity(activity);
-        renderTeams(teams, roles);
+        renderTeams(teams);
       } catch (err) {
-        $("summary").textContent = "";
-        $("content").hidden = true;
-        $("no-teams").hidden = true;
-        $("load-error-msg").textContent = "Couldn't load your dashboard. " + err.message;
-        $("load-error").hidden = false;
+        showLoadError(err);
       }
     }
 
+    let shellReady = false;
     $("retry-btn").addEventListener("click", function () {
+      if (!shellReady) { location.reload(); return; } // the sidebar never loaded: start over
       KF.withLoading($("retry-btn"), load);
     });
 
@@ -275,7 +289,6 @@
     function openTeamModal() {
       form.reset();
       fieldError(nameIn, $("team-name-error"), "");
-      fieldError(descIn, $("team-desc-error"), "");
       $("team-form-error").hidden = true;
       KF.openModal(modal);
       nameIn.focus();
@@ -284,16 +297,13 @@
     $("first-team-btn").addEventListener("click", openTeamModal);
 
     nameIn.addEventListener("input", function () { if (nameIn.value.trim()) fieldError(nameIn, $("team-name-error"), ""); });
-    descIn.addEventListener("input", function () { if (descIn.value.trim()) fieldError(descIn, $("team-desc-error"), ""); });
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       const name = nameIn.value.trim();
       const desc = descIn.value.trim();
       fieldError(nameIn, $("team-name-error"), name ? "" : "Give the team a name.");
-      fieldError(descIn, $("team-desc-error"), desc ? "" : "Add a short description so people know what the team is for.");
       if (!name) { nameIn.focus(); return; }
-      if (!desc) { descIn.focus(); return; }
       $("team-form-error").hidden = true;
 
       KF.withLoading($("team-submit"), async function () {
@@ -309,10 +319,10 @@
     });
 
     KF.initShell({ active: "dashboard", breadcrumbs: [{ label: "Dashboard" }] }).then(function (s) {
-      s.teams.forEach(function (t) { roles[t.teamId] = t.role; });
+      shellReady = true;
       $("greeting").textContent = greeting(s.me);
       return load();
-    });
+    }, showLoadError);
   })();
 </script>
 </body>
