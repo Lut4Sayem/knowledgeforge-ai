@@ -12,4 +12,11 @@ public interface TeamMemberRepository extends MongoRepository<TeamMember, String
     List<TeamMember> findByUserId(String userId);
     boolean existsByTeamIdAndUserId(String teamId, String userId);
 
+    // ADMIN and EDITOR can write content; VIEWER is read-only.
+    default boolean canEdit(String teamId, String userId) {
+        return findByTeamIdAndUserId(teamId, userId)
+                .map(m -> "ADMIN".equals(m.getRole()) || "EDITOR".equals(m.getRole()))
+                .orElse(false);
+    }
+
 }

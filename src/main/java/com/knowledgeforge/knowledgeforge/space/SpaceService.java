@@ -37,6 +37,9 @@ public class SpaceService {
         if(!exists){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User or Team Not Found");
         }
+        if (!teamMemberRepository.canEdit(teamId, userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only an ADMIN or EDITOR can create spaces");
+        }
 
         Space space = new Space();
         space.setName(createSpaceRequest.getName());

@@ -63,7 +63,7 @@ public class DocumentVersionService {
 
     public void restoreVersion(String documentId, String versionId) {
         // membership check
-        DocumentEntity doc = documentService.getDocumentByID(documentId);
+        DocumentEntity doc = documentService.getDocumentForEdit(documentId);
 
         DocumentVersion version = documentVersionRepository.findById(versionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Version not found"));

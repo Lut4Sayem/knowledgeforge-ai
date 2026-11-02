@@ -36,7 +36,7 @@ public class AttachmentService {
 
     public Attachment addAttachment(String documentId, CreateAttachmentRequest request) {
         // membership check
-        documentService.getDocumentByID(documentId);
+        documentService.getDocumentForEdit(documentId);
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -56,7 +56,7 @@ public class AttachmentService {
         Attachment a = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attachment not found"));
 
-        documentService.getDocumentByID(a.getDocumentId());
+        documentService.getDocumentForEdit(a.getDocumentId());
 
         attachmentRepository.deleteById(attachmentId);
     }

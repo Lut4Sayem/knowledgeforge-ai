@@ -51,9 +51,8 @@ public class DocumentService {
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
 
-        boolean exists = teamMemberRepository.existsByTeamIdAndUserId(space.getTeamId(), user.getId());
-        if (!exists) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
+        if (!teamMemberRepository.canEdit(space.getTeamId(), user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only an ADMIN or EDITOR can create documents");
         }
 
         DocumentEntity documentEntity = new DocumentEntity();
@@ -99,6 +98,15 @@ public class DocumentService {
     }
 
     public DocumentEntity getDocumentByID(String documentId) {
+        return loadDocument(documentId, false);
+    }
+
+    // Same as getDocumentByID, but also requires ADMIN or EDITOR.
+    public DocumentEntity getDocumentForEdit(String documentId) {
+        return loadDocument(documentId, true);
+    }
+
+    private DocumentEntity loadDocument(String documentId, boolean forEdit) {
         DocumentEntity document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
 
@@ -113,6 +121,9 @@ public class DocumentService {
         if (!isMember) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this team");
         }
+        if (forEdit && !teamMemberRepository.canEdit(space.getTeamId(), user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only an ADMIN or EDITOR can change documents");
+        }
 
         return document;
     }
@@ -123,7 +134,7 @@ public class DocumentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
-        DocumentEntity document = getDocumentByID(documentId);
+        DocumentEntity document = getDocumentForEdit(documentId);
 
         // Save OLD state before changing it
         saveVersionSnapshot(document, user.getId());
@@ -158,7 +169,7 @@ public class DocumentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
-        DocumentEntity document = getDocumentByID(documentId);
+        DocumentEntity document = getDocumentForEdit(documentId);
 
         Space space = spaceRepository.findById(document.getSpaceId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
