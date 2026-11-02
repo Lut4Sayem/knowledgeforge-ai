@@ -1,136 +1,172 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KnowledgeForge - Create Workspace</title>
-    <link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account · KnowledgeForge</title>
+  <meta name="description" content="Create a KnowledgeForge account and start your team's knowledge base.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body class="auth-page">
+<body>
+<main class="auth" id="main">
+  <a class="auth__brand" href="/login.html">
+    <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span>
+    KnowledgeForge
+  </a>
 
-<div class="auth-card" style="padding: 0; overflow: hidden;">
+  <section class="auth__card" aria-labelledby="register-title">
+    <h1 class="title-lg" id="register-title">Create your account</h1>
+    <p class="text-slate">One place for your team's docs, notes and decisions.</p>
 
-    <!-- Brand Header (matches design: separated top section) -->
-    <div style="padding: 32px 40px 24px; text-align: center; border-bottom: 1px solid var(--border-color);">
-        <h1 style="font-size: 28px; margin-bottom: 4px;">KnowledgeForge</h1>
-        <p style="color: var(--text-muted); font-size: 13px;">Digital Craftsmanship</p>
+    <div class="error-state" id="form-error" role="alert" hidden style="margin-top: var(--space-5)">
+      <span id="form-error-icon"></span><span class="error-state__msg" id="form-error-msg"></span>
     </div>
 
-    <!-- Form Body -->
-    <div style="padding: 32px 40px 40px;">
-        <h2 style="font-family: var(--font-serif); font-size: 22px; text-align: center; margin-bottom: 24px; color: var(--text-heading);">
-            Create Workspace
-        </h2>
+    <form id="register-form" novalidate style="margin-top: var(--space-6)">
+      <div class="field">
+        <label class="label" for="fullName">Full name</label>
+        <input class="input" id="fullName" name="fullName" type="text" autocomplete="name" required autofocus aria-describedby="fullName-error">
+        <p class="field__error" id="fullName-error" hidden></p>
+      </div>
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" required aria-describedby="email-error">
+        <p class="field__error" id="email-error" hidden></p>
+      </div>
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <div class="input-group">
+          <input class="input" id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="password-hint password-error">
+          <button type="button" class="btn btn--ghost btn--icon btn--sm input-group__btn" data-toggle-password="password" aria-pressed="false" aria-label="Show password" id="pw-toggle"></button>
+        </div>
+        <p class="hint" id="password-hint">At least 8 characters.</p>
+        <p class="field__error" id="password-error" hidden></p>
+        <p class="hint" id="caps-hint" aria-live="polite" hidden>Caps Lock is on.</p>
+      </div>
+      <div class="field">
+        <label class="label" for="confirmPassword">Confirm password</label>
+        <div class="input-group">
+          <input class="input" id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required aria-describedby="confirmPassword-error">
+          <button type="button" class="btn btn--ghost btn--icon btn--sm input-group__btn" data-toggle-password="confirmPassword" aria-pressed="false" aria-label="Show password" id="pw2-toggle"></button>
+        </div>
+        <p class="field__error" id="confirmPassword-error" hidden></p>
+      </div>
+      <button type="submit" class="btn btn--primary btn--block" id="submit" style="margin-top: var(--space-6)">Create account</button>
+    </form>
+  </section>
 
-        <!-- Error / Success Message Container (Hidden by default) -->
-        <div id="message" class="alert-error" style="display: none;"></div>
+  <p class="auth__footer">Already have an account? <a class="link" href="/login.html" id="login-link">Log in</a></p>
+</main>
+<footer class="site-footer" data-kf-footer></footer>
 
-        <form id="registerForm">
-            <div class="form-group">
-                <label for="fullName" class="form-label">Full Name</label>
-                <input type="text" id="fullName" class="form-control" placeholder="John Doe" required>
-            </div>
-
-            <div class="form-group">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" id="email" class="form-control" placeholder="john@example.com" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" id="password" class="form-control" placeholder="••••••••" required>
-            </div>
-
-            <div class="form-group">
-                <label for="confirmPassword" class="form-label">Confirm Password</label>
-                <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••" required>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-full" style="margin-top: 8px;">
-                REGISTER →
-            </button>
-        </form>
-    </div>
-
-    <!-- Footer -->
-    <div class="auth-footer" style="margin-top: 0; border-top: 1px solid var(--border-color); padding: 20px 40px;">
-        Already have a workspace? <a href="/login.html" style="font-weight: 600;">Log in</a>
-    </div>
-</div>
-
+<script src="/app.js"></script>
 <script>
-    const form = document.getElementById("registerForm");
-    const message = document.getElementById("message");
+  (function () {
+    const form = document.getElementById("register-form");
+    const fullName = document.getElementById("fullName");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const confirm = document.getElementById("confirmPassword");
+    const submit = document.getElementById("submit");
+    const formError = document.getElementById("form-error");
+    const fields = [fullName, email, password, confirm];
 
-    form.addEventListener("submit", async function (event) {
-        event.preventDefault();
+    document.getElementById("pw-toggle").innerHTML = KF.icon("eye");
+    document.getElementById("pw2-toggle").innerHTML = KF.icon("eye");
+    document.getElementById("form-error-icon").outerHTML = KF.icon("alert-circle");
 
-        // Reset message state
-        message.style.display = "none";
-        message.className = "alert-error";
-        message.innerHTML = "";
-
-        const fullName = document.getElementById("fullName").value;
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-        const confirmPassword = document.getElementById("confirmPassword").value;
-
-        if (password !== confirmPassword) {
-            showError("Passwords do not match.");
-            return;
+    // Same-origin paths only, so ?next= can't send people to another site.
+    function nextParam() {
+      const raw = new URLSearchParams(location.search).get("next");
+      if (!raw) return "";
+      try {
+        const url = new URL(raw, location.origin);
+        if (url.origin === location.origin && !/^\/(login|register)\.html/.test(url.pathname)) {
+          return "?next=" + encodeURIComponent(url.pathname + url.search + url.hash);
         }
+      } catch (e) { /* ignore */ }
+      return "";
+    }
+    const loginUrl = "/login.html" + nextParam();
+    document.getElementById("login-link").href = loginUrl;
 
-        const response = await fetch("/api/auth/register", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                fullName: fullName,
-                email: email,
-                password: password
-            })
-        });
+    function setFieldError(input, message) {
+      const err = document.getElementById(input.id + "-error");
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+      err.hidden = !message;
+      err.innerHTML = message ? KF.icon("alert-circle", "icon--sm") + KF.escapeHtml(message) : "";
+    }
 
-        if (response.ok) {
-            // Success state (soft green style via inline override)
-            message.style.display = "flex";
-            message.style.background = "#E6F4EA";
-            message.style.borderColor = "#A8D5B5";
-            message.style.color = "#137333";
-            message.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
-                    <span>Registration successful. Redirecting to login...</span>
-                `;
-            setTimeout(function () {
-                window.location.href = "/login.html";
-            }, 1000);
-        } else if (response.status === 409) {
-            showError("Email already registered.");
-        } else {
-            showError("Registration failed. Please try again.");
-        }
+    function showFormError(message) {
+      formError.hidden = !message;
+      document.getElementById("form-error-msg").textContent = message || "";
+    }
+
+    function validate() {
+      let ok = true;
+      function check(input, bad) { setFieldError(input, bad); if (bad) ok = false; }
+      check(fullName, fullName.value.trim() ? "" : "Enter your full name.");
+      const mail = email.value.trim();
+      check(email, !mail ? "Enter your email." : !email.checkValidity() ? "Enter a full email address, like name@example.com." : "");
+      check(password, !password.value ? "Choose a password." : password.value.length < 8 ? "Use at least 8 characters." : "");
+      check(confirm, !confirm.value ? "Type your password again." : confirm.value !== password.value ? "Passwords don't match." : "");
+      if (!ok) form.querySelector('[aria-invalid="true"]').focus();
+      return ok;
+    }
+
+    // Clear a field's error as soon as the person starts fixing it.
+    fields.forEach(function (input) {
+      input.addEventListener("input", function () {
+        if (input.getAttribute("aria-invalid") === "true") setFieldError(input, "");
+        if (input === password && confirm.getAttribute("aria-invalid") === "true") setFieldError(confirm, "");
+        showFormError("");
+      });
     });
 
-    function showError(text) {
-        message.style.display = "flex";
-        message.style.background = "";
-        message.style.borderColor = "";
-        message.style.color = "";
-        message.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>${text}</span>
-            `;
-    }
-</script>
+    const capsHint = document.getElementById("caps-hint");
+    [password, confirm].forEach(function (input) {
+      ["keydown", "keyup"].forEach(function (type) {
+        input.addEventListener(type, function (e) {
+          if (e.getModifierState) capsHint.hidden = !e.getModifierState("CapsLock");
+        });
+      });
+      input.addEventListener("blur", function () { capsHint.hidden = true; });
+    });
 
+    // Already logged in: skip the form.
+    KF.api("/api/me", { redirectOn401: false })
+      .then(function (me) { if (me) location.replace("/dashboard.html"); })
+      .catch(function () { /* not logged in: stay here */ });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      showFormError("");
+      if (!validate()) return;
+
+      KF.withLoading(submit, async function () {
+        try {
+          await KF.api("/api/auth/register", {
+            json: { fullName: fullName.value.trim(), email: email.value.trim(), password: password.value },
+            redirectOn401: false
+          });
+        } catch (err) {
+          if (err.status === 409) {
+            setFieldError(email, "That email already has an account.");
+            document.getElementById("email-error").insertAdjacentHTML("beforeend", ' <a class="link" href="' + loginUrl + '">Log in instead</a>');
+            email.focus();
+          } else {
+            showFormError(err.status ? "Couldn't create your account: " + err.message : err.message);
+          }
+          return;
+        }
+        KF.toast("Account created. Taking you to log in…");
+        setTimeout(function () { location.href = loginUrl; }, 1000);
+      });
+    });
+  })();
+</script>
 </body>
 </html>
