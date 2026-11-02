@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Styleguide · KnowledgeForge</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Styleguide-only helpers (temporary page) */
+    .sg-section { padding-top: var(--space-10); }
+    .sg-section:first-of-type { padding-top: 0; }
+    .sg-section > h2 { margin-bottom: var(--space-1); }
+    .sg-section > .sg-lead { color: var(--color-slate); margin-bottom: var(--space-5); max-width: 640px; }
+    .sg-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+    .sg-row + .sg-row { margin-top: var(--space-4); }
+    .sg-sub { margin: var(--space-6) 0 var(--space-3); }
+    .sg-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
+    .sg-swatch { border: 1px solid var(--color-hairline); border-radius: var(--radius-md); overflow: hidden; }
+    .sg-swatch__chip { height: 48px; }
+    .sg-swatch__info { padding: var(--space-2) var(--space-3); font-size: 12px; }
+    .sg-swatch__info code { color: var(--color-steel); }
+    .sg-type > * + * { margin-top: var(--space-3); }
+    .sg-type-row { display: grid; grid-template-columns: 120px 1fr; gap: var(--space-4); align-items: baseline; }
+    .sg-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-5); }
+    .is-focused { border-color: var(--color-primary) !important; box-shadow: 0 0 0 2px var(--color-primary-ring); }
+    .sg-hover { background: var(--color-hover) !important; }
+    @media (max-width: 639px) { .sg-type-row { grid-template-columns: 1fr; gap: 2px; } }
+  </style>
+</head>
+<body>
+<main id="main" class="page">
+
+  <header class="page-header">
+    <div>
+      <h1 class="title-lg">Styleguide</h1>
+      <p class="page-header__meta">Every component from DESIGN.md §6 in each of its states. Temporary page for review.</p>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn btn--secondary" id="sg-open-modal">Open modal</button>
+      <button type="button" class="btn btn--primary" id="sg-toast">Show toast</button>
+    </div>
+  </header>
+
+  <!-- Colours -->
+  <section class="sg-section" aria-labelledby="sg-colours">
+    <h2 class="title-md" id="sg-colours">Colour</h2>
+    <p class="sg-lead">One teal for the main action and the current place. Warm stone frame, white sheet. Tints only for tags, people and teams.</p>
+    <div class="sg-swatches" id="sg-swatches"></div>
+  </section>
+
+  <!-- Type -->
+  <section class="sg-section" aria-labelledby="sg-typeh">
+    <h2 class="title-md" id="sg-typeh">Type</h2>
+    <p class="sg-lead">Instrument Sans for everything, Fragment Mono only for code.</p>
+    <div class="sg-type">
+      <div class="sg-type-row"><span class="caption">title-xl 32</span><span class="title-xl">Onboarding handbook</span></div>
+      <div class="sg-type-row"><span class="caption">title-lg 24</span><span class="title-lg">Platform team</span></div>
+      <div class="sg-type-row"><span class="caption">title-md 20</span><span class="title-md">Recent documents</span></div>
+      <div class="sg-type-row"><span class="caption">title-sm 16</span><span class="title-sm">Release checklist</span></div>
+      <div class="sg-type-row"><span class="caption">body-lg 16</span><span class="body-lg">Every deploy goes through staging first. Write down what changed and who signed it off.</span></div>
+      <div class="sg-type-row"><span class="caption">body 14</span><span class="body">Spaces group documents inside a team. Viewers can read and comment.</span></div>
+      <div class="sg-type-row"><span class="caption">body-medium 14</span><span class="body-medium">Members and roles</span></div>
+      <div class="sg-type-row"><span class="caption">caption 13</span><span class="caption">Updated 3 h ago by Amara Okafor</span></div>
+      <div class="sg-type-row"><span class="caption">caption-bold 12</span><span class="caption-bold">PUBLISHED</span></div>
+      <div class="sg-type-row"><span class="caption">overline 11</span><span class="overline">Teams</span></div>
+      <div class="sg-type-row"><span class="caption">mono 14</span><code>./mvnw -q test -Dtest=AccessRulesTest</code></div>
+      <div class="sg-type-row"><span class="caption">tabular</span><span class="num title-lg">1,204 · 87 · 3,019</span></div>
+    </div>
+  </section>
+
+  <!-- Buttons -->
+  <section class="sg-section" aria-labelledby="sg-buttons">
+    <h2 class="title-md" id="sg-buttons">Buttons</h2>
+    <p class="sg-lead">36px, 8px radius. One primary per view. Hover and focus are live: hover or Tab through them.</p>
+    <div class="sg-row">
+      <button type="button" class="btn btn--primary">New document</button>
+      <button type="button" class="btn btn--secondary">Cancel</button>
+      <button type="button" class="btn btn--ghost">Edit</button>
+      <button type="button" class="btn btn--danger">Delete</button>
+      <button type="button" class="btn btn--danger-solid">Delete document</button>
+      <button type="button" class="btn btn--link">View all</button>
+    </div>
+    <div class="sg-row">
+      <button type="button" class="btn btn--primary">${plus} Create space</button>
+      <button type="button" class="btn btn--secondary">${download} Export</button>
+      <button type="button" class="btn btn--ghost btn--icon" aria-label="More actions" data-tooltip="More actions">${more}</button>
+      <button type="button" class="btn btn--ghost btn--icon" aria-label="Edit" data-tooltip="Edit">${pencil}</button>
+      <button type="button" class="btn btn--danger btn--icon" aria-label="Delete" data-tooltip="Delete">${trash}</button>
+    </div>
+    <div class="sg-row">
+      <button type="button" class="btn btn--primary btn--sm">Save</button>
+      <button type="button" class="btn btn--secondary btn--sm">Restore</button>
+      <button type="button" class="btn btn--ghost btn--sm">Reply</button>
+      <button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Copy link" data-tooltip="Copy link">${copy}</button>
+    </div>
+    <div class="sg-row">
+      <button type="button" class="btn btn--primary sg-hover" style="background:var(--color-primary-pressed)!important">Hover</button>
+      <button type="button" class="btn btn--secondary sg-hover">Hover</button>
+      <button type="button" class="btn btn--primary" disabled>Disabled</button>
+      <button type="button" class="btn btn--secondary" disabled>Disabled</button>
+      <button type="button" class="btn btn--primary is-loading" aria-busy="true">Saving</button>
+      <button type="button" class="btn btn--secondary is-loading" aria-busy="true">Loading</button>
+      <button type="button" class="btn btn--primary" id="sg-load">Click to load</button>
+    </div>
+  </section>
+
+  <!-- Inputs -->
+  <section class="sg-section" aria-labelledby="sg-inputs">
+    <h2 class="title-md" id="sg-inputs">Inputs</h2>
+    <p class="sg-lead">40px fields, label above, 2px teal ring on focus.</p>
+    <div class="sg-forms">
+      <div>
+        <div class="field">
+          <label class="label" for="i1">Space name</label>
+          <input class="input" id="i1" placeholder="e.g. Engineering handbook">
+        </div>
+        <div class="field">
+          <label class="label" for="i2">Team name (focused)</label>
+          <input class="input is-focused" id="i2" value="Platform">
+        </div>
+        <div class="field">
+          <label class="label" for="i3">Email</label>
+          <input class="input" id="i3" type="email" value="amara@" aria-invalid="true" aria-describedby="i3e">
+          <p class="field__error" id="i3e">${alertc} Enter a full email address.</p>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label class="label" for="i4">Password</label>
+          <input class="input" id="i4" type="password" value="hunter22" aria-describedby="i4h">
+          <p class="hint" id="i4h">At least 8 characters.</p>
+        </div>
+        <div class="field">
+          <label class="label" for="i5">Created by (disabled)</label>
+          <input class="input" id="i5" value="Amara Okafor" disabled>
+        </div>
+        <div class="field">
+          <label class="label" for="i6">Status</label>
+          <select class="select" id="i6"><option>Draft</option><option>Published</option></select>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label class="label" for="i7">Comment</label>
+          <textarea class="textarea" id="i7" placeholder="Write a comment"></textarea>
+        </div>
+        <div class="field">
+          <span class="label" id="sg-choices">Choices</span>
+          <div class="sg-row" role="group" aria-labelledby="sg-choices">
+            <label class="check"><input type="checkbox" checked> Published only</label>
+            <label class="check"><input type="radio" name="r" checked> Editor</label>
+            <label class="check"><input type="radio" name="r"> Viewer</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3 class="title-sm sg-sub">Search field</h3>
+    <div class="search-field" style="max-width:480px">
+      ${search}
+      <label class="sr-only" for="sg-search">Search</label>
+      <input class="input" id="sg-search" type="search" placeholder="Search documents, spaces, teams" data-search-input>
+      <kbd>Ctrl K</kbd>
+    </div>
+    <h3 class="title-sm sg-sub">Invite link box</h3>
+    <div class="copy-box" style="max-width:520px">
+      <label class="sr-only" for="sg-invite">Invite link</label>
+      <input class="input" id="sg-invite" readonly value="https://knowledgeforge-ai-1.onrender.com/join.html?code=7f3a9c">
+      <button type="button" class="btn btn--secondary" id="sg-copy">${copy} Copy</button>
+    </div>
+    <h3 class="title-sm sg-sub">Markdown editor</h3>
+    <label class="sr-only" for="sg-md">Document content</label>
+    <textarea class="textarea textarea--code" id="sg-md" style="min-height:120px">## Release checklist
+
+- Run `./mvnw test`
+- Tag the commit</textarea>
+  </section>
+
+  <!-- Cards & lists -->
+  <section class="sg-section" aria-labelledby="sg-cards">
+    <h2 class="title-md" id="sg-cards">Cards, stats and lists</h2>
+    <p class="sg-lead">Flat cards with a hairline. Only clickable cards get a shadow, on hover.</p>
+    <div class="stats" style="margin-bottom:var(--space-4)">
+      <div class="stat"><span class="stat__label">Teams</span><span class="stat__value">3</span></div>
+      <div class="stat"><span class="stat__label">Spaces</span><span class="stat__value">11</span></div>
+      <div class="stat"><span class="stat__label">Documents</span><span class="stat__value">148</span></div>
+      <div class="stat"><span class="stat__label">Drafts</span><span class="stat__value">0</span></div>
+    </div>
+    <div class="grid grid--3">
+      <div class="card">
+        <div class="card__header"><h3 class="title-sm">Plain card</h3><span class="count">4</span></div>
+        <p class="text-slate">A card holds one block of related content. 20px padding, 12px radius.</p>
+      </div>
+      <a class="card card--clickable" href="#sg-cards">
+        <div class="sg-row" style="gap:var(--space-2);margin-bottom:var(--space-2)">${teamIcon:Engineering handbook}<h3 class="title-sm">Engineering handbook</h3></div>
+        <p class="caption">24 documents · updated yesterday</p>
+      </a>
+      <a class="card card--clickable sg-hover" href="#sg-cards" style="box-shadow:var(--shadow-1);border-color:var(--color-hairline-strong);background:var(--color-canvas)!important">
+        <div class="sg-row" style="gap:var(--space-2);margin-bottom:var(--space-2)">${teamIcon:Incident reviews}<h3 class="title-sm">Incident reviews (hover)</h3></div>
+        <p class="caption">9 documents · updated 4 days ago</p>
+      </a>
+    </div>
+
+    <h3 class="title-sm sg-sub">List rows</h3>
+    <div class="card card--flush">
+      <ul class="list" role="list">
+        <li><a class="list-row" href="#sg-cards">${filetext}<div class="list-row__main"><span class="list-row__title">Deploying to Render</span><span class="caption truncate">Engineering handbook</span></div><span class="badge badge--published">Published</span><span class="list-row__meta">2 h ago</span></a></li>
+        <li><a class="list-row sg-hover" href="#sg-cards">${filetext}<div class="list-row__main"><span class="list-row__title">On-call rotation (hover)</span><span class="caption truncate">Incident reviews</span></div><span class="badge badge--draft">Draft</span><span class="list-row__meta">yesterday</span></a></li>
+        <li><a class="list-row" href="#sg-cards">${filetext}<div class="list-row__main"><span class="list-row__title">A long document title that has to truncate before it pushes the meta off the row</span><span class="caption truncate">Research notes</span></div><span class="badge badge--published">Published</span><span class="list-row__meta">12 Oct 2026</span></a></li>
+      </ul>
+    </div>
+
+    <h3 class="title-sm sg-sub">Table (stacks into rows on phones)</h3>
+    <div class="table-wrap">
+      <table class="table table--stack">
+        <thead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col" class="num">Documents</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          <tr><td data-label="Member"><span class="sg-row" style="gap:var(--space-2)">${avatar:Amara Okafor}<span>Amara Okafor</span></span></td><td data-label="Role"><span class="badge badge--admin">Admin</span></td><td data-label="Documents" class="num">42</td><td data-label="" class="cell-actions"><button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Member actions">${more}</button></td></tr>
+          <tr><td data-label="Member"><span class="sg-row" style="gap:var(--space-2)">${avatar:Lukas Brandt}<span>Lukas Brandt</span></span></td><td data-label="Role"><span class="badge badge--editor">Editor</span></td><td data-label="Documents" class="num">17</td><td data-label="" class="cell-actions"><button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Member actions">${more}</button></td></tr>
+          <tr><td data-label="Member"><span class="sg-row" style="gap:var(--space-2)">${avatar:Mei Tanaka}<span>Mei Tanaka</span></span></td><td data-label="Role"><span class="badge badge--viewer">Viewer</span></td><td data-label="Documents" class="num">0</td><td data-label="" class="cell-actions"><button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Member actions">${more}</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Badges & tags -->
+  <section class="sg-section" aria-labelledby="sg-badges">
+    <h2 class="title-md" id="sg-badges">Badges, tags and chips</h2>
+    <p class="sg-lead">Status always has text, never colour alone. Tag colour comes from a hash of the name.</p>
+    <div class="sg-row">
+      <span class="badge badge--draft">Draft</span>
+      <span class="badge badge--published">Published</span>
+      <span class="badge badge--admin">Admin</span>
+      <span class="badge badge--editor">Editor</span>
+      <span class="badge badge--viewer">Viewer</span>
+      <span class="badge badge--pending badge--dot">Pending</span>
+      <span class="badge badge--error">Rejected</span>
+      <span class="count">12</span>
+    </div>
+    <div class="sg-row" id="sg-tags"></div>
+    <div class="sg-row">
+      <span class="tag tint-sky">onboarding <button type="button" class="tag__remove" aria-label="Remove tag onboarding">${x}</button></span>
+      <span class="tag tint-mint">backend <button type="button" class="tag__remove" aria-label="Remove tag backend">${x}</button></span>
+    </div>
+    <div class="chip-row sg-row" role="group" aria-label="Filter by type">
+      <button type="button" class="chip" aria-pressed="true">All</button>
+      <button type="button" class="chip" aria-pressed="false">Documents</button>
+      <button type="button" class="chip" aria-pressed="false">Spaces</button>
+      <button type="button" class="chip" aria-pressed="false">Teams</button>
+    </div>
+  </section>
+
+  <!-- Navigation -->
+  <section class="sg-section" aria-labelledby="sg-nav">
+    <h2 class="title-md" id="sg-nav">Tabs and breadcrumbs</h2>
+    <p class="sg-lead">Underline tabs with arrow-key support. Breadcrumbs live in the top bar.</p>
+    <div class="tabs" role="tablist" aria-label="Team sections" id="sg-tabs">
+      <button type="button" class="tab" role="tab" id="t1" aria-controls="p1" aria-selected="true">Spaces <span class="count">4</span></button>
+      <button type="button" class="tab" role="tab" id="t2" aria-controls="p2" aria-selected="false">Members <span class="count">6</span></button>
+      <button type="button" class="tab" role="tab" id="t3" aria-controls="p3" aria-selected="false">Requests <span class="count">2</span></button>
+    </div>
+    <div class="tab-panel" role="tabpanel" id="p1" aria-labelledby="t1"><p class="text-slate">Spaces panel. Use the arrow keys to move between tabs.</p></div>
+    <div class="tab-panel" role="tabpanel" id="p2" aria-labelledby="t2" hidden><p class="text-slate">Members panel.</p></div>
+    <div class="tab-panel" role="tabpanel" id="p3" aria-labelledby="t3" hidden><p class="text-slate">Requests panel.</p></div>
+    <div style="margin-top:var(--space-5)">
+      <nav class="breadcrumbs" aria-label="Breadcrumb example"><ol><li><a href="#sg-nav">Platform</a></li><li><a href="#sg-nav">Engineering handbook</a></li><li><span aria-current="page">Deploying to Render</span></li></ol></nav>
+    </div>
+    <div class="load-more"><button type="button" class="btn btn--secondary">Load more</button></div>
+  </section>
+
+  <!-- Overlays -->
+  <section class="sg-section" aria-labelledby="sg-overlays">
+    <h2 class="title-md" id="sg-overlays">Modal, dropdown and toast</h2>
+    <p class="sg-lead">Static previews below; the buttons open the real ones (Esc and backdrop click close them).</p>
+    <div class="sg-row" style="margin-bottom:var(--space-5)">
+      <button type="button" class="btn btn--secondary" id="sg-open-modal2">Open modal</button>
+      <button type="button" class="btn btn--danger" id="sg-confirm">${trash} Delete document</button>
+      <div class="dropdown">
+        <button type="button" class="btn btn--secondary" aria-haspopup="menu" aria-expanded="false">Actions ${chevron}</button>
+        <div class="menu" role="menu" hidden>
+          <button type="button" class="menu__item" role="menuitem">${pencil} Rename</button>
+          <button type="button" class="menu__item" role="menuitem">${download} Export as Markdown</button>
+          <div class="menu__sep" role="separator"></div>
+          <button type="button" class="menu__item menu__item--danger" role="menuitem">${trash} Delete</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn--secondary" id="sg-toast-err">Error toast</button>
+    </div>
+    <div class="grid grid--2" style="align-items:start">
+      <div class="modal modal--static" role="presentation">
+        <div class="modal__header"><h3 class="title-md">Create space</h3><button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Close">${x}</button></div>
+        <div class="modal__body">
+          <div class="field"><label class="label" for="m1">Name</label><input class="input" id="m1" value="Incident reviews"></div>
+          <div class="field"><label class="label" for="m2">Description</label><textarea class="textarea" id="m2" placeholder="What goes in this space?"></textarea></div>
+        </div>
+        <div class="modal__footer"><button type="button" class="btn btn--secondary">Cancel</button><button type="button" class="btn btn--primary">Create space</button></div>
+      </div>
+      <div>
+        <div class="menu menu--static" role="menu" aria-label="Static menu example">
+          <button type="button" class="menu__item" role="menuitem">${pencil} Rename</button>
+          <button type="button" class="menu__item sg-hover" role="menuitem">${download} Export (hover)</button>
+          <div class="menu__sep" role="separator"></div>
+          <button type="button" class="menu__item menu__item--danger" role="menuitem">${trash} Delete</button>
+        </div>
+        <div class="toast-region toast-region--static" style="margin-top:var(--space-5)">
+          <div class="toast toast--success">${checkc}<div class="toast__msg">Document saved</div><button type="button" class="toast__close" aria-label="Dismiss">${xs}</button></div>
+          <div class="toast toast--error">${alertc}<div class="toast__msg">Couldn't upload report.pdf: files over 5 MB aren't allowed.</div><button type="button" class="toast__close" aria-label="Dismiss">${xs}</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- States -->
+  <section class="sg-section" aria-labelledby="sg-states">
+    <h2 class="title-md" id="sg-states">Empty, loading and error</h2>
+    <p class="sg-lead">Every list has all three. Skeletons for lists, spinners only inside buttons.</p>
+    <div class="grid grid--2">
+      <div class="card card--flush">
+        <div class="empty">
+          <div class="empty__icon">${filetext}</div>
+          <h3 class="title-sm">No documents yet</h3>
+          <p class="empty__text">Documents in this space show up here. Start with a page your team asks about the most.</p>
+          <button type="button" class="btn btn--primary">${plus} New document</button>
+        </div>
+      </div>
+      <div class="card card--flush" aria-busy="true" aria-label="Loading documents">
+        <div class="skeleton-row"><span class="skeleton skeleton--avatar"></span><span class="skeleton skeleton--line"></span></div>
+        <div class="skeleton-row"><span class="skeleton skeleton--avatar"></span><span class="skeleton skeleton--line" style="max-width:70%"></span></div>
+        <div class="skeleton-row"><span class="skeleton skeleton--avatar"></span><span class="skeleton skeleton--line" style="max-width:85%"></span></div>
+        <div class="skeleton-row"><span class="skeleton skeleton--avatar"></span><span class="skeleton skeleton--line" style="max-width:55%"></span></div>
+      </div>
+    </div>
+    <div class="error-state" role="alert" style="margin-top:var(--space-4)">
+      ${alertc}<span class="error-state__msg">Couldn't load the activity feed.</span>
+      <button type="button" class="btn btn--secondary btn--sm">${refresh} Retry</button>
+    </div>
+    <div class="grid grid--3" style="margin-top:var(--space-4)">
+      <div class="skeleton skeleton--card"></div><div class="skeleton skeleton--card"></div><div class="skeleton skeleton--card"></div>
+    </div>
+  </section>
+
+  <!-- KnowledgeForge-specific -->
+  <section class="sg-section" aria-labelledby="sg-kf">
+    <h2 class="title-md" id="sg-kf">KnowledgeForge components</h2>
+    <p class="sg-lead">People, teams, files and the document itself.</p>
+
+    <h3 class="title-sm sg-sub">Avatars and team icons</h3>
+    <div class="sg-row" id="sg-avatars"></div>
+    <div class="sg-row" id="sg-teamicons"></div>
+
+    <h3 class="title-sm sg-sub">File chips</h3>
+    <div class="file-list">
+      <a class="file-chip" href="#sg-kf" title="architecture-overview-2026.pdf">${filec}<span class="file-chip__name">architecture-overview-2026.pdf</span><span class="file-chip__size">1.2 MB</span><button type="button" class="file-chip__remove" aria-label="Delete architecture-overview-2026.pdf">${xs}</button></a>
+      <a class="file-chip" href="#sg-kf" title="dashboard-screenshot.png">${imagec}<span class="file-chip__name">dashboard-screenshot.png</span><span class="file-chip__size">348 KB</span></a>
+      <a class="file-chip" href="#sg-kf" title="https://docs.spring.io/spring-boot">${linkc}<span class="file-chip__name">Spring Boot reference</span><span class="file-chip__size">docs.spring.io</span></a>
+    </div>
+
+    <h3 class="title-sm sg-sub">Document view</h3>
+    <article class="card">
+      <h1 class="title-xl">Deploying to Render</h1>
+      <div class="meta-line" style="margin:var(--space-3) 0 var(--space-6)">
+        ${avatarsm:Amara Okafor}<span>Amara Okafor</span><span class="meta-line__sep" aria-hidden="true"></span>
+        <span>Updated 2 h ago</span><span class="meta-line__sep" aria-hidden="true"></span>
+        <span class="badge badge--published">Published</span>
+        <span class="tag tint-sky">deploy</span><span class="tag tint-peach">ops</span>
+      </div>
+      <div class="prose">
+        <p>The app runs on Render from the <code>Dockerfile</code> in the repo root. Every push to <a href="#sg-kf">main</a> builds a new image.</p>
+        <h2>Before you deploy</h2>
+        <ul><li>Run the tests locally.</li><li>Check that <mark>SPRING_DATA_MONGODB_URI</mark> is set on the service.</li></ul>
+        <pre><code>./mvnw -q test
+git push origin main</code></pre>
+        <blockquote>Free instances sleep after 15 minutes. The first request after that takes about 30 seconds.</blockquote>
+      </div>
+    </article>
+
+    <h3 class="title-sm sg-sub">Editor</h3>
+    <div class="card">
+      <label class="sr-only" for="sg-title">Title</label>
+      <input class="editor-title" id="sg-title" value="Release checklist" placeholder="Untitled">
+      <div class="editor-toolbar">
+        <label class="sr-only" for="sg-status">Status</label>
+        <select class="select select--sm" id="sg-status" style="width:auto"><option>Draft</option><option>Published</option></select>
+        <span class="tag tint-mint">release <button type="button" class="tag__remove" aria-label="Remove tag release">${x}</button></span>
+        <span class="unsaved">Unsaved changes</span>
+        <span style="margin-left:auto" class="btn-row">
+          <button type="button" class="btn btn--ghost btn--sm">${upload} Attach</button>
+          <button type="button" class="btn btn--primary btn--sm">Save</button>
+        </span>
+      </div>
+      <div class="editor-split">
+        <label class="sr-only" for="sg-src">Markdown</label>
+        <textarea class="textarea textarea--code" id="sg-src">## Steps
+
+1. Merge to `main`
+2. Watch the Render build
+3. Smoke-test login</textarea>
+        <div class="editor-preview prose"><h2>Steps</h2><ol><li>Merge to <code>main</code></li><li>Watch the Render build</li><li>Smoke-test login</li></ol></div>
+      </div>
+    </div>
+
+    <div class="grid grid--2" style="margin-top:var(--space-6);align-items:start">
+      <div>
+        <h3 class="title-sm sg-sub" style="margin-top:0">Comments</h3>
+        <div class="comment">${avatar:Lukas Brandt}<div class="comment__body"><div class="comment__head"><span class="comment__author">Lukas Brandt</span><span class="comment__time">1 h ago</span><button type="button" class="btn btn--ghost btn--icon btn--sm comment__delete" aria-label="Delete comment">${trash}</button></div><p class="comment__text">Can we add the rollback steps here too?</p></div></div>
+        <div class="comment">${avatar:Mei Tanaka}<div class="comment__body"><div class="comment__head"><span class="comment__author">Mei Tanaka</span><span class="comment__time">just now</span></div><p class="comment__text">Added them under "If the build fails".</p></div></div>
+        <form class="composer" onsubmit="return false">${avatar:Amara Okafor}<label class="sr-only" for="sg-comment">Add a comment</label><textarea class="textarea" id="sg-comment" placeholder="Add a comment"></textarea></form>
+        <div class="btn-row btn-row--end" style="margin-top:var(--space-2)"><button type="button" class="btn btn--secondary btn--sm">Comment</button></div>
+      </div>
+      <div>
+        <h3 class="title-sm sg-sub" style="margin-top:0">Version history</h3>
+        <ol class="versions">
+          <li class="version is-current"><span class="version__num">v4</span><span class="version__info">Amara Okafor · today, 14:02</span><span class="badge">Current</span></li>
+          <li class="version"><span class="version__num">v3</span><span class="version__info">Lukas Brandt · yesterday</span><button type="button" class="btn btn--secondary btn--sm">Restore</button></li>
+          <li class="version"><span class="version__num">v2</span><span class="version__info">Amara Okafor · 28 Oct 2026</span><button type="button" class="btn btn--secondary btn--sm">Restore</button></li>
+        </ol>
+        <h3 class="title-sm sg-sub">Activity</h3>
+        <p class="overline activity__day">Today</p>
+        <div class="activity-item">${avatarsm:Amara Okafor}<span class="activity-item__text"><strong>Amara Okafor</strong> updated <strong>Deploying to Render</strong></span><span class="activity-item__time">2 h ago</span></div>
+        <div class="activity-item">${avatarsm:Mei Tanaka}<span class="activity-item__text"><strong>Mei Tanaka</strong> created <strong>Release checklist</strong></span><span class="activity-item__time">5 h ago</span></div>
+        <p class="overline activity__day">Yesterday</p>
+        <div class="activity-item">${avatarsm:Lukas Brandt}<span class="activity-item__text"><strong>Lukas Brandt</strong> restored <strong>On-call rotation</strong></span><span class="activity-item__time">16:40</span></div>
+      </div>
+    </div>
+  </section>
+
+  <dialog class="modal" id="sg-modal" aria-labelledby="sg-modal-title">
+    <form method="dialog">
+      <div class="modal__header"><h2 class="title-md" id="sg-modal-title">Create team</h2><button type="button" class="btn btn--ghost btn--icon btn--sm" data-close aria-label="Close">${x}</button></div>
+      <div class="modal__body"><div class="field"><label class="label" for="sg-team">Team name</label><input class="input" id="sg-team" placeholder="e.g. Platform"></div></div>
+      <div class="modal__footer"><button type="button" class="btn btn--secondary" data-close>Cancel</button><button class="btn btn--primary" value="ok">Create team</button></div>
+    </form>
+  </dialog>
+</main>
+
+<script src="/app.js"></script>
+<script>
+  // Fake API so the real shell renders without a login. Styleguide only.
+  const realFetch = window.fetch;
+  window.fetch = function (url, opts) {
+    const fake = {
+      "/api/me": { id: "u1", email: "amara@example.org", fullName: "Amara Okafor", profilePicture: null },
+      "/api/me/teams": [
+        { teamId: "t1", teamName: "Platform", role: "ADMIN" },
+        { teamId: "t2", teamName: "Design ops", role: "EDITOR" },
+        { teamId: "t3", teamName: "Research guild", role: "VIEWER" }
+      ]
+    }[url];
+    if (fake) return Promise.resolve(new Response(JSON.stringify(fake), { status: 200, headers: { "Content-Type": "application/json" } }));
+    return realFetch.apply(this, arguments);
+  };
+
+  // Expand ${icon} and ${avatar:Name} placeholders so the markup above stays readable.
+  const main = document.getElementById("main");
+  const map = {
+    plus: KF.icon("plus"), download: KF.icon("download"), upload: KF.icon("upload"), more: KF.icon("more"),
+    pencil: KF.icon("pencil"), trash: KF.icon("trash"), copy: KF.icon("copy"), search: KF.icon("search"),
+    x: KF.icon("x"), xs: KF.icon("x", "icon--sm"), chevron: KF.icon("chevron-down", "icon--sm"),
+    alertc: KF.icon("alert-circle"), checkc: KF.icon("check-circle"), refresh: KF.icon("refresh", "icon--sm"),
+    filetext: KF.icon("file-text", "list-row__icon text-steel"),
+    filec: KF.icon("file", "file-chip__icon"), imagec: KF.icon("image", "file-chip__icon"), linkc: KF.icon("link", "file-chip__icon")
+  };
+  main.innerHTML = main.innerHTML
+    .replace(/\$\{avatarsm:([^}]+)\}/g, (m, n) => KF.avatar({ fullName: n }, "sm"))
+    .replace(/\$\{avatar:([^}]+)\}/g, (m, n) => KF.avatar({ fullName: n }))
+    .replace(/\$\{teamIcon:([^}]+)\}/g, (m, n) => KF.teamIcon(n))
+    .replace(/\$\{(\w+)\}/g, (m, k) => map[k] || m);
+
+  // Swatches
+  const sw = [
+    ["--color-primary", "Primary"], ["--color-primary-pressed", "Primary pressed"], ["--color-primary-soft", "Primary soft"],
+    ["--color-canvas", "Canvas"], ["--color-surface", "Surface"], ["--color-hover", "Hover"], ["--color-hairline", "Hairline"],
+    ["--color-ink", "Ink"], ["--color-charcoal", "Charcoal"], ["--color-slate", "Slate"], ["--color-steel", "Steel"],
+    ["--color-success-text", "Success"], ["--color-warning-text", "Warning"], ["--color-error-text", "Error"]
+  ];
+  const cs = getComputedStyle(document.documentElement);
+  document.getElementById("sg-swatches").innerHTML = sw.map(([v, n]) =>
+    `<div class="sg-swatch"><div class="sg-swatch__chip" style="background:var(${v})"></div><div class="sg-swatch__info"><div class="body-medium">${n}</div><code>${cs.getPropertyValue(v).trim()}</code></div></div>`).join("");
+
+  document.getElementById("sg-tags").innerHTML = ["onboarding", "backend", "deploy", "ops", "research", "security", "design", "q4-planning"].map(t => KF.tag(t, "#sg-badges")).join("");
+  document.getElementById("sg-avatars").innerHTML =
+    KF.avatar({ fullName: "Amara Okafor" }, "sm") + KF.avatar({ fullName: "Amara Okafor" }) + KF.avatar({ fullName: "Amara Okafor" }, "lg") +
+    ["Lukas Brandt", "Mei Tanaka", "Sofia Rossi", "Diego Alvarez", "Priya Natarajan", "Noah Kim"].map(n => KF.avatar({ fullName: n })).join("") +
+    '<span class="avatar-stack">' + ["Lukas Brandt", "Mei Tanaka", "Sofia Rossi"].map(n => KF.avatar({ fullName: n }, "sm")).join("") + "</span>";
+  document.getElementById("sg-teamicons").innerHTML = ["Platform", "Design ops", "Research guild", "Engineering handbook"].map(n => KF.teamIcon(n, "sm") + KF.teamIcon(n) + KF.teamIcon(n, "lg")).join("");
+
+  KF.initTabs(document.getElementById("sg-tabs"));
+  const modal = document.getElementById("sg-modal");
+  document.getElementById("sg-open-modal").onclick = () => KF.openModal(modal);
+  document.getElementById("sg-open-modal2").onclick = () => KF.openModal(modal);
+  document.getElementById("sg-toast").onclick = () => KF.toast("Document saved");
+  document.getElementById("sg-toast-err").onclick = () => KF.toast("Couldn't upload report.pdf: files over 5 MB aren't allowed.", { type: "error" });
+  document.getElementById("sg-confirm").onclick = async () => {
+    const ok = await KF.confirmDialog({ title: "Delete this document?", message: "Deploying to Render and its 4 versions will be deleted. This can't be undone.", confirmLabel: "Delete document" });
+    KF.toast(ok ? "Document deleted" : "Kept the document", { type: ok ? "success" : "info" });
+  };
+  document.getElementById("sg-load").onclick = (e) => KF.withLoading(e.currentTarget, () => new Promise(r => setTimeout(r, 1500)));
+  document.getElementById("sg-copy").onclick = async (e) => {
+    const btn = e.currentTarget;
+    try { await navigator.clipboard.writeText(document.getElementById("sg-invite").value); } catch (err) {}
+    btn.innerHTML = KF.icon("check") + " Copied";
+    setTimeout(() => { btn.innerHTML = KF.icon("copy") + " Copy"; }, 2000);
+  };
+  document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+    document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === c)));
+  });
+
+  KF.initShell({
+    active: "t1",
+    breadcrumbs: [{ label: "Platform", href: "#" }, { label: "Engineering handbook", href: "#" }, { label: "Styleguide" }],
+    actions: '<div class="search-field search-field--compact" style="width:240px">' + KF.icon("search") +
+      '<label class="sr-only" for="kf-top-search">Search</label><input class="input" id="kf-top-search" type="search" placeholder="Search"><kbd>Ctrl K</kbd></div>'
+  });
+</script>
+</body>
+</html>
