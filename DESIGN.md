@@ -12,19 +12,23 @@ Filled in during the redesign. Anything here wins over the rest of this file.
 - **Font (UI + headings):** **Instrument Sans** 400/500/600 (Google Fonts, `display=swap`).
   Stack: `"Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`. One face for everything except code.
 - **Font (code / markdown code blocks):** **Fragment Mono** 400 (+ italic). A neo-grotesque mono drawn to sit next to a grotesk.
-  Stack: `"Fragment Mono", ui-monospace, "Cascadia Code", Consolas, monospace`. Only in `<pre>`, `<code>`, `<kbd>` and the markdown editor.
-- **Primary color:** **#1b6e66** (deep slate-teal). White text 6.05:1; on `--color-surface` 5.56:1.
-- **Primary pressed / deep:** **#18615a** (-12%, white 7.25:1) / **#14534d** (-25%, white 8.85:1). Soft: **#e8f1f0** (primary at 10% on white; primary text on it 5.27:1).
-- **Art direction:** "Reading room." The app is a quiet, warm-paper room where the documents are the brightest thing:
-  a warm stone frame (sidebar + top bar on `--color-surface`, no rule between them) holds a white sheet where the work happens.
-  One deep teal, like a library binding, marks the single action and the current place, and nothing else takes colour except tags and people.
+  Stack: `"Fragment Mono", ui-monospace, "Cascadia Code", Consolas, monospace`. Only in `<pre>`, `<code>` and the markdown editor.
+- **Primary color:** **#1d6fcb** (knowledge-base blue; Notion's #2383e2 darkened to pass). White text 5.01:1.
+- **Primary pressed / deep:** **#1a64b8** (white 5.90:1) / **#15528f** (white 7.97:1). Soft: **#eef4fc**.
+  Active nav uses pressed-blue text on soft (5.33:1); plain primary on soft is only 4.53:1.
+- **Surfaces / ink (Notion-warm):** `--color-surface` **#f7f7f5**, `--color-surface-soft` **#fbfbfa**, `--color-hover` **#efefed**, `--color-ink` **#37352f** (one warm ink for headings and body).
+- **Shell:** flush. The warm-grey sidebar has a 1px right hairline. The white top bar has a soft bottom hairline and stays put when you scroll. The white page runs edge to edge, with no floating rounded "sheet".
+- **Logo:** "stacked pages" mark (three layered sheets, Lucide `layers` glyph) in white on a 24px primary rounded square, next to the "KnowledgeForge" wordmark in 15/600.
+- **Art direction:** "Team wiki." It should feel like opening Notion or Confluence: a warm-grey sidebar holding the map of teams and spaces, and a plain white page where the document is the brightest thing.
+  One knowledge-base blue marks the single main action and where you are. Nothing else takes colour except tags and people.
   Type is one plain grotesk at regular weight. Headings are sized up a little, never made bold for show. Figures are tabular. The dashboard opens with a sentence built from real data, not "Welcome back".
+  (Chosen 2026-11-03 over a teal "reading room" with a floating sheet, which read as an app rather than a knowledge base.)
 
 Contrast fixes (DESIGN.md §9 says text must reach 4.5:1; these replace the values further down):
-- `--color-steel` **#6b6964** (was #787671: 4.17:1 on surface). 5.48 on canvas, 5.04 on surface, 4.73 on hover. Placeholders use steel, not muted.
+- `--color-steel` **#6b6964** (was #787671: 4.17:1 on surface). 5.48 on canvas, 5.11 on surface, 4.76 on hover. Placeholders use steel, not muted.
 - `--color-stone` / `--color-muted` are for disabled text and decorative icons only, never for words someone must read.
 - `--color-hairline-strong` **#8f8b84** (was #c8c4be: 1.74:1). Input borders need 3:1 (3.39 on white).
-- `--color-link` **= primary-pressed #18615a**, always underlined. A blue link next to a teal button would mean two accents competing.
+- `--color-link` **= primary-pressed #1a64b8**, always underlined. One blue for links and buttons, so there are never two competing accents.
 - Semantic colour as **text** uses the deep variant: success **#136c27**, warning **#92400e**, error **#b42318** (6.57:1). The bright values (#1aae39, #dd5b00, #e03131) are only for icons and borders.
 - Error soft pair: **#fdecea** background with **#7a1d14** text (9.12:1). The old #fde0e0/#e03131 pair was 3.64:1.
 
