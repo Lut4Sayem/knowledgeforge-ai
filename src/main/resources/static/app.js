@@ -105,6 +105,12 @@
     return '<span class="team-icon tint-' + tintFor(name) + sizeCls + '" aria-hidden="true">' + escapeHtml(letter) + "</span>";
   }
 
+  /** Space icon: folder glyph on the name's tint. Letters are for teams only. */
+  function spaceIcon(name, size) {
+    const sizeCls = size && size !== "md" ? " team-icon--" + size : "";
+    return '<span class="team-icon tint-' + tintFor(name) + sizeCls + '" aria-hidden="true">' + icon("folder", size === "lg" ? "icon--lg" : "") + "</span>";
+  }
+
   function tag(name, href) {
     const cls = "tag tint-" + tintFor(name);
     return href
@@ -521,6 +527,7 @@
     return shellState;
   }
 
+  /** shellState.teams is [{ teamId, teamName, role }] from /api/me/teams. Needs initShell first. */
   /** Role of the current user in a team ("ADMIN" | "EDITOR" | "VIEWER" | null). Needs initShell first. */
   function roleIn(teamId) {
     const t = shellState.teams.find(function (x) { return x.teamId === teamId; });
@@ -548,6 +555,7 @@
     initials: initials,
     avatar: avatar,
     teamIcon: teamIcon,
+    spaceIcon: spaceIcon,
     tag: tag,
     formatDate: formatDate,
     formatTime: formatTime,
@@ -561,6 +569,7 @@
     initShell: initShell,
     setBreadcrumbs: setBreadcrumbs,
     roleIn: roleIn,
+    teams: function () { return shellState.teams; },
     canEdit: canEdit,
     logout: logout,
     goToLogin: goToLogin

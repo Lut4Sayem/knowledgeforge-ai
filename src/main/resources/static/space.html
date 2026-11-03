@@ -1,606 +1,297 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>KnowledgeForge - Space</title>
-    <link rel="stylesheet" href="/style.css" />
-    <style>
-        /* ── Space-page only styles ── */
-        .error-box {
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-            color: var(--error-text);
-            padding: 12px 16px;
-            font-size: 13px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 56px 24px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-            margin-top: 0;
-        }
-
-        .empty-state-icon {
-            font-size: 40px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            font-family: var(--font-serif);
-            font-size: 18px;
-            color: var(--text-heading);
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-            max-width: 340px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .empty-state-btn {
-            display: inline-block;
-            padding: 8px 20px;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            cursor: pointer;
-            background: none;
-            transition: background 0.15s;
-        }
-        .empty-state-btn:hover {
-            background: var(--bg-active);
-        }
-
-        /* Doc title in table - wraps, no truncation */
-        .doc-title-cell {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .doc-icon {
-            color: var(--text-muted);
-            flex-shrink: 0;
-        }
-
-        .doc-title-text {
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-heading);
-            word-break: break-word;
-        }
-
-        /* Action icon buttons */
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            padding: 4px 6px;
-            transition: color 0.15s;
-            display: inline-flex;
-            align-items: center;
-        }
-        .icon-btn:hover { color: var(--primary); }
-        .icon-btn.danger:hover { color: var(--error-text); }
-
-        /* Create doc top bar */
-        .space-topbar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        /* Section label */
-        .section-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-        }
-
-        /* Breadcrumb */
-        .page-breadcrumb {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-        .page-breadcrumb a {
-            color: var(--text-muted);
-            text-decoration: none;
-        }
-        .page-breadcrumb a:hover { color: var(--primary); }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Space · KnowledgeForge</title>
+  <meta name="description" content="The documents in a KnowledgeForge space.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
+<body>
+<main id="main" class="page">
 
-<body class="app-body">
-
-<!-- ===== SIDEBAR ===== -->
-<aside class="app-sidebar" id="appSidebar">
-    <div class="sidebar-brand">
-        <div class="brand-icon">KF</div>
-        <div class="brand-text">
-            <h2>KnowledgeForge</h2>
-            <p>Digital Craftsmanship</p>
-        </div>
+  <header class="page-header" id="header">
+    <div style="min-width: 0; flex: 1 1 320px">
+      <div class="page-header__title">
+        <span id="space-icon"><span class="skeleton" style="display: block; width: 40px; height: 40px"></span></span>
+        <h1 class="title-lg" id="space-name"><span class="skeleton skeleton--title" style="display: block; width: 220px; height: 24px"></span></h1>
+      </div>
+      <p class="page-header__meta" id="space-desc" hidden></p>
+      <p class="caption" id="space-meta"></p>
     </div>
+    <button type="button" class="btn btn--primary" id="new-doc-btn" hidden>New document</button>
+  </header>
 
-    <div class="sidebar-action">
-        <button type="button" class="btn btn-primary btn-full" id="sidebarCreateDocBtn">+ New Document</button>
+  <!-- Whole-page load error -->
+  <div class="error-state" id="load-error" role="alert" hidden>
+    <span id="load-error-icon"></span>
+    <span class="error-state__msg" id="load-error-msg"></span>
+    <button type="button" class="btn btn--secondary btn--sm" id="retry-btn">Try again</button>
+    <a class="btn btn--secondary btn--sm" id="back-btn" href="/dashboard.html" hidden>Back to dashboard</a>
+  </div>
+
+  <section id="content" aria-labelledby="docs-title">
+    <div class="section__header">
+      <h2 class="sr-only" id="docs-title">Documents</h2>
+      <div class="chip-row" id="filters" role="group" aria-label="Filter by status" hidden>
+        <button type="button" class="chip" data-filter="" aria-pressed="true">All <span class="num" data-n=""></span></button>
+        <button type="button" class="chip" data-filter="DRAFT" aria-pressed="false">Drafts <span class="num" data-n="DRAFT"></span></button>
+        <button type="button" class="chip" data-filter="PUBLISHED" aria-pressed="false">Published <span class="num" data-n="PUBLISHED"></span></button>
+      </div>
     </div>
-
-    <nav class="sidebar-nav">
-        <a class="nav-item" href="/dashboard.html">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-            Dashboard
-        </a>
-        <a class="nav-item active" href="#">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Teams
-        </a>
-        <a class="nav-item" href="/search.html">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            Search
-        </a>
-
-        <div style="padding: 20px 20px 6px; font-size: 10px; font-weight: 700;
-                    text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);">
-            My Teams
-        </div>
-        <div id="sidebarTeams" style="padding: 0 12px;">
-            <div style="padding: 6px 8px; font-size: 12px; color: var(--text-muted);">
-                Loading...
-            </div>
-        </div>
-    </nav>
-
-    <div class="sidebar-footer">
-        <a class="nav-item" href="/profile.html" style="padding: 8px 0;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-            </svg>
-            My Spaces
-        </a>
-        <button class="nav-item" type="button" id="logoutBtn"
-                style="background:none;border:none;width:100%;text-align:left;
-                   cursor:pointer;font-family:inherit;padding:8px 0;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Settings
-        </button>
+    <div class="card card--flush" id="docs" aria-busy="true">
+      <div class="skeleton-row"><span class="skeleton skeleton--line"></span></div>
+      <div class="skeleton-row"><span class="skeleton skeleton--line"></span></div>
+      <div class="skeleton-row"><span class="skeleton skeleton--line"></span></div>
     </div>
-</aside>
+  </section>
 
-<!-- ===== MAIN ===== -->
-<div class="app-main">
-
-    <!-- Topbar -->
-    <div class="app-topbar">
-        <nav class="breadcrumb-nav">
-            <span id="topbarTeamCrumb" style="color:var(--text-muted);">Team Alpha</span>
-            <span style="color:var(--border-dark);">·</span>
-            <span class="active" id="topbarSpaceName">Loading…</span>
-        </nav>
-        <div class="topbar-right">
-            <div class="topbar-search">
-                <span class="topbar-search-icon">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </span>
-                <input type="text" placeholder="Search..."
-                       onkeydown="if(event.key==='Enter'&&this.value)
-                        window.location.href='/search.html?q='+encodeURIComponent(this.value)">
-            </div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 style="color:var(--text-muted);cursor:pointer;">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 style="color:var(--text-muted);cursor:pointer;">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <div id="topAvatar" class="member-avatar"
-                 style="width:32px;height:32px;border-radius:50%;background:var(--bg-active);
-                        border:1px solid var(--border-color);display:flex;align-items:center;
-                        justify-content:center;font-size:12px;font-weight:700;
-                        color:var(--primary);cursor:pointer;flex-shrink:0;"
-                 onclick="window.location.href='/profile.html'">?</div>
+  <!-- New document -->
+  <dialog class="modal" id="doc-modal" aria-labelledby="doc-modal-title">
+    <form id="doc-form" novalidate>
+      <div class="modal__header">
+        <h2 class="title-md" id="doc-modal-title">New document</h2>
+        <button type="button" class="btn btn--ghost btn--icon btn--sm" data-close aria-label="Close" id="doc-modal-x"></button>
+      </div>
+      <div class="modal__body">
+        <p style="margin-bottom: var(--space-4)">It starts as a draft. You'll go straight to the editor.</p>
+        <div class="field">
+          <label class="label" for="doc-title">Title</label>
+          <input class="input" id="doc-title" maxlength="200" autocomplete="off" placeholder="e.g. How we deploy" aria-required="true" aria-describedby="doc-title-error">
+          <p class="field__error" id="doc-title-error" hidden></p>
         </div>
-    </div>
-
-    <!-- Content -->
-    <div class="app-content">
-
-        <div id="errorBox" class="error-box"></div>
-
-        <!-- Page heading -->
-        <div class="page-breadcrumb" id="breadcrumb">
-            <a href="/dashboard.html">Team</a> &rsaquo; <span id="breadcrumbTeamName">…</span>
+        <div class="error-state" id="doc-form-error" role="alert" hidden style="margin-top: var(--space-4)">
+          <span id="doc-form-error-icon"></span><span class="error-state__msg" id="doc-form-error-msg"></span>
         </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-close>Cancel</button>
+        <button type="submit" class="btn btn--primary" id="doc-submit">Create and edit</button>
+      </div>
+    </form>
+  </dialog>
+</main>
 
-        <div style="display:flex; justify-content:space-between;
-                    align-items:flex-start; gap:16px; flex-wrap:wrap;
-                    margin-bottom: 28px;">
-            <div>
-                <h1 class="page-title" id="spaceName">Loading…</h1>
-                <p class="page-description" id="spaceDescription"></p>
-            </div>
-            <!-- Create Document button (top-right) -->
-            <div style="flex-shrink:0; padding-top: 6px;">
-                <button class="btn btn-primary" type="button" id="showCreateDocBtn">
-                    + CREATE DOCUMENT
-                </button>
-            </div>
-        </div>
-
-        <!-- Create Document form (hidden by default, shown on button click) -->
-        <div id="createDocWrap" style="display:none; margin-bottom:20px;">
-            <div style="background:var(--bg-card); border:1px solid var(--border-color); padding:20px;">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;
-                            letter-spacing:0.8px;color:var(--text-muted);margin-bottom:12px;">
-                    New Document
-                </div>
-                <form id="createDocForm" style="display:flex;gap:10px;align-items:flex-start;">
-                    <input id="docTitleInput" type="text" class="form-control"
-                           placeholder="Document title" required
-                           style="flex:1;margin-bottom:0;" />
-                    <button class="btn btn-primary" type="submit">Create</button>
-                    <button class="btn btn-secondary" type="button" id="cancelCreateDocBtn">Cancel</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Documents Table -->
-        <div class="table-container" id="docsTableWrap">
-            <table class="data-table">
-                <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Updated</th>
-                    <th style="text-align:right;">Actions</th>
-                </tr>
-                </thead>
-                <tbody id="docsTbody"></tbody>
-            </table>
-        </div>
-
-        <!-- Empty state (hidden until we know docs are empty) -->
-        <div id="emptyState" class="empty-state" style="display:none;">
-            <div class="empty-state-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="1.2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                    <polyline points="10 9 9 9 8 9"/>
-                </svg>
-            </div>
-            <h3>This space is waiting for its first chapter.</h3>
-            <p>Create a document to start documenting your architecture and patterns.</p>
-            <button class="empty-state-btn" type="button" id="emptyStateCreateBtn">
-                CREATE DOCUMENT
-            </button>
-        </div>
-
-        <p id="docsEmpty" style="display:none;"></p>
-
-    </div>
-</div>
-
+<script src="/app.js"></script>
 <script>
-    const errorBox = document.getElementById("errorBox");
+  (function () {
+    const esc = KF.escapeHtml;
+    const $ = function (id) { return document.getElementById(id); };
+    const spaceId = new URLSearchParams(location.search).get("id");
+    const base = "/api/spaces/" + encodeURIComponent(spaceId || "");
 
-    function showError(msg) {
-        errorBox.style.display = "block";
-        errorBox.textContent = msg;
+    ["load-error-icon", "doc-form-error-icon"].forEach(function (id) { $(id).outerHTML = KF.icon("alert-circle"); });
+    $("doc-modal-x").innerHTML = KF.icon("x");
+    $("new-doc-btn").innerHTML = KF.icon("plus") + "New document";
+
+    let space = null;
+    let docs = [];
+    let filter = (new URLSearchParams(location.search).get("status") || "").toUpperCase();
+    if (filter !== "DRAFT" && filter !== "PUBLISHED") filter = "";
+    let editable = false;
+
+    function docHref(id, mode) { return "/document.html?id=" + encodeURIComponent(id) + "&mode=" + mode; }
+
+    const isPublished = function (d) { return String(d.status || "").toUpperCase() === "PUBLISHED"; };
+
+    // First words of the document as plain text, so a row says what's inside
+    function excerpt(md) {
+      return String(md || "").replace(/```[\s\S]*?```/g, " ").replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[#>*_`~|-]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
     }
 
-    function clearError() {
-        errorBox.style.display = "none";
-        errorBox.textContent = "";
+    function renderMeta() {
+      // Counts live on the filter chips; the meta line only says what you can't do
+      $("space-meta").textContent = editable ? "" : "You're a viewer in this team, so you can read and comment but not edit.";
+      $("space-meta").hidden = editable;
+      document.querySelectorAll("[data-n]").forEach(function (el) {
+        const k = el.dataset.n;
+        el.textContent = !k ? docs.length : docs.filter(function (d) { return (isPublished(d) ? "PUBLISHED" : "DRAFT") === k; }).length;
+      });
     }
 
-    function getSpaceIdFromUrl() {
-        return new URLSearchParams(window.location.search).get("id");
+    function emptyHtml() {
+      return '<div class="empty"><span class="empty__icon">' + KF.icon("file-text") + "</span>" +
+        '<h3 class="title-sm">No documents yet</h3>' +
+        (editable
+          ? '<p class="empty__text">Write the first page: a how-to, a decision, a runbook. It starts as a draft.</p>' +
+            '<button type="button" class="btn btn--primary" data-new-doc>' + KF.icon("plus") + "New document</button>"
+          : '<p class="empty__text">Nothing here yet. An admin or editor of this team can add the first document.</p>') +
+        "</div>";
     }
 
-    function timeAgo(dateStr) {
-        if (!dateStr) return "";
-        const date = new Date(dateStr);
-        const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 60) return "just now";
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return minutes + " min ago";
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
-        const days = Math.floor(hours / 24);
-        if (days === 1) return "Yesterday";
-        if (days < 30) return days + " days ago";
-        return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    function renderDocs() {
+      const box = $("docs");
+      box.removeAttribute("aria-busy");
+      renderMeta();
+      $("filters").hidden = docs.length === 0;
+      document.querySelectorAll("[data-filter]").forEach(function (c) { c.setAttribute("aria-pressed", String(c.dataset.filter === filter)); });
+      $("new-doc-btn").hidden = !editable || docs.length === 0; // the empty state has its own button
+      if (!docs.length) { box.innerHTML = emptyHtml(); return; }
+
+      const shown = docs.filter(function (d) { return !filter || (isPublished(d) ? "PUBLISHED" : "DRAFT") === filter; });
+      if (!shown.length) {
+        box.innerHTML = '<div class="empty"><p class="body-medium">No ' + (filter === "DRAFT" ? "drafts" : "published documents") + '</p>' +
+          '<button type="button" class="btn btn--secondary btn--sm" data-clear-filter>Show all documents</button></div>';
+        return;
+      }
+      box.innerHTML = '<ul class="list" role="list">' + shown.map(function (d) {
+        const title = d.title || "Untitled";
+        const tags = Array.isArray(d.tags) && d.tags.length
+          ? '<span class="tag-list">' + d.tags.slice(0, 3).map(function (t) { return KF.tag(t); }).join("") + "</span>" : "";
+        const when = d.updatedAt
+          ? '<time class="caption" datetime="' + esc(new Date(d.updatedAt).toISOString()) + '">Updated ' + esc(KF.relativeTime(d.updatedAt)) + "</time>" : "";
+        const actions = editable
+          ? '<a class="btn btn--ghost btn--icon btn--sm" href="' + esc(docHref(d.id, "edit")) + '" aria-label="Edit ' + esc(title) + '" title="Edit">' + KF.icon("pencil") + "</a>" +
+            '<button type="button" class="btn btn--ghost btn--icon btn--sm" data-delete="' + esc(d.id) + '" aria-label="Delete ' + esc(title) + '" title="Delete">' + KF.icon("trash") + "</button>"
+          : "";
+        const text = excerpt(d.content);
+        // Published is the normal state; only drafts get a badge
+        const draft = isPublished(d) ? "" : '<span class="badge badge--draft">Draft</span>';
+        return '<li class="list-row list-row--hover list-row--link">' + KF.icon("file-text", "text-steel") +
+          '<span class="list-row__main">' +
+            '<a class="list-row__title" href="' + esc(docHref(d.id, "view")) + '">' + esc(title) + "</a>" +
+            (text ? '<span class="list-row__excerpt">' + esc(text) + "</span>" : "") +
+            '<span class="meta-line">' + draft + when + tags + "</span>" +
+          "</span>" + (actions ? '<span class="btn-row" style="flex: none">' + actions + "</span>" : "") + "</li>";
+      }).join("") + "</ul>";
     }
 
-    function statusBadge(status) {
-        const s = String(status || "DRAFT").toUpperCase();
-        if (s === "PUBLISHED") return `<span class="badge badge-published">PUBLISHED</span>`;
-        return `<span class="badge badge-draft">DRAFT</span>`;
+    async function loadDocs() {
+      const data = await KF.api(base + "/documents");
+      // Newest edits first
+      docs = (Array.isArray(data) ? data : []).sort(function (a, b) { return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0); });
+      renderDocs();
     }
 
-    async function fetchJson(url, options = {}) {
-        const res = await fetch(url, { credentials: "include", ...options });
-        if (res.status === 401) { window.location.href = "/login.html"; return null; }
-
-        const text = await res.text();
-        let data = null;
-        try { data = text ? JSON.parse(text) : null; } catch (e) {}
-
-        if (!res.ok) {
-            const msg = (data && (data.message || data.error))
-                ? (data.message || data.error)
-                : ("Request failed: " + res.status);
-            throw new Error(msg);
-        }
-        return data;
-    }
-
-    async function loadSidebarTeams() {
-        try {
-            const teams = await fetchJson("/api/teams");
-            const box = document.getElementById("sidebarTeams");
-            box.innerHTML = "";
-            if (!teams || teams.length === 0) {
-                box.innerHTML = `<div style="padding:6px 8px;font-size:12px;
-                    color:var(--text-muted);">No teams</div>`;
-                return;
-            }
-            teams.forEach(t => {
-                const a = document.createElement("a");
-                a.href = "/team.html?id=" + t.id;
-                a.style.cssText = "display:block;padding:6px 8px;font-size:12px;" +
-                    "color:var(--text-main);text-decoration:none;";
-                a.textContent = "• " + (t.name || "(Unnamed)");
-                a.onmouseover = () => a.style.background = "var(--bg-active)";
-                a.onmouseout  = () => a.style.background = "";
-                box.appendChild(a);
-            });
-        } catch (e) { /* sidebar failing silently is fine */ }
-    }
-
-    async function loadMe() {
-        try {
-            const me = await fetchJson("/api/me");
-            if (!me) return;
-            const el = document.getElementById("topAvatar");
-            if (me.profilePicture) {
-                el.innerHTML = `<img src="${me.profilePicture}" alt=""
-                    style="width:100%;height:100%;object-fit:cover;border-radius:50%;"
-                    onerror="this.parentElement.textContent='${(me.fullName||me.email||"?")[0].toUpperCase()}'">`;
-            } else {
-                const name = (me.fullName || me.email || "?");
-                const parts = name.trim().split(" ");
-                el.textContent = parts.length >= 2
-                    ? (parts[0][0] + parts[1][0]).toUpperCase()
-                    : name.substring(0, 2).toUpperCase();
-            }
-        } catch (e) {}
-    }
-
-    async function loadSpace(spaceId) {
-        const space = await fetchJson(`/api/spaces/${spaceId}`);
-        if (!space) return;
-
-        document.getElementById("spaceName").textContent     = space.name ?? "(No name)";
-        document.getElementById("spaceDescription").textContent = space.description ?? "";
-        document.getElementById("topbarSpaceName").textContent  = space.name ?? "";
-
-        /* Only hides UI; the API enforces roles anyway. */
-        let canEdit = false;
-        try {
-            const teams = await fetchJson("/api/me/teams");
-            const role  = (teams || []).find(t => t.teamId === space.teamId)?.role;
-            canEdit = role === "ADMIN" || role === "EDITOR";
-        } catch (e) {}
-        ["showCreateDocBtn", "emptyStateCreateBtn", "sidebarCreateDocBtn"].forEach(id =>
-            document.getElementById(id).style.display = canEdit ? "" : "none");
-
-        if (space.teamId) {
-            document.getElementById("breadcrumb").innerHTML =
-                `<a href="/team.html?id=${space.teamId}">Team</a>
-                 &rsaquo; <span id="breadcrumbTeamName">${space.teamName || "Team"}</span>`;
-            document.getElementById("topbarTeamCrumb").textContent =
-                space.teamName || "Team";
-        }
-    }
-
-    async function loadDocuments(spaceId) {
-        const docs = await fetchJson(`/api/spaces/${spaceId}/documents`);
-        const tbody     = document.getElementById("docsTbody");
-        const tableWrap = document.getElementById("docsTableWrap");
-        const empty     = document.getElementById("emptyState");
-        tbody.innerHTML = "";
-
-        const list = Array.isArray(docs) ? docs : [];
-
-        if (list.length === 0) {
-            tableWrap.style.display = "none";
-            empty.style.display = "block";
-            return;
-        }
-
-        tableWrap.style.display = "block";
-        empty.style.display = "none";
-
-        for (const d of list) {
-            const docId  = d.id || d._id;
-            const status = d.status ?? "DRAFT";
-            const updated = timeAgo(d.updatedAt);
-
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>
-                    <div class="doc-title-cell">
-                        <span class="doc-icon">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
-                                         a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                            </svg>
-                        </span>
-                        <span class="doc-title-text">${d.title ?? "(No title)"}</span>
-                    </div>
-                </td>
-                <td>${statusBadge(status)}</td>
-                <td style="color:var(--text-muted);font-size:12px;">${updated}</td>
-                <td style="text-align:right;">
-                    <div style="display:inline-flex;gap:4px;align-items:center;">
-                        <button class="icon-btn viewBtn" title="View" type="button">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                        <button class="icon-btn editBtn" title="Edit" type="button">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14
-                                         a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                        </button>
-                        <button class="icon-btn danger deleteBtn" title="Delete" type="button">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2">
-                                <polyline points="3 6 5 6 21 6"/>
-                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                <path d="M10 11v6"/><path d="M14 11v6"/>
-                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            `;
-
-            tr.querySelector(".viewBtn").addEventListener("click", () => {
-                window.location.href = `/document.html?id=${docId}&mode=view`;
-            });
-            tr.querySelector(".editBtn").addEventListener("click", () => {
-                window.location.href = `/document.html?id=${docId}&mode=edit`;
-            });
-            tr.querySelector(".deleteBtn").addEventListener("click", async () => {
-                if (!confirm(`Delete "${d.title}"? This cannot be undone.`)) return;
-                clearError();
-                try {
-                    await fetchJson(`/api/documents/${docId}`, { method: "DELETE" });
-                    await loadDocuments(spaceId);
-                } catch (err) { showError(err.message); }
-            });
-
-            tbody.appendChild(tr);
-        }
-    }
-
-    /* ── Create doc form toggle ── */
-    function showCreateForm() {
-        document.getElementById("createDocWrap").style.display = "block";
-        document.getElementById("docTitleInput").focus();
-    }
-
-    document.getElementById("showCreateDocBtn").addEventListener("click", showCreateForm);
-    document.getElementById("emptyStateCreateBtn").addEventListener("click", showCreateForm);
-    document.getElementById("cancelCreateDocBtn").addEventListener("click", () => {
-        document.getElementById("createDocWrap").style.display = "none";
-    });
-    document.getElementById("sidebarCreateDocBtn").addEventListener("click", showCreateForm);
-
-    document.getElementById("createDocForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        clearError();
-        const spaceId = getSpaceIdFromUrl();
-        const title = document.getElementById("docTitleInput").value.trim();
-        try {
-            await fetchJson(`/api/spaces/${spaceId}/documents`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content: "", tags: [], status: "DRAFT" })
-            });
-            document.getElementById("docTitleInput").value = "";
-            document.getElementById("createDocWrap").style.display = "none";
-            await loadDocuments(spaceId);
-        } catch (err) { showError(err.message); }
+    /* ---------- Filters ---------- */
+    $("filters").addEventListener("click", function (e) {
+      const chip = e.target.closest("[data-filter]");
+      if (!chip) return;
+      filter = chip.dataset.filter;
+      const u = new URL(location.href);
+      if (filter) u.searchParams.set("status", filter.toLowerCase()); else u.searchParams.delete("status");
+      history.replaceState(null, "", u);
+      renderDocs();
     });
 
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-        try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch (e) {}
-        window.location.href = "/login.html";
+    /* ---------- Delete ---------- */
+    $("docs").addEventListener("click", async function (e) {
+      if (e.target.closest("[data-new-doc]")) { openDocModal(); return; }
+      if (e.target.closest("[data-clear-filter]")) { document.querySelector('[data-filter=""]').click(); return; }
+      const btn = e.target.closest("[data-delete]");
+      if (!btn) return;
+      const d = docs.find(function (x) { return x.id === btn.dataset.delete; });
+      const title = (d && d.title) || "Untitled";
+      const ok = await KF.confirmDialog({
+        title: "Delete “" + title + "”?",
+        message: "Its versions, comments and files are deleted too. This can't be undone.",
+        confirmLabel: "Delete document"
+      });
+      if (!ok) return;
+      await KF.withLoading(btn, async function () {
+        try {
+          await KF.api("/api/documents/" + encodeURIComponent(btn.dataset.delete), { method: "DELETE" });
+          KF.toast("Deleted “" + title + "”.");
+          await loadDocs();
+        } catch (err) {
+          KF.toast("Couldn't delete the document. " + err.message, { type: "error" });
+        }
+      });
     });
 
-    /* ── Boot ── */
-    (async function init() {
-        clearError();
-        const spaceId = getSpaceIdFromUrl();
-        if (!spaceId) {
-            showError("Missing space id in URL. Expected: /space.html?id=...");
-            return;
-        }
+    /* ---------- Space ---------- */
+    function showLoadError(err) {
+      $("header").hidden = true;
+      $("content").hidden = true;
+      const known = err.status === 403 || err.status === 404 || !spaceId;
+      $("load-error-msg").textContent = !spaceId ? "No space was picked. Open one from its team page."
+        : err.status === 403 ? "You're not a member of this space's team. Ask a team admin for an invite link."
+        : err.status === 404 ? "This space doesn't exist. It may have been deleted."
+        : "Couldn't load this space. " + err.message;
+      $("retry-btn").hidden = known;
+      $("back-btn").hidden = !known;
+      $("load-error").hidden = false;
+    }
+
+    async function load() {
+      $("load-error").hidden = true;
+      try {
+        space = (await KF.api(base)) || {};
+        editable = KF.canEdit(space.teamId);
+        const name = space.name || "Untitled space";
+        const team = (KF.teams().find(function (t) { return t.teamId === space.teamId; }) || {}).teamName || "Team";
+        document.title = name + " · KnowledgeForge";
+        $("space-icon").innerHTML = KF.spaceIcon(name, "lg");
+        $("space-name").textContent = name;
+        $("space-desc").textContent = space.description || "";
+        $("space-desc").hidden = !space.description;
+        // The space belongs to a team: mark that team as where you are in the sidebar
+        const link = document.querySelector('#kf-sidebar a[href="/team.html?id=' + encodeURIComponent(space.teamId) + '"]');
+        if (link) { link.classList.add("is-active"); link.setAttribute("aria-current", "page"); }
+        KF.setBreadcrumbs([{ label: team, href: "/team.html?id=" + encodeURIComponent(space.teamId) }, { label: name }]);
+        await loadDocs();
+        $("header").hidden = false;
+        $("content").hidden = false;
+      } catch (err) {
+        showLoadError(err);
+      }
+    }
+
+    let shellReady = false;
+    $("retry-btn").addEventListener("click", function () {
+      if (!shellReady) { location.reload(); return; }
+      KF.withLoading($("retry-btn"), load);
+    });
+
+    /* ---------- New document ---------- */
+    const modal = $("doc-modal");
+    const titleIn = $("doc-title");
+
+    function fieldError(msg) {
+      titleIn.setAttribute("aria-invalid", msg ? "true" : "false");
+      $("doc-title-error").hidden = !msg;
+      $("doc-title-error").innerHTML = msg ? KF.icon("alert-circle", "icon--sm") + esc(msg) : "";
+    }
+
+    function openDocModal() {
+      $("doc-form").reset();
+      fieldError("");
+      $("doc-form-error").hidden = true;
+      KF.openModal(modal);
+      titleIn.focus();
+    }
+    $("new-doc-btn").addEventListener("click", openDocModal);
+    titleIn.addEventListener("input", function () { if (titleIn.value.trim()) fieldError(""); });
+
+    $("doc-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const title = titleIn.value.trim();
+      fieldError(title ? "" : "Give the document a title.");
+      if (!title) { titleIn.focus(); return; }
+      $("doc-form-error").hidden = true;
+      KF.withLoading($("doc-submit"), async function () {
         try {
-            await loadMe();
-            await loadSidebarTeams();
-            await loadSpace(spaceId);
-            await loadDocuments(spaceId);
-        } catch (err) { showError(err.message); }
-    })();
+          const doc = await KF.api(base + "/documents", { json: { title: title, content: "", tags: [], status: "DRAFT" } });
+          if (doc && doc.id) { location.href = docHref(doc.id, "edit"); return; }
+          modal.close();
+          await loadDocs();
+        } catch (err) {
+          $("doc-form-error-msg").textContent = "Couldn't create the document. " + err.message;
+          $("doc-form-error").hidden = false;
+        }
+      });
+    });
+
+    KF.initShell({ active: null, breadcrumbs: [{ label: "Team" }, { label: "Space" }] }).then(function () {
+      shellReady = true;
+      if (!spaceId) { showLoadError({}); return; }
+      return load();
+    }, showLoadError);
+  })();
 </script>
-
 </body>
 </html>

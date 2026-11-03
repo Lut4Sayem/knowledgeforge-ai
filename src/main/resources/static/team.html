@@ -173,7 +173,7 @@
       box.innerHTML = spaces.map(function (s) {
         const name = s.name || "Untitled space";
         return '<a class="card card--clickable" href="/space.html?id=' + encodeURIComponent(s.id) + '">' +
-          '<div class="card__header">' + KF.teamIcon(name) +
+          '<div class="card__header">' + KF.spaceIcon(name) +
           (s.createdAt ? '<span class="caption">Created ' + esc(KF.formatDate(s.createdAt)) + "</span>" : "") + "</div>" +
           '<h2 class="title-sm">' + esc(name) + "</h2>" +
           (s.description ? '<p class="caption" style="margin-top: var(--space-1)">' + esc(s.description) + "</p>" : "") +
