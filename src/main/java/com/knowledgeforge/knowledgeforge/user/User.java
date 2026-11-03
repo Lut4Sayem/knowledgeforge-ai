@@ -16,7 +16,9 @@ public class User {
     private String passwordHash;
 
     // NEW
-    private String profilePicture; // URL string
+    private String profilePicture; // URL shown as the avatar: an uploaded picture's /api URL, or an old external link
+    private String pictureFileId;      // GridFS id of the uploaded picture, null if none
+    private String pictureContentType;
     private Date createdAt;
     private Date updatedAt;
 
@@ -45,6 +47,12 @@ public class User {
 
     public String getProfilePicture() { return profilePicture; }
     public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
+
+    public String getPictureFileId() { return pictureFileId; }
+    public void setPictureFileId(String pictureFileId) { this.pictureFileId = pictureFileId; }
+
+    public String getPictureContentType() { return pictureContentType; }
+    public void setPictureContentType(String pictureContentType) { this.pictureContentType = pictureContentType; }
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }

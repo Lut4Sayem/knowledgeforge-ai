@@ -92,7 +92,8 @@
     const name = (user && (user.fullName || user.email)) || "Unknown user";
     const sizeCls = size && size !== "md" ? " avatar--" + size : "";
     const pic = user && user.profilePicture;
-    if (pic && /^https?:\/\//i.test(pic)) {
+    // External links (older profiles) or our own uploaded picture URL
+    if (pic && /^(https?:\/\/|\/api\/users\/)/i.test(pic)) {
       return '<span class="avatar' + sizeCls + '"><img src="' + escapeHtml(pic) + '" alt="' + escapeHtml(name) + '" loading="lazy"></span>';
     }
     return '<span class="avatar tint-' + tintFor(name) + sizeCls + '" role="img" aria-label="' + escapeHtml(name) + '">' + escapeHtml(initials(name)) + "</span>";

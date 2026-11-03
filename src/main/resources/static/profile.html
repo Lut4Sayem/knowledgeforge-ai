@@ -44,10 +44,15 @@
             <p class="hint" id="email-hint">You log in with this. It can't be changed.</p>
           </div>
           <div class="field">
-            <label class="label" for="picture">Picture URL <span class="text-steel">(optional)</span></label>
-            <input class="input" id="picture" type="url" inputmode="url" maxlength="500" autocomplete="photo" placeholder="https://…" aria-describedby="picture-hint picture-error">
-            <p class="hint" id="picture-hint">A link to an image (http:// or https://). Your picture above updates as you type. Leave it empty to show your initials.</p>
-            <p class="field__error" id="picture-error" hidden></p>
+            <span class="label" id="picture-label">Picture <span class="text-steel">(optional)</span></span>
+            <div class="btn-row">
+              <span id="picture-preview"></span>
+              <input type="file" id="picture-file" hidden accept=".png,.jpg,.jpeg,.gif,.webp" aria-labelledby="picture-label">
+              <button type="button" class="btn btn--secondary btn--sm" id="picture-upload">Upload picture</button>
+              <button type="button" class="btn btn--ghost btn--sm" id="picture-remove" hidden>Remove</button>
+            </div>
+            <p class="hint" id="picture-hint">PNG, JPG, GIF or WebP, up to 2 MB. It saves right away. Without one, teammates see your initials.</p>
+            <p class="field__error" id="picture-error" role="alert" hidden></p>
           </div>
           <div class="error-state" id="save-error" role="alert" hidden style="margin-top: var(--space-4)">
             <span id="save-error-icon"></span><span class="error-state__msg" id="save-error-msg"></span>
@@ -102,7 +107,7 @@
     }
 
     function dirty() {
-      return me && ($("full-name").value.trim() !== (me.fullName || "") || $("picture").value.trim() !== (me.profilePicture || ""));
+      return me && $("full-name").value.trim() !== (me.fullName || "");
     }
 
     function refreshState() {
@@ -112,22 +117,75 @@
 
     function validate() {
       const name = $("full-name").value.trim();
-      const pic = $("picture").value.trim();
       const nameErr = name ? "" : "Enter your name. Teammates see it on documents and comments.";
-      const picErr = !pic || /^https?:\/\/\S+$/i.test(pic) ? "" : "Use a full link that starts with http:// or https://";
       setField("full-name", nameErr);
-      setField("picture", picErr);
-      if (nameErr) $("full-name").focus(); else if (picErr) $("picture").focus();
-      return !nameErr && !picErr;
+      if (nameErr) $("full-name").focus();
+      return !nameErr;
     }
 
     $("full-name").addEventListener("input", function () { if ($("full-name").value.trim()) setField("full-name", ""); refreshState(); });
-    $("picture").addEventListener("input", function () {
-      setField("picture", "");
-      refreshState();
-      const pic = $("picture").value.trim();
-      // Live preview in the header; only real links, same rule as KF.avatar
-      renderHeader(Object.assign({}, me, { profilePicture: /^https?:\/\/\S+$/i.test(pic) ? pic : "" }));
+
+    /* ---------- Picture: uploads on pick, separate from the name form ---------- */
+    const PIC_TYPES = /\.(png|jpe?g|gif|webp)$/i;
+    const PIC_MAX = 2 * 1024 * 1024;
+
+    function pictureError(msg) {
+      $("picture-error").hidden = !msg;
+      $("picture-error").innerHTML = msg ? KF.icon("alert-circle", "icon--sm") + esc(msg) : "";
+    }
+
+    function renderPicture() {
+      $("picture-preview").innerHTML = KF.avatar(me, "lg");
+      $("picture-upload").textContent = me.profilePicture ? "Change picture" : "Upload picture";
+      $("picture-remove").hidden = !me.profilePicture;
+    }
+
+    // Keep the typed name; only the picture changed
+    function applySaved(saved) {
+      me = Object.assign({}, me, { profilePicture: saved && saved.profilePicture });
+      renderPicture();
+      renderHeader(me);
+      renderSidebarUser(me);
+    }
+
+    $("picture-upload").addEventListener("click", function () { $("picture-file").click(); });
+
+    $("picture-file").addEventListener("change", function () {
+      const file = $("picture-file").files[0];
+      $("picture-file").value = ""; // picking the same file again still fires change
+      if (!file) return;
+      pictureError("");
+      if (!PIC_TYPES.test(file.name)) { pictureError("Use a PNG, JPG, GIF or WebP image."); return; }
+      if (file.size > PIC_MAX) { pictureError("That picture is " + KF.formatSize(file.size) + ". The limit is 2 MB."); return; }
+      const form = new FormData();
+      form.append("file", file);
+      KF.withLoading($("picture-upload"), async function () {
+        try {
+          applySaved(await KF.api("/api/me/picture", { method: "POST", body: form }));
+          KF.toast("Picture updated.");
+        } catch (err) {
+          pictureError("Couldn't upload the picture. " + err.message);
+        }
+      }).then(renderPicture);
+    });
+
+    $("picture-remove").addEventListener("click", async function () {
+      const ok = await KF.confirmDialog({
+        title: "Remove your picture?",
+        message: "Teammates will see your initials instead.",
+        confirmLabel: "Remove picture"
+      });
+      if (!ok) return;
+      pictureError("");
+      KF.withLoading($("picture-remove"), async function () {
+        try {
+          applySaved(await KF.api("/api/me/picture", { method: "DELETE" }));
+          KF.toast("Picture removed.");
+          $("picture-upload").focus(); // the Remove button is gone now
+        } catch (err) {
+          pictureError("Couldn't remove the picture. " + err.message);
+        }
+      });
     });
 
     $("profile-form").addEventListener("submit", function (e) {
@@ -138,11 +196,10 @@
         try {
           const saved = await KF.api("/api/me", {
             method: "PUT",
-            json: { fullName: $("full-name").value.trim(), profilePicture: $("picture").value.trim() }
+            json: { fullName: $("full-name").value.trim() }
           });
           me = saved || me;
           $("full-name").value = me.fullName || "";
-          $("picture").value = me.profilePicture || "";
           renderHeader(me);
           renderSidebarUser(me);
           refreshState();
@@ -184,7 +241,7 @@
       renderHeader(me);
       $("full-name").value = me.fullName || "";
       $("email-field").value = me.email || "";
-      $("picture").value = me.profilePicture || "";
+      renderPicture();
       refreshState();
       renderTeams(s.teams);
     }, function (err) {
