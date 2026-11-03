@@ -227,6 +227,7 @@ input, textarea { caret-color: var(--color-primary); }
 .page { max-width: var(--content-max); margin: 0 auto; padding: var(--page-pad); }
 .page--reading { max-width: calc(var(--reading-max) + 2 * var(--page-pad)); }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+.page-header__title { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .page-header__meta { margin-top: var(--space-1); color: var(--color-slate); }
 .section + .section { margin-top: var(--space-10); }
 .section__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
@@ -470,6 +471,7 @@ a.tag:hover { filter: brightness(0.96); }
   font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums;
 }
 .nav-item .count { margin-left: auto; background: var(--color-hover); }
+.count--accent { background: var(--color-primary-soft); color: var(--color-primary-pressed); } /* something waits on you */
 
 /* Filter chips (search) */
 .chip {
