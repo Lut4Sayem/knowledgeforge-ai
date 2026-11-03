@@ -310,6 +310,11 @@
         </div>
         <div class="modal__footer"><button type="button" class="btn btn--secondary">Cancel</button><button type="button" class="btn btn--primary">Create space</button></div>
       </div>
+      <div class="modal modal--static modal--wide" role="presentation" style="grid-column: 1 / -1">
+        <div class="modal__header"><div><h3 class="title-md">Version 3</h3><p class="caption">Lukas Brandt · yesterday</p></div><button type="button" class="btn btn--ghost btn--icon btn--sm" aria-label="Close">${x}</button></div>
+        <div class="modal__body"><div class="prose"><h2>Steps</h2><p>Wide modal (<code>.modal--wide</code>) for reading a snapshot. The body scrolls.</p></div></div>
+        <div class="modal__footer"><button type="button" class="btn btn--secondary">Close</button><button type="button" class="btn btn--primary">Restore this version</button></div>
+      </div>
       <div>
         <div class="menu menu--static" role="menu" aria-label="Static menu example">
           <button type="button" class="menu__item" role="menuitem">${pencil} Rename</button>
@@ -368,7 +373,7 @@
 
     <h3 class="title-sm sg-sub">File chips</h3>
     <div class="file-list">
-      <a class="file-chip" href="#sg-kf" title="architecture-overview-2026.pdf">${filec}<span class="file-chip__name">architecture-overview-2026.pdf</span><span class="file-chip__size">1.2 MB</span><button type="button" class="file-chip__remove" aria-label="Delete architecture-overview-2026.pdf">${xs}</button></a>
+      <span class="file-chip"><a class="file-chip__link" href="#sg-kf" title="architecture-overview-2026.pdf">${filec}<span class="file-chip__name">architecture-overview-2026.pdf</span><span class="file-chip__size">1.2 MB</span></a><button type="button" class="file-chip__remove" aria-label="Delete architecture-overview-2026.pdf">${xs}</button></span>
       <a class="file-chip" href="#sg-kf" title="dashboard-screenshot.png">${imagec}<span class="file-chip__name">dashboard-screenshot.png</span><span class="file-chip__size">348 KB</span></a>
       <a class="file-chip" href="#sg-kf" title="https://docs.spring.io/spring-boot">${linkc}<span class="file-chip__name">Spring Boot reference</span><span class="file-chip__size">docs.spring.io</span></a>
     </div>

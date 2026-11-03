@@ -534,6 +534,9 @@ a.tag:hover { filter: brightness(0.96); }
 .modal__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-5) var(--space-6) 0; }
 .modal__body { padding: var(--space-3) var(--space-6) var(--space-6); color: var(--color-slate); }
 .modal__footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-6); background: var(--color-surface-soft); border-top: 1px solid var(--color-hairline); }
+/* Wide modal for reading content (version preview); the body scrolls, header and footer stay */
+.modal--wide { max-width: 760px; }
+.modal--wide .modal__body { max-height: 60vh; overflow-y: auto; color: var(--color-ink); }
 /* Static preview of a modal (styleguide) */
 .modal--static { position: static; display: block; width: 100%; }
 
@@ -653,6 +656,8 @@ a.tag:hover { filter: brightness(0.96); }
 .file-chip__remove { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--radius-sm); color: var(--color-steel); flex: none; }
 .file-chip__remove:hover { background: var(--color-error-soft); color: var(--color-error-text); }
 .file-chip:not(:has(.file-chip__remove)) { padding-right: var(--space-3); }
+/* Removable chip: <span class="file-chip"><a class="file-chip__link">..</a><button class="file-chip__remove"></span> (no button inside a link) */
+.file-chip__link { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; height: 100%; color: inherit; text-decoration: none; border-radius: var(--radius-sm); }
 .file-list { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 /* Meta line under a document title */
@@ -693,12 +698,15 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 /* Editor: borderless title, toolbar, split view */
 .editor-title { width: 100%; border: 0; background: transparent; padding: 0; font-size: 32px; font-weight: 600; line-height: 1.2; letter-spacing: -0.5px; color: var(--color-ink); }
 .editor-title::placeholder { color: var(--color-stone); }
+.editor-title { border-radius: var(--radius-sm); transition: background-color var(--dur-fast) var(--ease-out); }
+.editor-title:hover { background: var(--color-surface-soft); }
 .editor-title:focus { outline: none; }
+.editor-title:focus-visible { box-shadow: 0 2px 0 var(--color-primary); border-radius: 0; } /* underline instead of a ring: it stays a heading */
 /* Sticks under the top bar so Save stays in reach on long documents */
 .editor-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-hairline); position: sticky; top: var(--topbar-height); z-index: 10; background: var(--color-canvas); }
 .editor-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4); }
 .editor-split .textarea--code, .editor-split .editor-preview { min-height: 60vh; }
-.editor-split .textarea--code { height: 100%; }
+.editor-split .textarea--code { resize: none; overflow: hidden; } /* grows with its content (document.html), so the page is the only scrollbar */
 /* Write / Preview switch: only shown once the split stacks (< 1024px) */
 .editor-panes { display: none; }
 
@@ -829,6 +837,7 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
   .modal__footer { flex-direction: column-reverse; }
   .modal__footer .btn { width: 100%; }
   .file-chip__name { max-width: 50vw; }
+  .topbar__actions .btn__label { display: none; } /* icon-only on phones so the breadcrumbs keep room; button keeps its aria-label */
   .editor-toolbar { position: static; } /* wraps to two rows here: sticky would cover a third of the screen */
 
   /* Tables become stacked rows: add data-label to each <td> */
@@ -854,6 +863,6 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 @media print {
   body, .app, .sheet { background: #fff; }
   .sidebar, .topbar, .drawer-backdrop, .toast-region, .site-footer, .no-print { display: none !important; }
-  .app { display: block; }
+  .app, .layout-aside { display: block; }
   .page { padding: 0; max-width: none; }
 }
