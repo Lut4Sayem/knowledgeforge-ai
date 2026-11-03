@@ -425,8 +425,9 @@ a.list-row__title { color: inherit; text-decoration: none; } /* title link insid
 a.list-row__title:hover { text-decoration: underline; }
 .list-row--link { position: relative; }
 .list-row--link a.list-row__title::after { content: ""; position: absolute; inset: 0; } /* whole row is the link */
-.list-row--link .btn { position: relative; z-index: 1; }
+.list-row--link .btn, .list-row--link a.tag { position: relative; z-index: 1; } /* stay clickable above the row link */
 .list-row__excerpt { font-size: 13px; color: var(--color-slate); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-row__excerpt--full { white-space: normal; } /* search: show the whole excerpt, the match may be mid-text */
 .list-row__meta { font-size: 13px; color: var(--color-steel); flex: none; display: flex; align-items: center; gap: var(--space-3); font-variant-numeric: tabular-nums; }
 
 .table-wrap { border: 1px solid var(--color-hairline); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-canvas); }
@@ -488,7 +489,7 @@ a.tag:hover { filter: brightness(0.96); }
   transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 .chip:hover { background: var(--color-hover); }
-.chip[aria-pressed="true"], .chip.is-active { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary); }
+.chip[aria-pressed="true"], .chip.is-active { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary-pressed); } /* 5.33:1, plain primary is only 4.53 */
 .chip-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 /* ---------- 9. Navigation: tabs, breadcrumbs ---------- */
@@ -693,7 +694,7 @@ a.tag:hover { filter: brightness(0.96); }
 .activity-item__time { font-size: 13px; color: var(--color-steel); flex: none; font-variant-numeric: tabular-nums; }
 
 /* Search highlight */
-mark, .highlight { background: var(--color-highlight); color: inherit; border-radius: 2px; padding: 0 1px; }
+mark, .highlight { background: var(--color-highlight); color: inherit; font-weight: 600; border-radius: 2px; padding: 0 1px; } /* the soft yellow alone barely shows on white */
 
 /* Editor: borderless title, toolbar, split view */
 .editor-title { width: 100%; border: 0; background: transparent; padding: 0; font-size: 32px; font-weight: 600; line-height: 1.2; letter-spacing: -0.5px; color: var(--color-ink); }
@@ -853,7 +854,7 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 
 /* Touch screens: 40px targets */
 @media (pointer: coarse) {
-  .btn--sm, .select--sm { height: 40px; }
+  .btn--sm, .select--sm, .chip { height: 40px; }
   .btn--icon.btn--sm { width: 40px; }
   .nav-item, .menu__item { min-height: 40px; }
   .tag__remove { width: 24px; height: 24px; }

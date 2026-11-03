@@ -1,844 +1,286 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>KnowledgeForge - Search</title>
-    <link rel="stylesheet" href="/style.css" />
-    <style>
-        /* ── Search-page only styles ── */
-        .error-box {
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-            color: var(--error-text);
-            padding: 12px 16px;
-            font-size: 13px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        /* Big search bar at top of content */
-        .search-bar-wrap {
-            position: relative;
-            margin-bottom: 24px;
-        }
-
-        .search-bar-wrap input {
-            width: 100%;
-            padding: 14px 44px 14px 44px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-            font-size: 15px;
-            color: var(--text-main);
-            outline: none;
-            transition: border-color 0.15s;
-        }
-        .search-bar-wrap input:focus {
-            border-color: var(--primary);
-        }
-
-        .search-bar-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-
-        .search-bar-clear {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            font-size: 16px;
-            line-height: 1;
-            display: none;
-            padding: 2px 4px;
-        }
-        .search-bar-clear:hover { color: var(--text-main); }
-
-        /* Filter tabs */
-        .filter-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .filter-label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            margin-right: 4px;
-        }
-
-        .filter-tab {
-            padding: 5px 14px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-main);
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .filter-tab:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        .filter-tab.active {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #fff;
-            font-weight: 700;
-        }
-
-        /* Results count */
-        .results-count {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-        }
-
-        /* Result card */
-        .result-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-bottom: none;
-            padding: 20px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-        }
-        .result-card:last-child {
-            border-bottom: 1px solid var(--border-color);
-        }
-        .result-card:hover {
-            background: #FDFCF8;
-        }
-
-        .result-main { flex: 1; min-width: 0; }
-
-        /* Source row: team · type */
-        .result-source {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        .result-source-sep {
-            font-size: 14px;
-            color: var(--border-dark);
-        }
-
-        .result-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text-heading);
-            margin-bottom: 6px;
-            line-height: 1.35;
-            word-break: break-word;
-        }
-
-        .result-excerpt {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.55;
-            margin-bottom: 10px;
-            /* Highlight search term via JS */
-        }
-
-        /* Tag chips */
-        .result-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-
-        .result-tag {
-            display: inline-block;
-            padding: 3px 8px;
-            border: 1px solid var(--border-color);
-            font-size: 11px;
-            color: var(--text-muted);
-            background: var(--bg-canvas);
-            font-family: inherit;
-            cursor: pointer;
-        }
-        .result-tag:hover { border-color: var(--primary); color: var(--primary); }
-
-        /* Status dropdown + active tag chip in the filter row */
-        .filter-select {
-            padding: 5px 10px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-            font-size: 12px;
-            font-family: inherit;
-            color: var(--text-main);
-            margin-left: auto;
-        }
-        .active-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 10px;
-            border: 1px solid var(--primary);
-            background: var(--bg-active);
-            color: var(--primary);
-            font-size: 12px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        /* Updated meta */
-        .result-meta {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        /* Thumbnail (optional) */
-        .result-thumb {
-            width: 80px;
-            height: 60px;
-            object-fit: cover;
-            border: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-
-        /* Pagination */
-        .pagination-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            margin-top: 4px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .pagination-btn {
-            background: none;
-            border: none;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0;
-        }
-        .pagination-btn:hover { color: var(--primary); }
-        .pagination-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .pagination-info {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* Empty state */
-        .empty-state {
-            padding: 48px 24px;
-            text-align: center;
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-        }
-
-        .empty-state p {
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-
-        .empty-state small {
-            font-size: 12px;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Search · KnowledgeForge</title>
+  <meta name="description" content="Search documents, spaces and teams in KnowledgeForge.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
+<body>
+<main id="main" class="page">
 
-<body class="app-body">
-
-<!-- ===== SIDEBAR ===== -->
-<aside class="app-sidebar" id="appSidebar">
-    <div class="sidebar-brand">
-        <div class="brand-icon">KF</div>
-        <div class="brand-text">
-            <h2>KnowledgeForge</h2>
-            <p>Digital Craftsmanship</p>
-        </div>
+  <header class="page-header">
+    <div>
+      <h1 class="title-lg">Search</h1>
+      <p class="page-header__meta">Everything in the teams you belong to.</p>
     </div>
+  </header>
 
-    <div class="sidebar-action">
-        <a href="/dashboard.html" class="btn btn-primary btn-full">+ New Space</a>
+  <form id="search-form" role="search" novalidate>
+    <div class="search-field">
+      <span id="search-icon"></span>
+      <label class="sr-only" for="q">Search</label>
+      <input class="input" id="q" type="search" data-search-input autocomplete="off" maxlength="200"
+             placeholder="Search titles, text and tags">
+      <kbd id="search-kbd">Ctrl K</kbd>
     </div>
+  </form>
 
-    <nav class="sidebar-nav">
-        <a class="nav-item" href="/dashboard.html">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-            Dashboard
-        </a>
-        <a class="nav-item" href="/dashboard.html#teamsSection">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Teams
-        </a>
-        <a class="nav-item active" href="/search.html">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            Search
-        </a>
-
-        <div style="padding: 20px 20px 6px; font-size: 10px; font-weight: 700;
-                    text-transform: uppercase; letter-spacing: 0.8px;
-                    color: var(--text-muted);">
-            My Teams
-        </div>
-        <div id="sidebarTeams" style="padding: 0 12px;">
-            <div style="padding: 6px 8px; font-size: 12px; color: var(--text-muted);">
-                Loading...
-            </div>
-        </div>
-    </nav>
-
-    <div class="sidebar-footer">
-        <a class="nav-item" href="/profile.html" style="padding: 8px 0;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-            </svg>
-            My Spaces
-        </a>
-        <button class="nav-item" type="button" id="logoutBtn"
-                style="background:none;border:none;width:100%;text-align:left;
-                   cursor:pointer;font-family:inherit;padding:8px 0;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Settings
-        </button>
+  <div class="section__header" id="filters" style="margin-top: var(--space-4); flex-wrap: wrap" hidden>
+    <div class="chip-row" role="group" aria-label="Show">
+      <button type="button" class="chip" data-type="" aria-pressed="true">All <span class="num" data-n=""></span></button>
+      <button type="button" class="chip" data-type="document" aria-pressed="false">Documents <span class="num" data-n="document"></span></button>
+      <button type="button" class="chip" data-type="space" aria-pressed="false">Spaces <span class="num" data-n="space"></span></button>
+      <button type="button" class="chip" data-type="team" aria-pressed="false">Teams <span class="num" data-n="team"></span></button>
+      <span id="tag-filter" style="display: contents"></span>
     </div>
-</aside>
-
-<!-- ===== MAIN ===== -->
-<div class="app-main">
-
-    <!-- Topbar -->
-    <div class="app-topbar">
-        <nav class="breadcrumb-nav">
-            <a href="/dashboard.html" style="color:var(--text-muted);text-decoration:none;">
-                Team
-            </a>
-            <span style="color:var(--border-dark);">›</span>
-            <a href="/dashboard.html" style="color:var(--text-muted);text-decoration:none;">
-                Space
-            </a>
-            <span style="color:var(--border-dark);">›</span>
-            <span class="active">Document</span>
-        </nav>
-        <div class="topbar-right">
-            <!-- Quick search in topbar -->
-            <div class="topbar-search">
-                <span class="topbar-search-icon">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </span>
-                <input type="text" placeholder="Quick search..."
-                       onkeydown="if(event.key==='Enter'&&this.value){
-                        document.getElementById('qInput').value=this.value;
-                        document.getElementById('searchForm').dispatchEvent(new Event('submit'));
-                    }">
-            </div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 style="color:var(--text-muted);cursor:pointer;">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 style="color:var(--text-muted);cursor:pointer;">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <div id="topAvatar"
-                 style="width:32px;height:32px;border-radius:50%;
-                        background:var(--bg-active);border:1px solid var(--border-color);
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:12px;font-weight:700;color:var(--primary);
-                        cursor:pointer;flex-shrink:0;overflow:hidden;"
-                 onclick="window.location.href='/profile.html'">?</div>
-        </div>
+    <div class="btn-row">
+      <label class="sr-only" for="status">Status</label>
+      <select class="select select--sm" id="status" style="width: auto">
+        <option value="">Any status</option>
+        <option value="DRAFT">Draft documents</option>
+        <option value="PUBLISHED">Published documents</option>
+      </select>
     </div>
+  </div>
 
-    <!-- Content -->
-    <div class="app-content">
+  <p class="sr-only" id="announce" role="status" aria-live="polite"></p>
+  <div id="results" style="margin-top: var(--space-6)"></div>
+</main>
 
-        <div id="errorBox" class="error-box"></div>
-
-        <!-- Big search bar -->
-        <form id="searchForm">
-            <div class="search-bar-wrap">
-                <span class="search-bar-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </span>
-                <input id="qInput" type="text"
-                       placeholder="Architecture Guidelines"
-                       autocomplete="off" />
-                <button type="button" class="search-bar-clear"
-                        id="clearSearchBtn" aria-label="Clear">✕</button>
-            </div>
-        </form>
-
-        <!-- Filter tabs -->
-        <div class="filter-row">
-            <span class="filter-label">Filters:</span>
-            <button class="filter-tab active" data-filter="all">All Results</button>
-            <button class="filter-tab" data-filter="document">Documents</button>
-            <button class="filter-tab" data-filter="team">Teams</button>
-            <button class="filter-tab" data-filter="space">Spaces</button>
-            <button type="button" class="active-tag" id="activeTag" style="display:none;"
-                    aria-label="Remove tag filter"></button>
-            <select id="statusSelect" class="filter-select" aria-label="Document status">
-                <option value="">Any status</option>
-                <option value="DRAFT">Draft</option>
-                <option value="PUBLISHED">Published</option>
-            </select>
-        </div>
-
-        <!-- Results count -->
-        <div id="resultsCount" class="results-count" style="display:none;"></div>
-
-        <!-- Results list -->
-        <div id="results"></div>
-
-        <!-- Empty state -->
-        <div id="emptyState" style="display:none;">
-            <div class="empty-state">
-                <p>No results found.</p>
-                <small>Try different keywords or check your spelling.</small>
-            </div>
-        </div>
-
-        <!-- Initial prompt -->
-        <div id="initialPrompt" class="empty-state" style="display:none;">
-            <p>Enter a search term above to find documents across your teams.</p>
-        </div>
-
-    </div>
-</div>
-
+<script src="/app.js"></script>
 <script>
-    const errorBox = document.getElementById("errorBox");
-    let allResults  = [];   /* keep full result set for client-side filtering */
-    let currentFilter = "all";
-    let currentTag    = null;   /* set by clicking a #tag on a result */
+  (function () {
+    const esc = KF.escapeHtml;
+    const $ = function (id) { return document.getElementById(id); };
+    const LABELS = { document: "Documents", space: "Spaces", team: "Teams" };
+    const GROUP_MAX = 5;   // per group in "All"
+    const PAGE = 20;       // per "Load more" in a single type
 
-    /* ── Pagination state ── */
-    const PAGE_SIZE = 5;
-    let currentPage = 1;
+    $("search-icon").outerHTML = KF.icon("search");
 
-    function showError(msg) {
-        errorBox.style.display = "block";
-        errorBox.textContent = msg;
-    }
-    function clearError() {
-        errorBox.style.display = "none";
-        errorBox.textContent = "";
-    }
+    const params = new URLSearchParams(location.search);
+    let q = (params.get("q") || "").trim();
+    let tag = (params.get("tag") || "").trim();
+    let status = (params.get("status") || "").toUpperCase();
+    if (status !== "DRAFT" && status !== "PUBLISHED") status = "";
+    let type = (params.get("type") || "").toLowerCase();
+    if (!LABELS[type]) type = "";
+    let results = [];
+    let shown = PAGE;
+    let seq = 0; // ignore answers to searches that were replaced by a newer one
 
-    async function fetchJson(url, options = {}) {
-        const res = await fetch(url, { credentials: "include", ...options });
-        if (res.status === 401) { window.location.href = "/login.html"; return null; }
-        const text = await res.text();
-        let data = null;
-        try { data = text ? JSON.parse(text) : null; } catch (e) {}
-        if (!res.ok) {
-            throw new Error((data && (data.message || data.error))
-                ? (data.message || data.error)
-                : ("Request failed: " + res.status));
-        }
-        return data;
-    }
+    $("q").value = q;
+    $("status").value = status;
 
-    /* ── Sidebar ── */
-    async function loadSidebarTeams() {
-        try {
-            const teams = await fetchJson("/api/teams");
-            const box = document.getElementById("sidebarTeams");
-            box.innerHTML = "";
-            if (!teams || teams.length === 0) {
-                box.innerHTML = `<div style="padding:6px 8px;font-size:12px;
-                    color:var(--text-muted);">No teams</div>`;
-                return;
-            }
-            teams.forEach(t => {
-                const a = document.createElement("a");
-                a.href = "/team.html?id=" + t.id;
-                a.style.cssText = "display:block;padding:6px 8px;font-size:12px;" +
-                    "color:var(--text-main);text-decoration:none;";
-                a.textContent = "• " + (t.name || "(Unnamed)");
-                a.onmouseover = () => a.style.background = "var(--bg-active)";
-                a.onmouseout  = () => a.style.background = "";
-                box.appendChild(a);
-            });
-        } catch (e) {}
+    function typeOf(r) { return String(r.type || "document").toLowerCase(); }
+
+    function syncUrl() {
+      const u = new URL(location.href);
+      [["q", q], ["tag", tag], ["status", status.toLowerCase()], ["type", type]].forEach(function (p) {
+        if (p[1]) u.searchParams.set(p[0], p[1]); else u.searchParams.delete(p[0]);
+      });
+      history.replaceState(null, "", u);
     }
 
-    /* ── Avatar ── */
-    async function loadMe() {
-        try {
-            const me = await fetchJson("/api/me");
-            if (!me) return;
-            const el = document.getElementById("topAvatar");
-            if (me.profilePicture) {
-                el.innerHTML = `<img src="${me.profilePicture}" alt=""
-                    style="width:100%;height:100%;object-fit:cover;"
-                    onerror="this.parentElement.textContent='?'">`;
-            } else {
-                const name = (me.fullName || me.email || "?");
-                const parts = name.trim().split(" ");
-                el.textContent = parts.length >= 2
-                    ? (parts[0][0] + parts[1][0]).toUpperCase()
-                    : name.substring(0, 2).toUpperCase();
-            }
-        } catch (e) {}
+    // Escape first, then wrap matches; the query is escaped the same way so it matches the escaped text
+    function highlight(text) {
+      const safe = esc(text);
+      if (!q) return safe;
+      const pattern = esc(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return safe.replace(new RegExp("(" + pattern + ")", "gi"), "<mark>$1</mark>");
     }
 
-    /* ── Result type detection (client-side) ── */
-    function getResultType(r) {
-        /* Backend returns documents. If the API ever returns teams/spaces
-           they would have a `type` field. We check defensively. */
-        if (r.type) return r.type.toLowerCase();
-        if (r.documentId || r.content !== undefined) return "document";
-        if (r.memberCount !== undefined) return "team";
-        if (r.teamId !== undefined) return "space";
-        return "document";
+    // Excerpts are raw markdown; drop the syntax so they read as text
+    function plain(md) {
+      return String(md).replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*`~#>|]+|__/g, "").replace(/\s+/g, " ").trim();
     }
 
-    /* User content goes into innerHTML, so always escape it first */
-    function escapeHtml(s) {
-        return String(s ?? "").replace(/[&<>"']/g, c =>
-            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    function hrefFor(r, t) {
+      if (t === "team") return "/team.html?id=" + encodeURIComponent(r.teamId);
+      if (t === "space") return "/space.html?id=" + encodeURIComponent(r.spaceId);
+      return "/document.html?id=" + encodeURIComponent(r.documentId) + "&mode=view";
     }
 
-    /* ── Highlight search term in text (returns safe HTML) ── */
-    function highlight(text, query) {
-        const safe = escapeHtml(text);
-        if (!query || !safe) return safe;
-        const escaped = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const regex = new RegExp(`(${escaped})`, "gi");
-        return safe.replace(regex,
-            `<mark style="background:#FFF3C4;color:inherit;padding:0 1px;">$1</mark>`);
+    function tagHref(name) {
+      const u = new URLSearchParams();
+      if (q) u.set("q", q);
+      u.set("tag", name);
+      return "/search.html?" + u;
     }
 
-    /* ── Render one page of results ── */
-    function renderResults(query) {
-        const box       = document.getElementById("results");
-        const countEl   = document.getElementById("resultsCount");
-        const emptyEl   = document.getElementById("emptyState");
-        const promptEl  = document.getElementById("initialPrompt");
-        box.innerHTML   = "";
-        promptEl.style.display = "none";
-
-        /* Filter */
-        const filtered = currentFilter === "all"
-            ? allResults
-            : allResults.filter(r => getResultType(r) === currentFilter);
-
-        const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-        if (currentPage > totalPages) currentPage = 1;
-
-        countEl.style.display = filtered.length > 0 ? "block" : "none";
-        countEl.textContent   = filtered.length + " Results Found";
-
-        if (filtered.length === 0) {
-            emptyEl.style.display = "block";
-            renderPagination(0, totalPages);
-            return;
-        }
-        emptyEl.style.display = "none";
-
-        /* Slice for current page */
-        const start = (currentPage - 1) * PAGE_SIZE;
-        const page  = filtered.slice(start, start + PAGE_SIZE);
-
-        for (const r of page) {
-            const div = document.createElement("div");
-            div.className = "result-card";
-
-            const tags = (r.tags || [])
-                .map(t => `<button type="button" class="result-tag" data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</button>`)
-                .join("");
-
-            const type     = getResultType(r);
-            const typeIcon = type === "team"
-                ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                   </svg>`
-                : type === "space"
-                    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        <polyline points="9 22 9 12 15 12 15 22"/>
-                   </svg>`
-                    : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
-                                 a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                   </svg>`;
-
-            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-            const teamName  = escapeHtml(r.teamName || "");
-
-            /* Updated meta */
-            let updatedText = "";
-            if (r.updatedAt) {
-                const d = new Date(r.updatedAt);
-                const diff = Math.floor((Date.now() - d) / 3600000);
-                if (diff < 1) updatedText = "Updated just now";
-                else if (diff < 24) updatedText = `Updated ${diff}h ago`;
-                else if (diff < 48) updatedText = "Updated yesterday";
-                else updatedText = "Updated " + d.toLocaleDateString("en-US",
-                        { month: "short", day: "numeric" });
-
-                if (r.updatedByName) {
-                    updatedText += " by " + escapeHtml(r.updatedByName);
-                }
-            }
-
-            const excerpt = highlight(r.excerpt || r.snippet || "", query);
-            const titleH  = highlight(r.title || "(No title)", query);
-
-            div.innerHTML = `
-                <div class="result-main">
-                    <div class="result-source">
-                        ${teamName
-                ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                    <circle cx="9" cy="7" r="4"/>
-                               </svg>
-                               <span>${teamName}</span>
-                               <span class="result-source-sep">•</span>`
-                : ""}
-                        ${typeIcon}
-                        <span>${typeLabel}</span>
-                    </div>
-                    <div class="result-title">${titleH}</div>
-                    ${excerpt
-                ? `<div class="result-excerpt">${excerpt}</div>`
-                : ""}
-                    ${tags
-                ? `<div class="result-tags">${tags}</div>`
-                : ""}
-                    <div class="result-meta">${updatedText}</div>
-                </div>
-            `;
-
-            /* Click a #tag: search by that tag (don't open the card) */
-            div.querySelectorAll(".result-tag").forEach(btn =>
-                btn.addEventListener("click", e => {
-                    e.stopPropagation();
-                    currentTag = btn.dataset.tag;
-                    runSearch();
-                }));
-
-            /* Click card: open the team, space or document */
-            const href = type === "team"  ? `/team.html?id=${encodeURIComponent(r.teamId)}`
-                       : type === "space" ? `/space.html?id=${encodeURIComponent(r.spaceId)}`
-                       : `/document.html?id=${encodeURIComponent(r.documentId)}&mode=view`;
-            div.style.cursor = "pointer";
-            div.addEventListener("click", () => { window.location.href = href; });
-
-            box.appendChild(div);
-        }
-
-        renderPagination(filtered.length, totalPages);
+    function rowHtml(r) {
+      const t = typeOf(r);
+      const title = r.title || (t === "team" ? "Untitled team" : t === "space" ? "Untitled space" : "Untitled");
+      const ico = t === "team" ? KF.teamIcon(title) : t === "space" ? KF.spaceIcon(title) : KF.icon("file-text", "text-steel");
+      const where = [];
+      if (r.teamName && t !== "team") where.push(esc(r.teamName));
+      if (r.spaceName && t === "document") where.push(esc(r.spaceName));
+      const meta = [];
+      if (where.length) meta.push("<span>" + where.join(" / ") + "</span>");
+      if (t === "document" && String(r.status || "").toUpperCase() !== "PUBLISHED") meta.push('<span class="badge badge--draft">Draft</span>');
+      if (r.updatedAt) {
+        meta.push('<time datetime="' + esc(new Date(r.updatedAt).toISOString()) + '">Updated ' + esc(KF.relativeTime(r.updatedAt)) +
+          (r.updatedByName ? " by " + esc(r.updatedByName) : "") + "</time>");
+      }
+      if (Array.isArray(r.tags) && r.tags.length) {
+        meta.push('<span class="tag-list">' + r.tags.map(function (g) { return KF.tag(g, tagHref(g)); }).join("") + "</span>");
+      }
+      return '<li class="list-row list-row--hover list-row--link">' + ico +
+        '<span class="list-row__main">' +
+          '<a class="list-row__title" href="' + esc(hrefFor(r, t)) + '">' + highlight(title) + "</a>" +
+          (r.excerpt ? '<span class="list-row__excerpt list-row__excerpt--full">' + highlight(plain(r.excerpt)) + "</span>" : "") +
+          (meta.length ? '<span class="meta-line">' + meta.join("") + "</span>" : "") +
+        "</span></li>";
     }
 
-    /* ── Pagination ── */
-    function renderPagination(total, totalPages) {
-        /* Remove old pagination if any */
-        const old = document.getElementById("paginationRow");
-        if (old) old.remove();
-        if (total === 0) return;
-
-        const row = document.createElement("div");
-        row.id = "paginationRow";
-        row.className = "pagination-row";
-        row.innerHTML = `
-            <button class="pagination-btn" id="prevBtn"
-                    ${currentPage <= 1 ? "disabled" : ""}>← Previous</button>
-            <span class="pagination-info">Page ${currentPage} of ${totalPages}</span>
-            <button class="pagination-btn" id="nextBtn"
-                    ${currentPage >= totalPages ? "disabled" : ""}>Next →</button>
-        `;
-
-        document.querySelector(".app-content").appendChild(row);
-
-        document.getElementById("prevBtn").addEventListener("click", () => {
-            if (currentPage > 1) {
-                currentPage--;
-                const q = document.getElementById("qInput").value.trim();
-                renderResults(q);
-            }
-        });
-
-        document.getElementById("nextBtn").addEventListener("click", () => {
-            if (currentPage < totalPages) {
-                currentPage++;
-                const q = document.getElementById("qInput").value.trim();
-                renderResults(q);
-            }
-        });
+    function listHtml(items) {
+      return '<div class="card card--flush"><ul class="list" role="list">' + items.map(rowHtml).join("") + "</ul></div>";
     }
 
-    /* ── Search: text + optional tag + optional status (type tabs filter client-side) ── */
-    async function runSearch() {
-        clearError();
-        const q      = document.getElementById("qInput").value.trim();
-        const status = document.getElementById("statusSelect").value;
-
-        document.getElementById("clearSearchBtn").style.display = (q || currentTag) ? "block" : "none";
-        document.getElementById("initialPrompt").style.display = "none";
-
-        const tagChip = document.getElementById("activeTag");
-        tagChip.style.display = currentTag ? "inline-flex" : "none";
-        tagChip.textContent   = currentTag ? `#${currentTag} ✕` : "";
-
-        if (!q && !currentTag) {
-            allResults = [];
-            renderResults("");
-            return;
-        }
-
-        const params = new URLSearchParams();
-        if (q)          params.set("q", q);
-        if (currentTag) params.set("tag", currentTag);
-        if (status)     params.set("status", status);
-
-        try {
-            const data  = await fetchJson(`/api/search?${params}`);
-            allResults  = Array.isArray(data) ? data : [];
-            currentPage = 1;
-            renderResults(q);
-        } catch (err) {
-            showError(err.message);
-        }
+    function emptyHtml(iconName, title, text, action) {
+      return '<div class="empty"><span class="empty__icon">' + KF.icon(iconName) + '</span><h2 class="title-sm">' + title + "</h2>" +
+        (text ? '<p class="empty__text">' + text + "</p>" : "") + (action || "") + "</div>";
     }
 
-    /* Enter in the input submits the form natively, so this is the only trigger */
-    document.getElementById("searchForm").addEventListener("submit", e => {
-        e.preventDefault();
-        runSearch();
+    function renderFilters() {
+      const active = !!(q || tag);
+      $("filters").hidden = !active;
+      $("search-kbd").hidden = !!$("q").value;
+      document.querySelectorAll("[data-type]").forEach(function (c) { c.setAttribute("aria-pressed", String(c.dataset.type === type)); });
+      document.querySelectorAll("[data-n]").forEach(function (el) {
+        const k = el.dataset.n;
+        const n = results.filter(function (r) { return !k || typeOf(r) === k; }).length;
+        el.textContent = n;
+        el.parentElement.hidden = !!k && !n && type !== k;
+      });
+      $("tag-filter").innerHTML = tag
+        ? '<button type="button" class="chip" aria-pressed="true" data-clear-tag aria-label="Remove tag filter ' + esc(tag) + '">' +
+          KF.icon("tag", "icon--sm") + esc(tag) + KF.icon("x", "icon--sm") + "</button>"
+        : "";
+    }
+
+    function render() {
+      renderFilters();
+      const box = $("results");
+      box.removeAttribute("aria-busy");
+      if (!q && !tag) {
+        box.innerHTML = emptyHtml("search", "Find anything your teams have written",
+          "Search by title, text or tag. Press Ctrl K from any page to jump here.");
+        $("announce").textContent = "";
+        return;
+      }
+      const list = results.filter(function (r) { return !type || typeOf(r) === type; });
+      $("announce").textContent = list.length + (list.length === 1 ? " result" : " results");
+      if (!list.length) {
+        const what = q ? "“" + esc(q) + "”" : "the tag “" + esc(tag) + "”";
+        const narrowed = tag && q || status || type;
+        box.innerHTML = emptyHtml("search", "Nothing matches " + what,
+          narrowed ? "Try removing a filter." : "Check the spelling or try a shorter word.",
+          narrowed ? '<button type="button" class="btn btn--secondary btn--sm" data-clear-filters>Clear filters</button>' : "");
+        return;
+      }
+      if (type) {
+        box.innerHTML = listHtml(list.slice(0, shown)) +
+          (list.length > shown ? '<div class="load-more"><button type="button" class="btn btn--secondary" data-more>Show more</button></div>' : "");
+        return;
+      }
+      // "All": one section per type, documents first
+      box.innerHTML = ["document", "space", "team"].map(function (t) {
+        const items = list.filter(function (r) { return typeOf(r) === t; });
+        if (!items.length) return "";
+        return '<section class="section" aria-labelledby="h-' + t + '"><div class="section__header">' +
+          '<h2 class="title-sm" id="h-' + t + '">' + LABELS[t] + ' <span class="count">' + items.length + "</span></h2>" +
+          (items.length > GROUP_MAX ? '<button type="button" class="btn btn--link" data-show-type="' + t + '">Show all ' + items.length + "</button>" : "") +
+          "</div>" + listHtml(items.slice(0, GROUP_MAX)) + "</section>";
+      }).join("");
+    }
+
+    function skeleton() {
+      const box = $("results");
+      box.setAttribute("aria-busy", "true");
+      box.innerHTML = '<div class="card card--flush">' +
+        '<div class="skeleton-row"><span class="skeleton skeleton--line"></span></div>'.repeat(4) + "</div>";
+    }
+
+    async function run() {
+      q = $("q").value.trim();
+      status = $("status").value;
+      shown = PAGE;
+      syncUrl();
+      if (!q && !tag) { results = []; render(); return; }
+      renderFilters();
+      skeleton();
+      const mine = ++seq;
+      const p = new URLSearchParams();
+      if (q) p.set("q", q);
+      if (tag) p.set("tag", tag);
+      if (status) p.set("status", status);
+      try {
+        const data = await KF.api("/api/search?" + p);
+        if (mine !== seq) return;
+        results = Array.isArray(data) ? data : [];
+        render();
+      } catch (err) {
+        if (mine !== seq) return;
+        results = [];
+        renderFilters();
+        $("results").removeAttribute("aria-busy");
+        $("results").innerHTML = '<div class="error-state" role="alert">' + KF.icon("alert-circle") +
+          '<span class="error-state__msg">Search failed. ' + esc(err.message) + "</span>" +
+          '<button type="button" class="btn btn--secondary btn--sm" data-retry>Try again</button></div>';
+      }
+    }
+
+    /* ---------- Events ---------- */
+    $("search-form").addEventListener("submit", function (e) { e.preventDefault(); clearTimeout(typing); run(); });
+    // The native clear (x) in a search input fires "search" with an empty value
+    $("q").addEventListener("search", function () { if (!$("q").value) run(); });
+    let typing;
+    $("q").addEventListener("input", function () {
+      $("search-kbd").hidden = !!$("q").value;
+      clearTimeout(typing);
+      typing = setTimeout(run, 300); // results as you type; seq drops stale answers
+    });
+    $("status").addEventListener("change", run);
+
+    $("filters").addEventListener("click", function (e) {
+      if (e.target.closest("[data-clear-tag]")) { tag = ""; run(); $("q").focus(); return; }
+      const chip = e.target.closest("[data-type]");
+      if (!chip) return;
+      type = chip.dataset.type;
+      shown = PAGE;
+      syncUrl();
+      render();
     });
 
-    document.getElementById("statusSelect").addEventListener("change", runSearch);
-
-    document.getElementById("activeTag").addEventListener("click", () => {
-        currentTag = null;
-        runSearch();
+    $("results").addEventListener("click", function (e) {
+      if (e.target.closest("[data-retry]")) { run(); return; }
+      if (e.target.closest("[data-more]")) { shown += PAGE; render(); return; }
+      const showType = e.target.closest("[data-show-type]");
+      if (showType) { type = showType.dataset.showType; shown = PAGE; syncUrl(); render(); document.querySelector('[data-type="' + type + '"]').focus(); return; }
+      if (e.target.closest("[data-clear-filters]")) {
+        type = ""; status = ""; $("status").value = "";
+        if (q) tag = ""; // keep the tag when it's the only thing being searched
+        run();
+      }
     });
 
-    /* ── Clear button ── */
-    document.getElementById("clearSearchBtn").addEventListener("click", () => {
-        document.getElementById("qInput").value = "";
-        document.getElementById("clearSearchBtn").style.display = "none";
-        currentTag  = null;
-        document.getElementById("activeTag").style.display = "none";
-        allResults  = [];
-        currentPage = 1;
-        document.getElementById("results").innerHTML = "";
-        document.getElementById("resultsCount").style.display = "none";
-        document.getElementById("emptyState").style.display = "none";
-        const old = document.getElementById("paginationRow");
-        if (old) old.remove();
+    function start() {
+      if (q || tag) run(); else render();
+      if (!q && !tag) $("q").focus();
+    }
+
+    KF.initShell({ active: "search", breadcrumbs: [{ label: "Search" }] }).then(start, function (err) {
+      $("results").innerHTML = '<div class="error-state" role="alert">' + KF.icon("alert-circle") +
+        '<span class="error-state__msg">Couldn\'t load your account. ' + esc(err.message) + "</span>" +
+        '<button type="button" class="btn btn--secondary btn--sm" onclick="location.reload()">Try again</button></div>';
     });
-
-    /* ── Filter tabs ── */
-    document.querySelectorAll(".filter-tab").forEach(tab => {
-        tab.addEventListener("click", () => {
-            document.querySelectorAll(".filter-tab")
-                .forEach(t => t.classList.remove("active"));
-            tab.classList.add("active");
-            currentFilter = tab.dataset.filter;
-            currentPage   = 1;
-            const q = document.getElementById("qInput").value.trim();
-            renderResults(q);
-        });
-    });
-
-    /* ── Logout ── */
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-        try { await fetch("/logout", { method: "POST", credentials: "include" }); }
-        catch (e) {}
-        window.location.href = "/login.html";
-    });
-
-    /* ── Boot: auto-run search if ?q= is in URL ── */
-    (async function init() {
-        await loadMe();
-        await loadSidebarTeams();
-
-        const params = new URLSearchParams(window.location.search);
-        const qParam = params.get("q");
-
-        if (qParam) {
-            document.getElementById("qInput").value = qParam;
-            runSearch();
-        } else {
-            /* Show hint */
-            document.getElementById("initialPrompt").style.display = "none";
-        }
-    })();
+  })();
 </script>
-
 </body>
 </html>
