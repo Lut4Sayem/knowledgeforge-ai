@@ -1,1421 +1,339 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KnowledgeForge - Document</title>
-    <link rel="stylesheet" href="/style.css">
-    <style>
-        /* ── Document-page only styles ── */
-        .error-box {
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-            color: var(--error-text);
-            padding: 12px 16px;
-            font-size: 13px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        /* ── VIEW MODE: Article layout ── */
-        .doc-article {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 48px 56px;
-            max-width: 780px;
-        }
-
-        .doc-tags-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .doc-tag {
-            display: inline-block;
-            padding: 4px 10px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            background: var(--bg-canvas);
-        }
-
-        .doc-view-title {
-            font-family: var(--font-serif);
-            font-size: 36px;
-            font-weight: 700;
-            line-height: 1.15;
-            color: var(--text-heading);
-            margin-bottom: 16px;
-        }
-
-        .doc-meta {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .doc-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        /* Rendered markdown body */
-        .doc-body {
-            font-size: 15px;
-            line-height: 1.75;
-            color: var(--text-main);
-        }
-
-        .doc-body h1, .doc-body h2, .doc-body h3 {
-            font-family: var(--font-serif);
-            margin: 28px 0 12px;
-            color: var(--text-heading);
-        }
-
-        .doc-body p { margin: 0 0 16px; }
-
-        .doc-body pre {
-            background: #F4F1EA;
-            border: 1px solid var(--border-color);
-            padding: 16px 20px;
-            font-family: "Courier New", monospace;
-            font-size: 13px;
-            overflow-x: auto;
-            margin: 20px 0;
-        }
-
-        .doc-body code {
-            background: #F4F1EA;
-            padding: 2px 6px;
-            font-family: "Courier New", monospace;
-            font-size: 13px;
-        }
-
-        .doc-body blockquote {
-            border-left: 3px solid var(--primary);
-            margin: 16px 0;
-            padding: 8px 16px;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        .doc-body ul, .doc-body ol {
-            padding-left: 24px;
-            margin: 0 0 16px;
-        }
-
-        /* Attachments in view */
-        .attachment-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            font-size: 12px;
-            color: var(--text-main);
-            margin-right: 8px;
-            margin-bottom: 8px;
-            text-decoration: none;
-            background: var(--bg-card);
-            transition: background 0.15s;
-        }
-        .attachment-chip:hover {
-            background: var(--bg-active);
-            text-decoration: none;
-        }
-
-        .attachment-size {
-            color: var(--text-muted);
-            font-size: 11px;
-        }
-        .attachment-chip svg { flex-shrink: 0; color: var(--text-muted); }
-
-        /* Upload control in the editor */
-        .upload-hint {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-        .upload-or {
-            margin: 18px 0 10px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-muted);
-        }
-
-        /* Section dividers */
-        .doc-section {
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .doc-section-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-        }
-
-        /* Comments */
-        .comment-item {
-            padding: 14px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .comment-item:last-child { border-bottom: none; }
-
-        .comment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 6px;
-        }
-
-        .comment-author { font-weight: 600; font-size: 13px; }
-        .comment-time { font-size: 11px; color: var(--text-muted); }
-        .comment-body { font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
-
-        .btn-del-comment {
-            background: none;
-            border: none;
-            font-size: 11px;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0;
-        }
-        .btn-del-comment:hover { color: var(--error-text); }
-
-        /* Versions */
-        .version-row {
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .version-row:last-child { border-bottom: none; }
-
-        .version-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .version-label { font-weight: 600; font-size: 13px; }
-        .version-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-        .version-actions { display: flex; gap: 8px; }
-
-        .btn-version {
-            background: none;
-            border: 1px solid var(--border-color);
-            font-size: 11px;
-            padding: 4px 10px;
-            cursor: pointer;
-            color: var(--text-main);
-            transition: background 0.15s;
-        }
-        .btn-version:hover { background: var(--bg-active); }
-
-        .version-preview-box {
-            display: none;
-            margin-top: 12px;
-            padding: 16px;
-            background: var(--bg-canvas);
-            border: 1px solid var(--border-color);
-            font-size: 13px;
-        }
-
-        /* ── EDIT MODE layout ── */
-        .editor-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            align-items: start;
-        }
-
-        @media (max-width: 860px) {
-            .editor-layout { grid-template-columns: 1fr; }
-            .doc-article { padding: 28px 20px; }
-        }
-
-        .editor-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 24px;
-        }
-
-        .editor-panel-title {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .editor-textarea {
-            width: 100%;
-            min-height: 320px;
-            resize: vertical;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            font-family: "Courier New", monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--text-main);
-            background: #FEFEFE;
-            outline: none;
-        }
-        .editor-textarea:focus { border-color: var(--primary); }
-
-        textarea.comment-box {
-            min-height: 72px;
-            resize: none;
-        }
-
-        /* Edit topbar action row */
-        .edit-topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .edit-breadcrumb {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* Attachment table in edit mode */
-        .attach-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-            font-size: 12px;
-        }
-        .attach-table th {
-            text-align: left;
-            padding: 6px 8px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border-color);
-        }
-        .attach-table td {
-            padding: 8px;
-            border-bottom: 1px solid var(--border-color);
-            word-break: break-all;
-        }
-        .attach-table tr:last-child td { border-bottom: none; }
-
-        .btn-del-attach {
-            background: none;
-            border: none;
-            font-size: 11px;
-            color: var(--text-muted);
-            cursor: pointer;
-        }
-        .btn-del-attach:hover { color: var(--error-text); }
-
-        /* Save message */
-        .save-msg {
-            font-size: 12px;
-            color: var(--badge-green-text);
-            font-weight: 600;
-        }
-
-        /* Edit button in view mode topbar */
-        .edit-btn-topbar {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 16px;
-            border: 1px solid var(--primary);
-            background: var(--primary);
-            color: #fff;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-        .edit-btn-topbar:hover {
-            background: var(--primary-hover);
-            text-decoration: none;
-        }
-
-        /* Export menu (native <details> = keyboard accessible, no JS toggle needed) */
-        .export-menu { position: relative; }
-        .export-menu > summary {
-            list-style: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 16px;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            background: transparent;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            cursor: pointer;
-        }
-        .export-menu > summary::-webkit-details-marker { display: none; }
-        .export-menu > summary:hover { background: var(--bg-active); }
-        .export-items {
-            position: absolute;
-            right: 0;
-            top: calc(100% + 4px);
-            z-index: 20;
-            min-width: 170px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-        .export-items button {
-            display: block;
-            width: 100%;
-            padding: 10px 14px;
-            border: none;
-            background: none;
-            text-align: left;
-            font-size: 13px;
-            color: var(--text-main);
-            cursor: pointer;
-        }
-        .export-items button:hover,
-        .export-items button:focus-visible { background: var(--bg-active); }
-
-        /* PDF export = browser print: show only the document itself */
-        @media print {
-            .app-sidebar, .app-topbar, #errorBox, #editorSection,
-            .doc-article .doc-section { display: none !important; }
-            .app-main { margin-left: 0 !important; }
-            .app-content { padding: 0 !important; max-width: none !important; }
-            .doc-article { border: none !important; padding: 0 !important; max-width: none !important; }
-            body, .doc-article { background: #fff !important; }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document · KnowledgeForge</title>
+  <meta name="description" content="Read and edit a KnowledgeForge document.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
+<body>
+<main id="main" class="page page--reading">
 
-<body class="app-body">
+  <!-- Loading -->
+  <div id="loading" aria-busy="true" aria-label="Loading document">
+    <span class="skeleton" style="display: block; width: 60%; height: 32px"></span>
+    <span class="skeleton skeleton--line" style="display: block; width: 35%; margin: var(--space-4) 0 var(--space-8)"></span>
+    <span class="skeleton skeleton--line" style="display: block; margin-bottom: var(--space-3)"></span>
+    <span class="skeleton skeleton--line" style="display: block; margin-bottom: var(--space-3)"></span>
+    <span class="skeleton skeleton--line" style="display: block; width: 80%"></span>
+  </div>
 
-<!-- ===== SIDEBAR ===== -->
-<aside class="app-sidebar" id="appSidebar">
-    <div class="sidebar-brand">
-        <div style="display:flex;align-items:center;gap:8px;">
-            <button type="button" id="backButton"
-                    style="background:none;border:none;cursor:pointer;padding:0;
-                       color:var(--text-muted);display:flex;align-items:center;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2">
-                    <polyline points="15 18 9 12 15 6"/>
-                </svg>
-            </button>
-            <div>
-                <div style="font-family:var(--font-serif);font-weight:700;font-size:15px;
-                            color:var(--text-heading);">KnowledgeForge</div>
-                <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;
-                            color:var(--text-muted);">Digital Craftsmanship</div>
-            </div>
-        </div>
+  <!-- Whole-page load error -->
+  <div class="error-state" id="load-error" role="alert" hidden>
+    <span id="load-error-icon"></span>
+    <span class="error-state__msg" id="load-error-msg"></span>
+    <button type="button" class="btn btn--secondary btn--sm" id="retry-btn">Try again</button>
+    <a class="btn btn--secondary btn--sm" id="back-btn" href="/dashboard.html" hidden>Back to dashboard</a>
+  </div>
+
+  <!-- View -->
+  <article id="view" hidden>
+    <header style="margin-bottom: var(--space-8)">
+      <h1 class="title-xl" id="v-title"></h1>
+      <div class="meta-line" id="v-meta" style="margin-top: var(--space-3)"></div>
+      <div class="tag-list" id="v-tags" style="margin-top: var(--space-3)" hidden></div>
+    </header>
+    <div class="prose" id="v-body"></div>
+    <div class="empty" id="v-empty" hidden>
+      <span class="empty__icon" id="v-empty-icon"></span>
+      <h2 class="title-sm">This page is empty</h2>
+      <p class="empty__text" id="v-empty-text"></p>
+      <a class="btn btn--secondary" id="v-empty-btn" hidden>Start writing</a>
+    </div>
+  </article>
+
+  <!-- Editor -->
+  <form id="editor" novalidate hidden>
+    <label class="sr-only" for="e-title">Title</label>
+    <input class="editor-title" id="e-title" maxlength="200" autocomplete="off" placeholder="Untitled" aria-describedby="e-title-error">
+    <p class="field__error" id="e-title-error" hidden style="margin-top: var(--space-1)"></p>
+
+    <div class="editor-toolbar" style="margin-top: var(--space-4)">
+      <label class="sr-only" for="e-status">Status</label>
+      <select class="select select--sm" id="e-status" style="width: auto">
+        <option value="DRAFT">Draft</option>
+        <option value="PUBLISHED">Published</option>
+      </select>
+      <div class="tag-input" id="e-tags" style="flex: 1 1 200px">
+        <label class="sr-only" for="e-tag-field">Add tag</label>
+        <input class="tag-input__field" id="e-tag-field" maxlength="40" autocomplete="off" placeholder="Add tag, press Enter">
+      </div>
+      <span class="btn-row" style="margin-left: auto">
+        <span class="unsaved" id="e-unsaved" hidden>Unsaved changes</span>
+        <a class="btn btn--ghost btn--sm" id="e-done">Done</a>
+        <button type="submit" class="btn btn--primary btn--sm" id="e-save" title="Save (Ctrl+S)">Save</button>
+      </span>
     </div>
 
-    <div class="sidebar-action">
-        <a href="/dashboard.html" class="btn btn-primary btn-full">+ New Space</a>
+    <div class="tabs editor-panes" role="tablist" aria-label="Editor view">
+      <button type="button" class="tab" role="tab" id="pane-write" aria-selected="true" aria-controls="e-content">Write</button>
+      <button type="button" class="tab" role="tab" id="pane-preview" aria-selected="false" aria-controls="e-preview" tabindex="-1">Preview</button>
     </div>
-
-    <nav class="sidebar-nav">
-        <a class="nav-item" href="/dashboard.html">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-            Dashboard
-        </a>
-        <a class="nav-item" href="/dashboard.html#teamsSection">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Teams
-        </a>
-        <a class="nav-item active" href="/search.html">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            Search
-        </a>
-
-        <div style="padding:20px 20px 6px;font-size:10px;font-weight:700;
-                    text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);">
-            My Teams
-        </div>
-        <div id="sidebarTeams" style="padding:0 12px;">
-            <div style="padding:6px 8px;font-size:12px;color:var(--text-muted);">
-                Loading...
-            </div>
-        </div>
-    </nav>
-
-    <div class="sidebar-footer">
-        <a class="nav-item" href="/profile.html" style="padding:8px 0;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-            </svg>
-            My Spaces
-        </a>
-        <button class="nav-item" type="button" id="logoutButton"
-                style="background:none;border:none;width:100%;text-align:left;
-                   cursor:pointer;font-family:inherit;padding:8px 0;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Settings
-        </button>
+    <div class="editor-split" id="e-split" data-pane="write">
+      <label class="sr-only" for="e-content">Content (Markdown)</label>
+      <textarea class="textarea textarea--code" id="e-content" placeholder="Write in Markdown: # Heading, **bold**, - lists, `code`"></textarea>
+      <div class="editor-preview prose" id="e-preview" aria-label="Preview"></div>
     </div>
-</aside>
+  </form>
+</main>
 
-<!-- ===== MAIN ===== -->
-<div class="app-main">
-
-    <!-- Topbar -->
-    <div class="app-topbar">
-        <nav class="breadcrumb-nav">
-            <span id="topbarDocCrumb" style="color:var(--text-muted);">Document</span>
-            <span style="color:var(--border-dark);">/</span>
-            <span class="active" id="topbarDocTitle">Loading…</span>
-        </nav>
-        <div class="topbar-right">
-            <!-- Edit button (view mode only) -->
-            <button type="button" class="edit-btn-topbar" id="editModeBtn" style="display:none;"
-                    onclick="window.location.href='/document.html?id='+documentId+'&mode=edit'">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Edit
-            </button>
-            <!-- Export (view mode only, available to every member) -->
-            <details class="export-menu" id="exportMenu" style="display:none;">
-                <summary>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Export
-                </summary>
-                <div class="export-items">
-                    <button type="button" id="exportMdBtn">Markdown (.md)</button>
-                    <button type="button" id="exportPdfBtn">PDF (print)</button>
-                </div>
-            </details>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 style="color:var(--text-muted);cursor:pointer;">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 style="color:var(--text-muted);cursor:pointer;">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <div id="topAvatar"
-                 style="width:32px;height:32px;border-radius:50%;
-                        background:var(--bg-active);border:1px solid var(--border-color);
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:12px;font-weight:700;color:var(--primary);
-                        cursor:pointer;flex-shrink:0;overflow:hidden;"
-                 onclick="window.location.href='/profile.html'">?</div>
-        </div>
-    </div>
-
-    <!-- Content -->
-    <div class="app-content">
-
-        <div id="errorBox" class="error-box"></div>
-
-        <!-- ═══════════════ VIEW MODE ═══════════════ -->
-        <div id="viewSection" style="display:none;">
-
-            <div class="doc-article">
-
-                <!-- Tags + status row -->
-                <div class="doc-tags-row" id="viewTags"></div>
-
-                <!-- Title -->
-                <h1 class="doc-view-title" id="viewTitle">Loading…</h1>
-
-                <!-- Meta: author + last updated -->
-                <div class="doc-meta">
-                    <div class="doc-meta-item">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <span id="viewAuthor">—</span>
-                    </div>
-                    <span>·</span>
-                    <div class="doc-meta-item">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        <span id="viewUpdated">—</span>
-                    </div>
-                    <span id="viewStatus"
-                          style="margin-left:auto;"></span>
-                </div>
-
-                <!-- Body -->
-                <div class="doc-body" id="viewContent"></div>
-
-                <!-- Attachments -->
-                <div class="doc-section">
-                    <div class="doc-section-label">Attachments</div>
-                    <div id="attachmentsViewList"></div>
-                    <p id="attachmentsViewEmpty"
-                       style="display:none;font-size:13px;color:var(--text-muted);">
-                        No attachments.
-                    </p>
-                </div>
-
-                <!-- Comments -->
-                <div class="doc-section">
-                    <div class="doc-section-label">Comments</div>
-                    <div id="commentsBoxView"></div>
-                    <div style="margin-top:16px;">
-                        <textarea id="commentInputView" class="form-control comment-box"
-                                  placeholder="Write a comment…"></textarea>
-                        <button class="btn btn-outline" type="button"
-                                id="addCommentBtnView" style="margin-top:8px;">
-                            Add Comment
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Versions -->
-                <div class="doc-section">
-                    <div class="doc-section-label">Version History</div>
-                    <div id="versionsBoxView"></div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- ═══════════════ EDIT MODE ═══════════════ -->
-        <div id="editorSection" style="display:none;">
-
-            <div class="edit-topbar">
-                <div class="edit-breadcrumb">Editing: <strong id="editDocTitle">…</strong></div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <button class="btn btn-primary" type="button" id="saveButton">Save</button>
-                    <span class="save-msg" id="saveMessage"></span>
-                    <button class="btn btn-secondary" type="button"
-                            onclick="window.location.href='/document.html?id='+documentId+'&mode=view'">
-                        View
-                    </button>
-                </div>
-            </div>
-
-            <div class="editor-layout">
-
-                <!-- LEFT: Editor inputs -->
-                <div class="editor-panel">
-                    <div class="editor-panel-title">Editor</div>
-
-                    <div class="form-group">
-                        <label for="titleInput" class="form-label">Title</label>
-                        <input id="titleInput" type="text" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contentInput" class="form-label">Content / Markdown</label>
-                        <textarea id="contentInput" class="editor-textarea"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tagsInput" class="form-label">Tags</label>
-                        <input id="tagsInput" type="text" class="form-control"
-                               placeholder="api, platform, rfc">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="statusInput" class="form-label">Status</label>
-                        <select id="statusInput" class="form-control">
-                            <option value="DRAFT">DRAFT</option>
-                            <option value="PUBLISHED">PUBLISHED</option>
-                        </select>
-                    </div>
-
-                    <!-- Attachments -->
-                    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border-color);">
-                        <div class="editor-panel-title" style="margin-bottom:12px;">
-                            Attachments
-                        </div>
-
-                        <!-- File upload -->
-                        <div class="form-group">
-                            <label for="attachFileInput" class="form-label">Upload a file</label>
-                            <input id="attachFileInput" type="file" class="form-control"
-                                   accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.csv,.docx,.xlsx,.pptx">
-                            <div class="upload-hint">PDF, images, Office docs, txt/md/csv · max 5 MB</div>
-                        </div>
-                        <button class="btn btn-primary btn-sm" type="button" id="uploadAttachmentBtn">
-                            Upload
-                        </button>
-                        <span class="save-msg" id="uploadStatus" role="status"></span>
-
-                        <div class="upload-or">or add a link</div>
-
-                        <div class="form-group">
-                            <label for="attachNameInput" class="form-label">Name</label>
-                            <input id="attachNameInput" type="text" class="form-control"
-                                   placeholder="e.g. architecture-diagram.png">
-                        </div>
-                        <div class="form-group">
-                            <label for="attachUrlInput" class="form-label">URL</label>
-                            <input id="attachUrlInput" type="text" class="form-control"
-                                   placeholder="https://...">
-                        </div>
-                        <button class="btn btn-outline btn-sm" type="button"
-                                id="addAttachmentBtn">
-                            + Add Attachment
-                        </button>
-
-                        <table class="attach-table" style="margin-top:16px;">
-                            <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>File / Link</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody id="attachmentsEditTbody"></tbody>
-                        </table>
-                        <p id="attachmentsEditEmpty"
-                           style="display:none;font-size:12px;color:var(--text-muted);margin-top:8px;">
-                            No attachments yet.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- RIGHT: Preview + Comments + Versions -->
-                <div>
-                    <!-- Preview panel -->
-                    <div class="editor-panel" style="margin-bottom:16px;">
-                        <div class="editor-panel-title">Preview</div>
-
-                        <div id="previewTags" class="doc-tags-row"></div>
-                        <h2 id="previewTitle"
-                            style="font-family:var(--font-serif);font-size:24px;
-                                   margin-bottom:8px;color:var(--text-heading);"></h2>
-                        <div class="doc-body" id="previewContent"></div>
-                    </div>
-
-                    <!-- Comments panel -->
-                    <div class="editor-panel" style="margin-bottom:16px;">
-                        <div class="editor-panel-title">Comments</div>
-                        <div id="commentsBox"></div>
-                        <div style="margin-top:12px;">
-                            <textarea id="commentInput" class="form-control comment-box"
-                                      placeholder="Write a comment…"></textarea>
-                            <button class="btn btn-outline btn-sm" type="button"
-                                    id="addCommentBtn" style="margin-top:8px;">
-                                Add Comment
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Versions panel -->
-                    <div class="editor-panel">
-                        <div class="editor-panel-title">Version History</div>
-                        <div id="versionsBox"></div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-    </div>
-</div>
-
-<!-- Markdown renderer -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="/app.js"></script>
 <script>
-    const params     = new URLSearchParams(window.location.search);
-    const documentId = params.get("id");
-    let   mode       = params.get("mode") || "view";
+  (function () {
+    const esc = KF.escapeHtml;
+    const $ = function (id) { return document.getElementById(id); };
+    const params = new URLSearchParams(location.search);
+    const docId = params.get("id");
+    const docUrl = "/api/documents/" + encodeURIComponent(docId || "");
+    const wantsEdit = params.get("mode") === "edit";
 
-    /* ── Make documentId accessible to inline onclick ── */
-    window.documentId = documentId;
+    $("load-error-icon").outerHTML = KF.icon("alert-circle");
+    $("v-empty-icon").innerHTML = KF.icon("file-text");
 
-    function showError(message) {
-        const box = document.getElementById("errorBox");
-        box.style.display = "block";
-        box.textContent = message;
-    }
+    let doc = null;
+    let space = null;
+    let members = {};      // userId -> { fullName, email }
+    let editable = false;
 
-    function clearError() {
-        const box = document.getElementById("errorBox");
-        box.style.display = "none";
-        box.textContent = "";
-    }
+    function pageHref(mode) { return "/document.html?id=" + encodeURIComponent(docId) + "&mode=" + mode; }
 
-    function timeAgo(dateStr) {
-        if (!dateStr) return "—";
-        const date = new Date(dateStr);
-        const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 60) return "just now";
-        const mins = Math.floor(seconds / 60);
-        if (mins < 60) return mins + " min ago";
-        const hrs = Math.floor(mins / 60);
-        if (hrs < 24) return hrs + " hour" + (hrs > 1 ? "s" : "") + " ago";
-        const days = Math.floor(hrs / 24);
-        if (days === 1) return "Yesterday";
-        if (days < 30) return days + " days ago";
-        return date.toLocaleDateString("en-US",
-            { month: "short", day: "numeric", year: "numeric" });
-    }
-
-    async function fetchJson(url, options = {}) {
-        const response = await fetch(url, { credentials: "include", ...options });
-        if (response.status === 401) {
-            window.location.href = "/login.html";
-            return null;
-        }
-        const text = await response.text();
-        if (response.ok && !text) return null;
-        let data = null;
-        try { data = text ? JSON.parse(text) : null; } catch (e) {}
-        if (!response.ok) {
-            throw new Error(
-                (data && (data.message || data.error))
-                    ? (data.message || data.error)
-                    : ("Request failed: " + response.status)
-            );
-        }
-        return data;
-    }
-
-    /* Only hides UI; the API enforces roles anyway. Any lookup failure counts as "can't edit". */
-    async function canEditSpace(spaceId) {
-        try {
-            const space = await fetchJson(`/api/spaces/${spaceId}`);
-            const teams = await fetchJson("/api/me/teams");
-            const role  = (teams || []).find(t => t.teamId === space?.teamId)?.role;
-            return role === "ADMIN" || role === "EDITOR";
-        } catch (e) { return false; }
-    }
-
+    /* Markdown -> sanitised HTML. Without the sanitiser, show the source as plain text, never raw HTML. */
     function renderMarkdown(md) {
-        if (window.marked) {
-            marked.setOptions({ breaks: true });
-            return marked.parse(md || "");
-        }
-        return (md || "");
+      if (window.marked && window.DOMPurify) return DOMPurify.sanitize(marked.parse(md || "", { breaks: true, gfm: true }));
+      return "<p style=\"white-space: pre-wrap\">" + esc(md || "") + "</p>";
     }
 
-    /* ── Sidebar teams ── */
-    async function loadSidebarTeams() {
-        try {
-            const teams = await fetchJson("/api/teams");
-            const box = document.getElementById("sidebarTeams");
-            box.innerHTML = "";
-            if (!teams || teams.length === 0) {
-                box.innerHTML = `<div style="padding:6px 8px;font-size:12px;
-                    color:var(--text-muted);">No teams</div>`;
-                return;
-            }
-            teams.forEach(t => {
-                const a = document.createElement("a");
-                a.href = "/team.html?id=" + t.id;
-                a.style.cssText = "display:block;padding:6px 8px;font-size:12px;" +
-                    "color:var(--text-main);text-decoration:none;";
-                a.textContent = "• " + (t.name || "(Unnamed)");
-                a.onmouseover = () => a.style.background = "var(--bg-active)";
-                a.onmouseout  = () => a.style.background = "";
-                box.appendChild(a);
-            });
-        } catch (e) {}
+    function personName(userId) {
+      const m = members[userId];
+      return m ? (m.fullName || m.email) : null;
     }
 
-    /* ── Top avatar ── */
-    async function loadMe() {
-        try {
-            const me = await fetchJson("/api/me");
-            if (!me) return;
-            const el = document.getElementById("topAvatar");
-            if (me.profilePicture) {
-                el.innerHTML = `<img src="${me.profilePicture}" alt=""
-                    style="width:100%;height:100%;object-fit:cover;"
-                    onerror="this.parentElement.textContent='?'">`;
-            } else {
-                const name = (me.fullName || me.email || "?");
-                const parts = name.trim().split(" ");
-                el.textContent = parts.length >= 2
-                    ? (parts[0][0] + parts[1][0]).toUpperCase()
-                    : name.substring(0, 2).toUpperCase();
-            }
-        } catch (e) {}
+    /* ---------- View ---------- */
+    function renderView() {
+      const title = doc.title || "Untitled";
+      $("v-title").textContent = title;
+
+      const author = personName(doc.createdBy);
+      const updater = personName(doc.updatedBy);
+      const parts = [];
+      if (author) parts.push('<span style="display: inline-flex; align-items: center; gap: 6px">' + KF.avatar(members[doc.createdBy], "sm") + esc(author) + "</span>");
+      if (doc.updatedAt) {
+        const when = new Date(doc.updatedAt);
+        parts.push('<span>Updated <time datetime="' + esc(when.toISOString()) + '" title="' + esc(KF.formatDate(when) + ", " + KF.formatTime(when)) + '">' +
+          esc(KF.relativeTime(when)) + "</time>" + (updater && updater !== author ? " by " + esc(updater) : "") + "</span>");
+      }
+      // Published is the normal state; only drafts get a badge (same as the space page)
+      if (String(doc.status).toUpperCase() !== "PUBLISHED") parts.push('<span class="badge badge--draft">Draft</span>');
+      $("v-meta").innerHTML = parts.join('<span class="meta-line__sep" aria-hidden="true"></span>');
+
+      const tags = Array.isArray(doc.tags) ? doc.tags : [];
+      $("v-tags").innerHTML = tags.map(function (t) { return KF.tag(t, "/search.html?tag=" + encodeURIComponent(t)); }).join("");
+      $("v-tags").hidden = !tags.length;
+
+      const empty = !String(doc.content || "").trim();
+      $("v-body").innerHTML = empty ? "" : renderMarkdown(doc.content);
+      $("v-body").hidden = empty;
+      $("v-empty").hidden = !empty;
+      $("v-empty-text").textContent = editable ? "Nothing has been written here yet." : "Nothing has been written here yet. An admin or editor can add the content.";
+      $("v-empty-btn").hidden = !editable;
+      $("v-empty-btn").href = pageHref("edit");
+      $("v-empty-btn").innerHTML = KF.icon("pencil") + "Start writing";
     }
 
-    /* ══════════════════════════════════════
-       ATTACHMENTS
-    ══════════════════════════════════════ */
-    async function loadAttachments() {
-        const list = await fetchJson(`/api/documents/${documentId}/attachments`);
-        renderAttachments(list || []);
+    /* ---------- Editor ---------- */
+    let tags = [];
+    let saved = "";   // snapshot of the last saved state, to spot unsaved changes
+
+    function snapshot() {
+      return JSON.stringify([$("e-title").value.trim(), $("e-content").value, $("e-status").value, tags]);
+    }
+    function isDirty() { return snapshot() !== saved || $("e-tag-field").value.trim() !== ""; }
+    function updateDirty() { $("e-unsaved").hidden = !isDirty(); }
+
+    function renderTags() {
+      const box = $("e-tags");
+      box.querySelectorAll(".tag").forEach(function (el) { el.remove(); });
+      box.insertAdjacentHTML("afterbegin", tags.map(function (t, i) {
+        return '<span class="tag tint-' + KF.tintFor(t) + '">' + esc(t) +
+          '<button type="button" class="tag__remove" data-remove-tag="' + i + '" aria-label="Remove tag ' + esc(t) + '">' + KF.icon("x") + "</button></span>";
+      }).join(""));
     }
 
-    /* Names and URLs are user input and go into innerHTML: always escape */
-    function escapeHtml(s) {
-        return String(s ?? "").replace(/[&<>"']/g, c =>
-            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    function addTag(raw) {
+      String(raw).split(",").map(function (t) { return t.trim(); }).filter(Boolean).forEach(function (t) {
+        if (!tags.some(function (x) { return x.toLowerCase() === t.toLowerCase(); })) tags.push(t);
+      });
+      renderTags();
     }
 
-    /* Only http(s) links are clickable; blocks javascript: and data: URLs */
-    function safeUrl(url) {
-        return /^https?:\/\//i.test(url || "") ? url : null;
-    }
-
-    function formatSize(bytes) {
-        if (bytes == null) return "";
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
-        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-    }
-
-    const ICON_FILE  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/></svg>`;
-    const ICON_IMAGE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
-    const ICON_LINK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
-
-    function attachmentIcon(a) {
-        if (!a.fileId) return ICON_LINK;
-        return (a.contentType || "").startsWith("image/") ? ICON_IMAGE : ICON_FILE;
-    }
-
-    /* Where an attachment opens: our download endpoint for files, the URL for safe links */
-    function attachmentHref(a) {
-        return a.fileId ? `/api/attachments/${encodeURIComponent(a.id)}/download` : safeUrl(a.url);
-    }
-
-    function renderAttachments(list) {
-        /* EDIT table */
-        const tbody     = document.getElementById("attachmentsEditTbody");
-        const emptyEdit = document.getElementById("attachmentsEditEmpty");
-
-        if (tbody && emptyEdit) {
-            tbody.innerHTML = "";
-            if (!list.length) {
-                emptyEdit.style.display = "block";
-            } else {
-                emptyEdit.style.display = "none";
-                for (const a of list) {
-                    const href  = attachmentHref(a);
-                    const label = a.fileId
-                        ? formatSize(a.size)
-                        : (a.url || "").substring(0, 40) + (a.url && a.url.length > 40 ? "…" : "");
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${escapeHtml(a.originalName)}</td>
-                        <td>${href
-                            ? `<a href="${escapeHtml(href)}" ${a.fileId ? "" : 'target="_blank" rel="noopener noreferrer"'}
-                                   style="color:var(--primary);font-size:11px;">${escapeHtml(label)}</a>`
-                            : `<span style="font-size:11px;color:var(--text-muted);">${escapeHtml(label)}</span>`}
-                        </td>
-                        <td><button class="btn-del-attach delAttachBtn" type="button"
-                                    aria-label="Delete ${escapeHtml(a.originalName)}">✕</button></td>
-                    `;
-                    tr.querySelector(".delAttachBtn").addEventListener("click", async () => {
-                        if (!confirm("Delete this attachment?")) return;
-                        clearError();
-                        try {
-                            await fetchJson(`/api/attachments/${a.id || a._id}`,
-                                { method: "DELETE" });
-                            await loadAttachments();
-                        } catch (err) { showError(err.message); }
-                    });
-                    tbody.appendChild(tr);
-                }
-            }
-        }
-
-        /* VIEW chips */
-        const viewList  = document.getElementById("attachmentsViewList");
-        const emptyView = document.getElementById("attachmentsViewEmpty");
-
-        if (viewList && emptyView) {
-            viewList.innerHTML = "";
-            if (!list.length) {
-                emptyView.style.display = "block";
-            } else {
-                emptyView.style.display = "none";
-                /* Chips like mockup 07: icon, name, size */
-                for (const a of list) {
-                    const href = attachmentHref(a);
-                    const chip = document.createElement(href ? "a" : "span");
-                    chip.className = "attachment-chip";
-                    if (href) {
-                        chip.href = href;
-                        if (!a.fileId) { chip.target = "_blank"; chip.rel = "noopener noreferrer"; }
-                    }
-                    chip.innerHTML = `
-                        ${attachmentIcon(a)}
-                        <span>${escapeHtml(a.originalName || a.url)}</span>
-                        ${a.fileId ? `<span class="attachment-size">${formatSize(a.size)}</span>` : ""}
-                    `;
-                    viewList.appendChild(chip);
-                }
-            }
-        }
-    }
-
-    const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // keep in sync with the server limit
-
-    async function uploadAttachment() {
-        const input  = document.getElementById("attachFileInput");
-        const status = document.getElementById("uploadStatus");
-        const btn    = document.getElementById("uploadAttachmentBtn");
-        const file   = input.files && input.files[0];
-
-        clearError();
-        if (!file) { showError("Choose a file to upload."); return; }
-        // Checked here too so a big file fails instantly instead of after the whole upload
-        if (file.size > MAX_UPLOAD_BYTES) { showError("File is too large (max 5 MB)."); return; }
-
-        const form = new FormData();
-        form.append("file", file);
-
-        btn.disabled = true;
-        status.textContent = "Uploading…";
-        try {
-            await fetchJson(`/api/documents/${documentId}/attachments/upload`, { method: "POST", body: form });
-            input.value = "";
-            status.textContent = "Uploaded ✓";
-            setTimeout(() => { status.textContent = ""; }, 2000);
-            await loadAttachments();
-        } catch (err) {
-            status.textContent = "";
-            showError(err.message);
-        } finally {
-            btn.disabled = false;
-        }
-    }
-
-    async function addAttachment() {
-        const name = document.getElementById("attachNameInput").value.trim();
-        const url  = document.getElementById("attachUrlInput").value.trim();
-        if (!name || !url) { showError("Attachment name and URL are required."); return; }
-        if (!safeUrl(url)) { showError("Link must start with http:// or https://"); return; }
-        clearError();
-        try {
-            await fetchJson(`/api/documents/${documentId}/attachments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ originalName: name, url })
-            });
-            document.getElementById("attachNameInput").value = "";
-            document.getElementById("attachUrlInput").value  = "";
-            await loadAttachments();
-        } catch (err) { showError(err.message); }
-    }
-
-    /* ══════════════════════════════════════
-       COMMENTS
-    ══════════════════════════════════════ */
-    async function loadComments() {
-        const list = await fetchJson(`/api/documents/${documentId}/comments`);
-        renderComments(Array.isArray(list) ? list : []);
-    }
-
-    function renderComments(list) {
-        ["commentsBox", "commentsBoxView"].forEach(boxId => {
-            const box = document.getElementById(boxId);
-            if (!box) return;
-            box.innerHTML = "";
-
-            if (list.length === 0) {
-                box.innerHTML = `<p style="color:var(--text-muted);font-size:13px;">
-                    No comments yet.</p>`;
-                return;
-            }
-
-            for (const c of list) {
-                const div = document.createElement("div");
-                div.className = "comment-item";
-                const name = c.createdByFullName || c.createdByEmail || "Unknown";
-                const when = c.createdAt ? timeAgo(new Date(c.createdAt)) : "";
-
-                div.innerHTML = `
-                    <div class="comment-header">
-                        <div>
-                            <div class="comment-author">${name}</div>
-                            <div class="comment-time">${when}</div>
-                        </div>
-                        <button class="btn-del-comment delCommentBtn" type="button">Delete</button>
-                    </div>
-                    <div class="comment-body">${c.content || ""}</div>
-                `;
-
-                div.querySelector(".delCommentBtn").addEventListener("click", async () => {
-                    if (!confirm("Delete this comment?")) return;
-                    clearError();
-                    try {
-                        await fetchJson(`/api/comments/${c.id}`, { method: "DELETE" });
-                        await loadComments();
-                    } catch (err) { showError(err.message); }
-                });
-                box.appendChild(div);
-            }
-        });
-    }
-
-    async function addCommentFrom(textareaId) {
-        const ta = document.getElementById(textareaId);
-        if (!ta) return;
-        const content = ta.value.trim();
-        if (!content) { showError("Comment cannot be empty."); return; }
-        clearError();
-        try {
-            await fetchJson(`/api/documents/${documentId}/comments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content })
-            });
-            ta.value = "";
-            await loadComments();
-        } catch (err) { showError(err.message); }
-    }
-
-    /* ══════════════════════════════════════
-       VERSIONS
-    ══════════════════════════════════════ */
-    async function loadVersions() {
-        const list = await fetchJson(`/api/documents/${documentId}/versions`);
-        renderVersions(Array.isArray(list) ? list : []);
-    }
-
-    function renderVersions(list) {
-        ["versionsBox", "versionsBoxView"].forEach(boxId => {
-            const box = document.getElementById(boxId);
-            if (!box) return;
-            box.innerHTML = "";
-
-            if (list.length === 0) {
-                box.innerHTML = `<p style="color:var(--text-muted);font-size:13px;">
-                    No versions yet.</p>`;
-                return;
-            }
-
-            for (const v of list) {
-                const div = document.createElement("div");
-                div.className = "version-row";
-                const who  = v.savedByFullName || v.savedByEmail || "Unknown";
-                const when = v.savedAt ? timeAgo(new Date(v.savedAt)) : "";
-
-                div.innerHTML = `
-                    <div class="version-header">
-                        <div>
-                            <div class="version-label">Version ${v.versionNumber ?? ""}</div>
-                            <div class="version-meta">Saved by ${who} · ${when}</div>
-                        </div>
-                        <div class="version-actions">
-                            <button class="btn-version previewVersionBtn" type="button">
-                                Preview
-                            </button>
-                            ${mode === "edit"
-                    ? `<button class="btn-version restoreBtn" type="button">
-                                       Restore
-                                   </button>`
-                    : ""}
-                        </div>
-                    </div>
-                    <div class="version-preview-box">
-                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
-                            Snapshot — v${v.versionNumber}
-                        </div>
-                        <div style="font-family:var(--font-serif);font-size:18px;
-                                    font-weight:600;margin-bottom:12px;">
-                            ${v.title || "(No title)"}
-                        </div>
-                        <div class="doc-body">${renderMarkdown(v.content || "")}</div>
-                    </div>
-                `;
-
-                div.querySelector(".previewVersionBtn").addEventListener("click", () => {
-                    const pb = div.querySelector(".version-preview-box");
-                    pb.style.display = pb.style.display === "none" ? "block" : "none";
-                });
-
-                if (mode === "edit") {
-                    div.querySelector(".restoreBtn").addEventListener("click", async () => {
-                        if (!confirm(`Restore version ${v.versionNumber}?`)) return;
-                        clearError();
-                        try {
-                            await fetchJson(
-                                `/api/documents/${documentId}/versions/${v.id}/restore`,
-                                { method: "POST" }
-                            );
-                            await loadDocument();
-                        } catch (err) { showError(err.message); }
-                    });
-                }
-
-                box.appendChild(div);
-            }
-        });
-    }
-
-    /* ══════════════════════════════════════
-       PREVIEW (edit mode live update)
-    ══════════════════════════════════════ */
     function updatePreview() {
-        const title    = document.getElementById("titleInput").value;
-        const content  = document.getElementById("contentInput").value;
-        const tagsText = document.getElementById("tagsInput").value;
-
-        document.getElementById("previewTitle").textContent = title;
-        document.getElementById("previewContent").innerHTML = renderMarkdown(content);
-
-        const tagsContainer = document.getElementById("previewTags");
-        tagsContainer.innerHTML = "";
-        tagsText.split(",").map(t => t.trim()).filter(Boolean).forEach(tag => {
-            const span = document.createElement("span");
-            span.className = "doc-tag";
-            span.textContent = "#" + tag;
-            tagsContainer.appendChild(span);
-        });
+      const md = $("e-content").value;
+      $("e-preview").innerHTML = md.trim() ? renderMarkdown(md) : '<p class="text-steel">The preview shows up here as you write.</p>';
     }
 
-    /* ══════════════════════════════════════
-       LOAD DOCUMENT
-    ══════════════════════════════════════ */
-    async function loadDocument() {
-        if (!documentId) { showError("Document ID is missing from URL."); return; }
-
-        const doc = await fetchJson(`/api/documents/${documentId}`);
-        if (!doc) return;
-        currentDoc = doc;
-
-        /* Viewers never get edit mode (that also hides restore + attachment controls) */
-        const canEdit = await canEditSpace(doc.spaceId);
-        if (!canEdit) mode = "view";
-
-        /* Update topbar breadcrumb */
-        document.getElementById("topbarDocTitle").textContent =
-            (doc.title || "Untitled").toUpperCase();
-
-        if (mode === "edit") {
-            document.getElementById("editorSection").style.display = "block";
-            document.getElementById("viewSection").style.display   = "none";
-            document.getElementById("editModeBtn").style.display   = "none";
-
-            document.getElementById("editDocTitle").textContent   = doc.title || "";
-            document.getElementById("titleInput").value           = doc.title || "";
-            document.getElementById("contentInput").value         = doc.content || "";
-            document.getElementById("tagsInput").value            =
-                (doc.tags || []).join(", ");
-            document.getElementById("statusInput").value          =
-                doc.status || "DRAFT";
-            updatePreview();
-
-        } else {
-            document.getElementById("editorSection").style.display = "none";
-            document.getElementById("viewSection").style.display   = "block";
-            document.getElementById("editModeBtn").style.display   = canEdit ? "inline-flex" : "none";
-            document.getElementById("exportMenu").style.display    = "block";
-
-            /* Tags + status row */
-            const tagsRow = document.getElementById("viewTags");
-            tagsRow.innerHTML = "";
-            (doc.tags || []).forEach(tag => {
-                const span = document.createElement("span");
-                span.className = "doc-tag";
-                span.textContent = tag;
-                tagsRow.appendChild(span);
-            });
-
-            /* Status badge */
-            const statusEl = document.getElementById("viewStatus");
-            const s = (doc.status || "DRAFT").toUpperCase();
-            statusEl.innerHTML = s === "PUBLISHED"
-                ? `<span class="badge badge-published">Published</span>`
-                : `<span class="badge badge-draft">Draft</span>`;
-
-            document.getElementById("viewTitle").textContent =
-                doc.title || "Untitled";
-            document.getElementById("viewContent").innerHTML =
-                renderMarkdown(doc.content || "");
-
-            /* Author + updated */
-            document.getElementById("viewAuthor").textContent =
-                "Penned by " + (doc.createdByFullName || doc.createdByEmail || "Unknown");
-            document.getElementById("viewUpdated").textContent =
-                "Last updated " + timeAgo(doc.updatedAt);
-        }
-
-        await loadAttachments();
-        await loadComments();
-        await loadVersions();
+    function fillEditor() {
+      $("e-title").value = doc.title || "";
+      $("e-content").value = doc.content || "";
+      $("e-status").value = String(doc.status).toUpperCase() === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
+      tags = Array.isArray(doc.tags) ? doc.tags.slice() : [];
+      renderTags();
+      updatePreview();
+      saved = snapshot();
+      updateDirty();
     }
 
-    /* ══════════════════════════════════════
-       SAVE DOCUMENT
-    ══════════════════════════════════════ */
-    async function saveDocument() {
-        const title   = document.getElementById("titleInput").value.trim();
-        const content = document.getElementById("contentInput").value;
-        const status  = document.getElementById("statusInput").value;
-        const tags    = document.getElementById("tagsInput").value
-            .split(",").map(t => t.trim()).filter(Boolean);
+    function titleError(msg) {
+      $("e-title").setAttribute("aria-invalid", msg ? "true" : "false");
+      $("e-title-error").hidden = !msg;
+      $("e-title-error").innerHTML = msg ? KF.icon("alert-circle", "icon--sm") + esc(msg) : "";
+    }
 
-        clearError();
+    async function save() {
+      if ($("e-save").disabled) return;
+      if ($("e-tag-field").value.trim()) { addTag($("e-tag-field").value); $("e-tag-field").value = ""; }
+      const title = $("e-title").value.trim();
+      titleError(title ? "" : "Give the document a title.");
+      if (!title) { $("e-title").focus(); return; }
+      await KF.withLoading($("e-save"), async function () {
         try {
-            await fetchJson(`/api/documents/${documentId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content, tags, status })
-            });
-            const msg = document.getElementById("saveMessage");
-            msg.textContent = "Saved ✓";
-            setTimeout(() => { msg.textContent = ""; }, 2000);
-            await loadVersions();
-        } catch (error) { showError(error.message); }
+          const body = { title: title, content: $("e-content").value, tags: tags, status: $("e-status").value };
+          const updated = await KF.api(docUrl, { method: "PUT", json: body });
+          doc = Object.assign(doc, updated || body);
+          saved = snapshot();
+          updateDirty();
+          setCrumbs();
+          KF.toast("Saved.");
+        } catch (err) {
+          KF.toast("Couldn't save. " + err.message, { type: "error" });
+        }
+      });
     }
 
-    /* ══════════════════════════════════════
-       EXPORT
-    ══════════════════════════════════════ */
-    let currentDoc = null;
+    function bindEditor() {
+      $("editor").addEventListener("submit", function (e) { e.preventDefault(); save(); });
+      $("editor").addEventListener("input", updateDirty);
+      $("editor").addEventListener("change", updateDirty);
+      $("e-content").addEventListener("input", updatePreview);
+      $("e-title").addEventListener("input", function () { if ($("e-title").value.trim()) titleError(""); });
+      // Enter in the title jumps to the body instead of submitting
+      $("e-title").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("e-content").focus({ preventScroll: true }); } });
 
-    function closeExportMenu() {
-        document.getElementById("exportMenu").open = false;
-    }
+      const field = $("e-tag-field");
+      field.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === ",") {
+          e.preventDefault();
+          if (field.value.trim()) { addTag(field.value); field.value = ""; updateDirty(); }
+        } else if (e.key === "Backspace" && !field.value && tags.length) {
+          tags.pop(); renderTags(); updateDirty();
+        }
+      });
+      field.addEventListener("blur", function () { if (field.value.trim()) { addTag(field.value); field.value = ""; updateDirty(); } });
+      $("e-tags").addEventListener("click", function (e) {
+        const btn = e.target.closest("[data-remove-tag]");
+        if (btn) { tags.splice(Number(btn.dataset.removeTag), 1); renderTags(); updateDirty(); field.focus(); return; }
+        if (e.target === $("e-tags")) field.focus();
+      });
 
-    function exportMarkdown() {
-        if (!currentDoc) return;
-        const title = currentDoc.title || "Untitled";
-        const md = `# ${title}\n\n${currentDoc.content || ""}\n`;
-        // Strip characters Windows/macOS don't allow in file names
-        const fileName = (title.replace(/[\\/:*?"<>|]+/g, "").trim() || "document") + ".md";
+      document.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) { e.preventDefault(); save(); }
+      });
+      window.addEventListener("beforeunload", function (e) { if (isDirty()) { e.preventDefault(); e.returnValue = ""; } });
 
-        const url = URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" }));
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        closeExportMenu();
-    }
-
-    function exportPdf() {
-        closeExportMenu();
-        window.print(); // user picks "Save as PDF"; @media print hides everything but the document
-    }
-
-    document.getElementById("exportMdBtn").addEventListener("click", exportMarkdown);
-    document.getElementById("exportPdfBtn").addEventListener("click", exportPdf);
-    // Close the menu on outside click or Escape
-    document.addEventListener("click", e => {
-        const menu = document.getElementById("exportMenu");
-        if (menu.open && !menu.contains(e.target)) menu.open = false;
-    });
-    document.addEventListener("keydown", e => { if (e.key === "Escape") closeExportMenu(); });
-
-    /* ══════════════════════════════════════
-       EVENT LISTENERS
-    ══════════════════════════════════════ */
-    document.getElementById("addAttachmentBtn")
-        ?.addEventListener("click", addAttachment);
-
-    document.getElementById("uploadAttachmentBtn")
-        ?.addEventListener("click", uploadAttachment);
-
-    document.getElementById("addCommentBtn")
-        ?.addEventListener("click", () => addCommentFrom("commentInput"));
-
-    document.getElementById("addCommentBtnView")
-        ?.addEventListener("click", () => addCommentFrom("commentInputView"));
-
-    document.getElementById("saveButton")
-        ?.addEventListener("click", saveDocument);
-
-    document.getElementById("titleInput")
-        ?.addEventListener("input", updatePreview);
-    document.getElementById("contentInput")
-        ?.addEventListener("input", updatePreview);
-    document.getElementById("tagsInput")
-        ?.addEventListener("input", updatePreview);
-    document.getElementById("statusInput")
-        ?.addEventListener("change", updatePreview);
-
-    document.getElementById("backButton")
-        ?.addEventListener("click", () => history.back());
-
-    document.getElementById("logoutButton")
-        ?.addEventListener("click", async () => {
-            try { await fetch("/logout", { method: "POST", credentials: "include" }); }
-            catch (e) {}
-            window.location.href = "/login.html";
+      // Write / Preview switch (phones and tablets)
+      const panes = [$("pane-write"), $("pane-preview")];
+      panes.forEach(function (tab, i) {
+        tab.addEventListener("click", function () { showPane(i); });
+        tab.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowRight" || e.key === "ArrowLeft") { showPane(1 - i); panes[1 - i].focus(); }
         });
+      });
+      function showPane(i) {
+        $("e-split").dataset.pane = i ? "preview" : "write";
+        panes.forEach(function (t, j) { t.setAttribute("aria-selected", String(i === j)); t.tabIndex = i === j ? 0 : -1; });
+      }
+      $("e-done").href = pageHref("view");
+    }
 
-    /* ── Boot ── */
-    (async function init() {
-        await loadMe();
-        await loadSidebarTeams();
-        loadDocument().catch(err => showError(err.message));
-    })();
+    /* ---------- Load ---------- */
+    function setCrumbs() {
+      const title = (doc && doc.title) || "Untitled";
+      document.title = title + " · KnowledgeForge";
+      const team = space && KF.teams().find(function (t) { return t.teamId === space.teamId; });
+      const crumbs = [];
+      if (team) crumbs.push({ label: team.teamName || "Team", href: "/team.html?id=" + encodeURIComponent(team.teamId) });
+      if (space) crumbs.push({ label: space.name || "Space", href: "/space.html?id=" + encodeURIComponent(doc.spaceId) });
+      crumbs.push({ label: title });
+      KF.setBreadcrumbs(crumbs);
+    }
+
+    function showLoadError(err) {
+      $("loading").hidden = true;
+      $("view").hidden = true;
+      $("editor").hidden = true;
+      const known = err.status === 403 || err.status === 404 || !docId;
+      $("load-error-msg").textContent = !docId ? "No document was picked. Open one from its space."
+        : err.status === 403 ? "You're not a member of this document's team. Ask a team admin for an invite link."
+        : err.status === 404 ? "This document doesn't exist. It may have been deleted."
+        : "Couldn't load this document. " + err.message;
+      $("retry-btn").hidden = known;
+      $("back-btn").hidden = !known;
+      $("load-error").hidden = false;
+    }
+
+    async function load() {
+      $("load-error").hidden = true;
+      try {
+        doc = (await KF.api(docUrl)) || {};
+        // Space + team only add names and permissions; the document still shows if they fail
+        space = await KF.api("/api/spaces/" + encodeURIComponent(doc.spaceId)).catch(function () { return null; });
+        if (space) {
+          const team = await KF.api("/api/teams/" + encodeURIComponent(space.teamId)).catch(function () { return null; });
+          members = {};
+          ((team && team.teamMembers) || []).forEach(function (m) { members[m.userId] = m; });
+          const link = document.querySelector('#kf-sidebar a[href="/team.html?id=' + encodeURIComponent(space.teamId) + '"]');
+          if (link) { link.classList.add("is-active"); link.setAttribute("aria-current", "page"); }
+        }
+        editable = !!space && KF.canEdit(space.teamId);
+        setCrumbs();
+        $("loading").hidden = true;
+
+        if (wantsEdit && editable) {
+          document.getElementById("main").classList.remove("page--reading");
+          bindEditor();
+          fillEditor();
+          $("editor").hidden = false;
+          $("e-content").focus({ preventScroll: true });
+        } else {
+          if (wantsEdit) history.replaceState(null, "", pageHref("view")); // viewers never get the editor
+          renderView();
+          $("view").hidden = false;
+          if (editable) {
+            $("kf-actions").innerHTML = '<a class="btn btn--primary btn--sm" href="' + esc(pageHref("edit")) + '">' + KF.icon("pencil") + "Edit</a>";
+          }
+        }
+      } catch (err) {
+        showLoadError(err);
+      }
+    }
+
+    let shellReady = false;
+    $("retry-btn").addEventListener("click", function () {
+      if (!shellReady) { location.reload(); return; }
+      KF.withLoading($("retry-btn"), load);
+    });
+
+    KF.initShell({ active: null, breadcrumbs: [{ label: "Document" }] }).then(function () {
+      shellReady = true;
+      if (!docId) { showLoadError({}); return; }
+      return load();
+    }, showLoadError);
+  })();
 </script>
-
 </body>
 </html>

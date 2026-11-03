@@ -694,9 +694,26 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 .editor-title { width: 100%; border: 0; background: transparent; padding: 0; font-size: 32px; font-weight: 600; line-height: 1.2; letter-spacing: -0.5px; color: var(--color-ink); }
 .editor-title::placeholder { color: var(--color-stone); }
 .editor-title:focus { outline: none; }
-.editor-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-hairline); }
+/* Sticks under the top bar so Save stays in reach on long documents */
+.editor-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-hairline); position: sticky; top: var(--topbar-height); z-index: 10; background: var(--color-canvas); }
 .editor-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4); }
+.editor-split .textarea--code, .editor-split .editor-preview { min-height: 60vh; }
 .editor-split .textarea--code { height: 100%; }
+/* Write / Preview switch: only shown once the split stacks (< 1024px) */
+.editor-panes { display: none; }
+
+/* Tag input: removable tag chips + a text field, looks like one input */
+.tag-input {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  min-height: 30px; padding: 3px 6px;
+  border: 1px solid var(--color-hairline-strong); border-radius: var(--radius-sm); background: var(--color-canvas);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.tag-input:hover { border-color: var(--color-slate); }
+.tag-input:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-ring); }
+.tag-input__field { flex: 1; min-width: 96px; height: 22px; border: 0; padding: 0 2px; background: transparent; font-size: 13px; }
+.tag-input__field:focus { outline: none; } /* the wrapper shows the focus ring */
+.tag-input__field::placeholder { color: var(--color-steel); opacity: 1; }
 .editor-preview { padding: var(--space-3) var(--space-4); border: 1px solid var(--color-hairline); border-radius: var(--radius-md); background: var(--color-surface-soft); min-height: 320px; overflow: auto; }
 .unsaved { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-warning-text); }
 .unsaved::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning); }
@@ -756,6 +773,8 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
 @media (max-width: 1023px) {
   .grid--3, .grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .editor-split { grid-template-columns: 1fr; }
+  .editor-panes { display: flex; margin-top: var(--space-2); }
+  .editor-split[data-pane="write"] .editor-preview, .editor-split[data-pane="preview"] .textarea--code { display: none; }
   .layout-aside { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
   .layout-aside__side { grid-column: auto; grid-row: auto; }
 }
@@ -810,6 +829,7 @@ mark, .highlight { background: var(--color-highlight); color: inherit; border-ra
   .modal__footer { flex-direction: column-reverse; }
   .modal__footer .btn { width: 100%; }
   .file-chip__name { max-width: 50vw; }
+  .editor-toolbar { position: static; } /* wraps to two rows here: sticky would cover a third of the screen */
 
   /* Tables become stacked rows: add data-label to each <td> */
   .table--stack thead { display: none; }

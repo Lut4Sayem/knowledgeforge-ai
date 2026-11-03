@@ -399,13 +399,14 @@ git push origin main</code></pre>
       <div class="editor-toolbar">
         <label class="sr-only" for="sg-status">Status</label>
         <select class="select select--sm" id="sg-status" style="width:auto"><option>Draft</option><option>Published</option></select>
-        <span class="tag tint-mint">release <button type="button" class="tag__remove" aria-label="Remove tag release">${x}</button></span>
+        <div class="tag-input"><span class="tag tint-mint">release <button type="button" class="tag__remove" aria-label="Remove tag release">${x}</button></span><label class="sr-only" for="sg-tag">Add tag</label><input class="tag-input__field" id="sg-tag" placeholder="Add tag"></div>
         <span class="unsaved">Unsaved changes</span>
         <span style="margin-left:auto" class="btn-row">
           <button type="button" class="btn btn--ghost btn--sm">${upload} Attach</button>
           <button type="button" class="btn btn--primary btn--sm">Save</button>
         </span>
       </div>
+      <div class="tabs editor-panes" role="tablist" aria-label="Editor view"><button type="button" class="tab" role="tab" aria-selected="true">Write</button><button type="button" class="tab" role="tab" aria-selected="false">Preview</button></div>
       <div class="editor-split">
         <label class="sr-only" for="sg-src">Markdown</label>
         <textarea class="textarea textarea--code" id="sg-src">## Steps
