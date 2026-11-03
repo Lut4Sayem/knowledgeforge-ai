@@ -1,244 +1,136 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Join Team Workspace</title>
-    <link rel="stylesheet" href="/style.css" />
-    <style>
-        /* Join-page only styles */
-
-        .join-header-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-        }
-
-        .join-header-icon svg {
-            color: var(--primary);
-        }
-
-        .join-title {
-            font-family: var(--font-serif);
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--text-heading);
-            margin-bottom: 8px;
-        }
-
-        .join-subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        .workspace-card {
-            border: 1px solid var(--border-color);
-            padding: 16px 18px;
-            margin: 24px 0 16px;
-            text-align: left;
-            background: var(--bg-card);
-        }
-
-        .workspace-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        .workspace-name {
-            font-family: var(--font-serif);
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-heading);
-            margin-bottom: 4px;
-        }
-
-        .workspace-meta {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        #statusText {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        #messageBox {
-            margin-top: 16px;
-            font-size: 13px;
-            display: none;
-        }
-
-        #messageBox.error {
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-            color: var(--error-text);
-            padding: 10px 12px;
-        }
-
-        #messageBox.success {
-            background: #E6F4EA;
-            border: 1px solid #A8D5B5;
-            color: #137333;
-            padding: 10px 12px;
-        }
-
-        #actionBtn {
-            margin-top: 16px;
-        }
-
-        .join-footer-text {
-            margin-top: 20px;
-            font-size: 12px;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        .join-footer-text a {
-            font-weight: 600;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join a team · KnowledgeForge</title>
+  <meta name="description" content="Request to join a team on KnowledgeForge with your invite link.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
+<body>
+<main class="auth" id="main">
+  <a class="auth__brand" href="/dashboard.html">
+    <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span>
+    KnowledgeForge
+  </a>
 
-<body class="auth-page">
-
-<div class="auth-card" style="max-width: 520px;">
-
-    <!-- Header -->
-    <div class="auth-header" style="margin-bottom: 20px;">
-        <div class="join-header-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-        </div>
-        <h1 class="join-title">Join Team Workspace</h1>
-        <p class="join-subtitle">
-            You’ve been invited to collaborate in KnowledgeForge.
-            Joining this workspace lets you request access to shared documents and resources.
-        </p>
-        <p id="statusText">Checking invite...</p>
+  <section class="auth__card" aria-labelledby="join-title" aria-live="polite" id="card">
+    <!-- Loading: shown until we know whether the person is logged in -->
+    <div id="state-loading" aria-busy="true">
+      <div class="skeleton skeleton--title" style="width: 60%; height: 24px"></div>
+      <div class="skeleton skeleton--line" style="margin-top: var(--space-4)"></div>
+      <div class="skeleton skeleton--line" style="margin-top: var(--space-2); width: 80%"></div>
+      <div class="skeleton skeleton--line" style="margin-top: var(--space-6); height: 36px"></div>
     </div>
 
-    <!-- Workspace summary -->
-    <div class="workspace-card">
-        <div class="workspace-label">Workspace</div>
-        <div class="workspace-name" id="workspaceName">KnowledgeForge Team Workspace</div>
-        <div class="workspace-meta">
-            Invite code:
-            <span id="inviteCodeText" style="font-family:monospace;"></span>
-        </div>
+    <!-- Ready: invite found, not yet requested -->
+    <div id="state-ready" hidden>
+      <h1 class="title-lg" id="join-title">Join a team</h1>
+      <p class="text-slate">You've been invited to a team on KnowledgeForge. Send a request and a team admin will review it.</p>
+
+      <dl class="notice" style="margin-top: var(--space-5); display: block">
+        <dt class="text-steel" style="font-size: 12px">Signed in as</dt>
+        <dd id="me" style="margin: 0 0 var(--space-3); color: var(--color-ink)"></dd>
+        <dt class="text-steel" style="font-size: 12px">Invite code</dt>
+        <dd style="margin: 0"><code id="code" style="color: var(--color-ink); overflow-wrap: anywhere"></code></dd>
+      </dl>
+
+      <div class="error-state" id="form-error" role="alert" hidden style="margin-top: var(--space-4)">
+        <span id="form-error-icon"></span><span class="error-state__msg" id="form-error-msg"></span>
+      </div>
+
+      <button type="button" class="btn btn--primary btn--block" id="join-btn" style="margin-top: var(--space-6)">Request to join</button>
     </div>
 
-    <!-- Message + action -->
-    <div id="messageBox"></div>
-
-    <button id="actionBtn" class="btn btn-primary btn-full" style="display:none;">
-        Request to Join
-    </button>
-
-    <!-- Bottom text -->
-    <div class="join-footer-text">
-        New here? <a href="/register.html">Create an account</a><br>
-        <span style="display:block;margin-top:8px;">
-            By joining, you agree to the workspace terms of service.
-        </span>
+    <!-- Sent -->
+    <div id="state-sent" hidden>
+      <span class="badge badge--pending badge--dot">Pending approval</span>
+      <h1 class="title-lg" style="margin-top: var(--space-3)">Request sent</h1>
+      <p class="text-slate">A team admin needs to approve it. Once they do, the team shows up in your sidebar.</p>
+      <a class="btn btn--primary btn--block" href="/dashboard.html" style="margin-top: var(--space-6)">Go to dashboard</a>
     </div>
 
-</div>
+    <!-- Invalid link / load error -->
+    <div id="state-error" hidden>
+      <h1 class="title-lg">This invite doesn't work</h1>
+      <div class="error-state" role="alert" style="margin-top: var(--space-4)">
+        <span id="bad-icon"></span><span class="error-state__msg" id="bad-msg"></span>
+      </div>
+      <a class="btn btn--secondary btn--block" href="/dashboard.html" style="margin-top: var(--space-6)">Go to dashboard</a>
+    </div>
+  </section>
 
+  <p class="auth__footer">Don't have an account? <a class="link" href="/register.html">Create one</a></p>
+</main>
+<footer class="site-footer" data-kf-footer></footer>
+
+<script src="/app.js"></script>
 <script>
-    const inviteCode  = new URLSearchParams(window.location.search).get("code");
-    const statusText  = document.getElementById("statusText");
-    const messageBox  = document.getElementById("messageBox");
-    const actionBtn   = document.getElementById("actionBtn");
-    const inviteCodeText = document.getElementById("inviteCodeText");
+  (function () {
+    const code = (new URLSearchParams(location.search).get("code") || "").trim();
+    const states = ["loading", "ready", "sent", "error"];
+    const joinBtn = document.getElementById("join-btn");
+    const formError = document.getElementById("form-error");
 
-    if (inviteCodeText) {
-        inviteCodeText.textContent = inviteCode || "—";
+    document.getElementById("form-error-icon").outerHTML = KF.icon("alert-circle");
+    document.getElementById("bad-icon").outerHTML = KF.icon("alert-circle");
+
+    function show(name) {
+      states.forEach(function (s) { document.getElementById("state-" + s).hidden = s !== name; });
+      if (name === "ready") joinBtn.focus();
     }
 
-    function showMessage(text, type) {
-        messageBox.style.display = "block";
-        messageBox.className = type; // "error" or "success"
-        messageBox.textContent = text;
+    function showFormError(message) {
+      formError.hidden = !message;
+      document.getElementById("form-error-msg").textContent = message || "";
     }
 
-    async function checkLoginAndInvite() {
-        if (!inviteCode) {
-            statusText.textContent = "";
-            showMessage("Invalid link: no invite code found.", "error");
-            return;
-        }
-
-        // check if logged in
-        const meRes = await fetch("/api/me", { credentials: "include" });
-        if (meRes.status === 401) {
-            // save the invite code, redirect to login, come back after
-            sessionStorage.setItem("pendingInviteCode", inviteCode);
-            window.location.href = "/login.html";
-            return;
-        }
-
-        statusText.textContent = "You’ve been invited to join a team workspace.";
-        actionBtn.style.display = "inline-block";
+    function fail(message) {
+      document.getElementById("bad-msg").textContent = message;
+      show("error");
     }
 
-    actionBtn.addEventListener("click", async () => {
-        actionBtn.disabled = true;
-        statusText.textContent = "Sending request...";
+    async function init() {
+      if (!code) { fail("The link is missing its invite code. Ask the person who invited you for a new link."); return; }
+      let me;
+      try {
+        me = await KF.api("/api/me"); // 401 sends them to login, then back here via ?next=
+      } catch (err) {
+        fail(err.message);
+        return;
+      }
+      document.getElementById("me").textContent = (me && (me.fullName || me.email)) || "";
+      document.getElementById("code").textContent = code;
+      show("ready");
+    }
 
+    joinBtn.addEventListener("click", function () {
+      showFormError("");
+      KF.withLoading(joinBtn, async function () {
         try {
-            const res = await fetch(`/api/team-invites/${inviteCode}/join`, {
-                method: "POST",
-                credentials: "include"
-            });
-
-            const text = await res.text();
-            let data = null;
-            try { data = text ? JSON.parse(text) : null; } catch (e) {}
-
-            if (res.status === 201) {
-                statusText.textContent = "";
-                showMessage("Request sent! Waiting for admin approval.", "success");
-                actionBtn.style.display = "none";
-                return;
-            }
-
-            const errorMsg = (data && data.message) ? data.message : "Something went wrong.";
-
-            if (errorMsg.toLowerCase().includes("already a member")) {
-                statusText.textContent = "";
-                showMessage("You're already a member! Redirecting...", "success");
-                setTimeout(() => window.location.href = "/dashboard.html", 1500);
-                return;
-            }
-
-            statusText.textContent = "";
-            showMessage(errorMsg, "error");
-            actionBtn.disabled = false;
-
+          await KF.api("/api/team-invites/" + encodeURIComponent(code) + "/join", { method: "POST" });
+          show("sent");
         } catch (err) {
-            statusText.textContent = "";
-            showMessage("Network error. Please try again.", "error");
-            actionBtn.disabled = false;
+          if (err.status === 409 && /already a member/i.test(err.message)) {
+            KF.toast("You're already a member. Taking you to your dashboard…");
+            setTimeout(function () { location.href = "/dashboard.html"; }, 1500);
+          } else if (err.status === 409) {
+            show("sent"); // an earlier request is still pending
+            KF.toast("You've already asked to join. It's waiting for approval.", { type: "info" });
+          } else if (err.status === 404) {
+            fail("We couldn't find this invite. It may have been replaced; ask for a new link.");
+          } else {
+            showFormError(err.message);
+          }
         }
+      });
     });
 
-    checkLoginAndInvite();
+    init();
+  })();
 </script>
-
 </body>
 </html>

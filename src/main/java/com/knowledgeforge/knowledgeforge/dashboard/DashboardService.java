@@ -132,7 +132,23 @@ public class DashboardService {
             recent.add(dto);
         }
 
+        Map<String, Integer> spacesPerTeam = new HashMap<>();
+        for (Space s : spaces) spacesPerTeam.merge(s.getTeamId(), 1, Integer::sum);
+        Map<String, Integer> docsPerTeam = new HashMap<>();
+        for (DocumentEntity d : docs) {
+            Space s = spaceMap.get(d.getSpaceId());
+            if (s != null) docsPerTeam.merge(s.getTeamId(), 1, Integer::sum);
+        }
+        List<TeamSummaryDTO> teamSummaries = new ArrayList<>();
+        for (TeamMember tm : memberships) {
+            Team t = teamMap.get(tm.getTeamId());
+            if (t == null) continue;
+            teamSummaries.add(new TeamSummaryDTO(t.getId(), t.getName(), t.getDescription(), tm.getRole(),
+                    spacesPerTeam.getOrDefault(t.getId(), 0), docsPerTeam.getOrDefault(t.getId(), 0)));
+        }
+
         DashboardResponseDTO resp = new DashboardResponseDTO();
+        resp.setTeams(teamSummaries);
         resp.setTeamCount(teams.size());
         resp.setSpaceCount(spaces.size());
         resp.setDocumentCount(docs.size());

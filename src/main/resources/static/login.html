@@ -1,87 +1,148 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KnowledgeForge - Sign In</title>
-    <link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in · KnowledgeForge</title>
+  <meta name="description" content="Log in to KnowledgeForge, your team's knowledge base.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body class="auth-page">
+<body>
+<main class="auth" id="main">
+  <a class="auth__brand" href="/login.html">
+    <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span>
+    KnowledgeForge
+  </a>
 
-<div class="auth-card">
-    <div class="auth-header">
-        <h1>KnowledgeForge</h1>
-        <p>Sign in to your workspace</p>
+  <section class="auth__card" aria-labelledby="login-title">
+    <h1 class="title-lg" id="login-title">Log in</h1>
+    <p class="text-slate">Pick up where your team left off.</p>
+
+    <div class="error-state" id="form-error" role="alert" hidden style="margin-top: var(--space-5)">
+      <span id="form-error-icon"></span><span class="error-state__msg" id="form-error-msg"></span>
     </div>
 
-    <!-- Error Message Container (Hidden by default) -->
-    <div id="message" class="alert-error" style="display: none;"></div>
-
-    <form id="loginForm">
-        <div class="form-group">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" id="email" class="form-control" placeholder="you@example.com" required>
+    <form id="login-form" novalidate style="margin-top: var(--space-6)">
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" required autofocus aria-describedby="email-error">
+        <p class="field__error" id="email-error" hidden></p>
+      </div>
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <div class="input-group">
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" required aria-describedby="password-error">
+          <button type="button" class="btn btn--ghost btn--icon btn--sm input-group__btn" data-toggle-password="password" aria-pressed="false" aria-label="Show password" id="pw-toggle"></button>
         </div>
-
-        <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <label for="password" class="form-label">Password</label>
-                <!-- Mock forgot password link to match design -->
-                <a href="#" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Forgot?</a>
-            </div>
-            <input type="password" id="password" class="form-control" placeholder="••••••••" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-full" style="margin-top: 8px;">LOG IN</button>
+        <p class="field__error" id="password-error" hidden></p>
+        <p class="hint" id="caps-hint" aria-live="polite" hidden>Caps Lock is on.</p>
+      </div>
+      <button type="submit" class="btn btn--primary btn--block" id="submit" style="margin-top: var(--space-6)">Log in</button>
     </form>
+  </section>
 
-    <div class="auth-footer">
-        Don't have an account? <a href="/register.html" style="font-weight: 600;">Register</a>
-    </div>
-</div>
+  <p class="auth__footer">New to KnowledgeForge? <a class="link" href="/register.html">Create an account</a></p>
+</main>
+<footer class="site-footer" data-kf-footer></footer>
 
+<script src="/app.js"></script>
 <script>
-    const form = document.getElementById("loginForm");
-    const message = document.getElementById("message");
+  (function () {
+    const form = document.getElementById("login-form");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const submit = document.getElementById("submit");
+    const formError = document.getElementById("form-error");
 
-    form.addEventListener("submit", async function (event) {
-        event.preventDefault();
+    document.getElementById("pw-toggle").innerHTML = KF.icon("eye");
+    document.getElementById("form-error-icon").outerHTML = KF.icon("alert-circle");
 
-        // Clear previous errors
-        message.style.display = "none";
-        message.innerHTML = "";
-
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        const response = await fetch("/api/auth/login", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        });
-
-        if (response.ok) {
-            window.location.href = "/dashboard.html";
-        } else {
-            // Display the red alert banner styled like the design reference
-            message.style.display = "flex";
-            message.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                    <span>Invalid credentials. Please try again.</span>
-                `;
+    // Only same-origin paths, so ?next= can't send people to another site.
+    function nextUrl() {
+      const raw = new URLSearchParams(location.search).get("next");
+      if (!raw) return "/dashboard.html";
+      try {
+        const url = new URL(raw, location.origin);
+        if (url.origin === location.origin && !/^\/(login|register)\.html/.test(url.pathname)) {
+          return url.pathname + url.search + url.hash;
         }
-    });
-</script>
+      } catch (e) { /* fall through */ }
+      return "/dashboard.html";
+    }
 
+    function setFieldError(input, message) {
+      const err = document.getElementById(input.id + "-error");
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+      err.hidden = !message;
+      err.innerHTML = message ? KF.icon("alert-circle", "icon--sm") + KF.escapeHtml(message) : "";
+    }
+
+    function showFormError(message) {
+      formError.hidden = !message;
+      document.getElementById("form-error-msg").textContent = message || "";
+    }
+
+    function validate() {
+      let ok = true;
+      const value = email.value.trim();
+      if (!value) { setFieldError(email, "Enter your email."); ok = false; }
+      else if (!email.checkValidity()) { setFieldError(email, "Enter a full email address, like name@example.com."); ok = false; }
+      else setFieldError(email, "");
+      if (!password.value) { setFieldError(password, "Enter your password."); ok = false; }
+      else setFieldError(password, "");
+      if (!ok) form.querySelector('[aria-invalid="true"]').focus();
+      return ok;
+    }
+
+    // Clear a field's error as soon as the person starts fixing it.
+    [email, password].forEach(function (input) {
+      input.addEventListener("input", function () {
+        if (input.getAttribute("aria-invalid") === "true") setFieldError(input, "");
+        showFormError("");
+      });
+    });
+
+    // Caps Lock is the usual reason a correct password "doesn't work".
+    const capsHint = document.getElementById("caps-hint");
+    ["keydown", "keyup"].forEach(function (type) {
+      password.addEventListener(type, function (e) {
+        if (e.getModifierState) capsHint.hidden = !e.getModifierState("CapsLock");
+      });
+    });
+    password.addEventListener("blur", function () { capsHint.hidden = true; });
+
+    // Already logged in (e.g. a bookmarked login page): skip the form.
+    KF.api("/api/me", { redirectOn401: false })
+      .then(function (me) { if (me) location.replace(nextUrl()); })
+      .catch(function () { /* not logged in: stay here */ });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      showFormError("");
+      if (!validate()) return;
+
+      KF.withLoading(submit, async function () {
+        try {
+          await KF.api("/api/auth/login", {
+            json: { email: email.value.trim(), password: password.value },
+            redirectOn401: false
+          });
+          location.href = nextUrl();
+        } catch (err) {
+          if (err.status === 401 || err.status === 403) {
+            showFormError("That email and password don't match. Check them and try again.");
+            password.select();
+            password.focus();
+          } else {
+            showFormError(err.status ? "Couldn't log you in: " + err.message : err.message);
+          }
+        }
+      });
+    });
+  })();
+</script>
 </body>
 </html>

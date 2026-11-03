@@ -9,6 +9,10 @@ public class DashboardResponseDTO {
 
     private List<RecentDocumentDTO> recentDocuments;
     private List<RecentActivityDTO> recentActivity;
+    private List<TeamSummaryDTO> teams;
+
+    public List<TeamSummaryDTO> getTeams() { return teams; }
+    public void setTeams(List<TeamSummaryDTO> teams) { this.teams = teams; }
 
     public int getTeamCount() { return teamCount; }
     public void setTeamCount(int teamCount) { this.teamCount = teamCount; }
