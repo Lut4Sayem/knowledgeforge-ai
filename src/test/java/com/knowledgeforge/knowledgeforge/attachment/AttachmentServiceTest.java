@@ -1,6 +1,7 @@
 package com.knowledgeforge.knowledgeforge.attachment;
 
 import com.knowledgeforge.knowledgeforge.activity.ActivityLogService;
+import com.knowledgeforge.knowledgeforge.ai.AiSummaryRepository;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentEntity;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentRepository;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
@@ -44,9 +45,10 @@ class AttachmentServiceTest {
     DocumentRepository documents = mock(DocumentRepository.class);
     AttachmentRepository attachments = mock(AttachmentRepository.class);
     AttachmentStorageService storage = mock(AttachmentStorageService.class);
+    AiSummaryRepository summaries = mock(AiSummaryRepository.class);
 
     DocumentService documentService = new DocumentService(documents, spaces, members, users,
-            mock(DocumentVersionRepository.class), mock(ActivityLogService.class), attachments, storage);
+            mock(DocumentVersionRepository.class), mock(ActivityLogService.class), attachments, storage, summaries);
     AttachmentService service = new AttachmentService(attachments, storage, documentService, users);
 
     @BeforeEach
@@ -224,6 +226,7 @@ class AttachmentServiceTest {
         verify(attachments).deleteAll(list);
         verify(storage).delete("f1");
         verify(storage).delete(null); // link attachment: storage ignores a null id
+        verify(summaries).deleteByDocumentId(DOC_ID); // cached AI summary goes with the document
         verify(documents).deleteById(DOC_ID);
     }
 

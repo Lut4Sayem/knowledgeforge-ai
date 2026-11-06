@@ -1,6 +1,7 @@
 package com.knowledgeforge.knowledgeforge.documentPkg;
 
 import com.knowledgeforge.knowledgeforge.activity.ActivityLogService;
+import com.knowledgeforge.knowledgeforge.ai.AiSummaryRepository;
 import com.knowledgeforge.knowledgeforge.attachment.Attachment;
 import com.knowledgeforge.knowledgeforge.attachment.AttachmentRepository;
 import com.knowledgeforge.knowledgeforge.attachment.AttachmentStorageService;
@@ -30,6 +31,7 @@ public class DocumentService {
     final ActivityLogService activityLogService;
     final AttachmentRepository attachmentRepository;
     final AttachmentStorageService attachmentStorage;
+    final AiSummaryRepository aiSummaryRepository;
 
     public DocumentService(
             DocumentRepository documentRepository,
@@ -39,7 +41,8 @@ public class DocumentService {
             DocumentVersionRepository documentVersionRepository,
             ActivityLogService activityLogService,
             AttachmentRepository attachmentRepository,
-            AttachmentStorageService attachmentStorage
+            AttachmentStorageService attachmentStorage,
+            AiSummaryRepository aiSummaryRepository
     ) {
         this.documentRepository = documentRepository;
         this.spaceRepository = spaceRepository;
@@ -49,6 +52,7 @@ public class DocumentService {
         this.activityLogService = activityLogService;
         this.attachmentRepository = attachmentRepository;
         this.attachmentStorage = attachmentStorage;
+        this.aiSummaryRepository = aiSummaryRepository;
     }
 
     public DocumentEntity createDocument(String spaceId, CreateDocumentRequest request) {
@@ -197,6 +201,7 @@ public class DocumentService {
         attachmentRepository.deleteAll(attachments);
         attachments.forEach(a -> attachmentStorage.delete(a.getFileId()));
 
+        aiSummaryRepository.deleteByDocumentId(documentId);
         documentRepository.deleteById(documentId);
     }
 
