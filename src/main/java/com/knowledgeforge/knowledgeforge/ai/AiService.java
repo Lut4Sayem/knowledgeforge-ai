@@ -159,7 +159,7 @@ public class AiService {
         Set<String> words = new LinkedHashSet<>();
         for (String w : question.toLowerCase().split("[^\\p{L}\\p{N}]+")) {
             if (w.length() >= 3 && !STOP_WORDS.contains(w)) {
-                words.add(w);
+                words.add(stem(w));
             }
         }
         record Scored(DocumentEntity doc, int score) {}
@@ -179,6 +179,15 @@ public class AiService {
                 .limit(ASK_DOCS)
                 .map(Scored::doc)
                 .toList();
+    }
+
+    // shortcut: crude English suffix trim ("vacations" -> "vacation"), upgrade to a real stemmer if matching feels weak.
+    static String stem(String w) {
+        if (w.endsWith("ies") && w.length() > 4) return w.substring(0, w.length() - 3) + "y";
+        for (String suffix : new String[]{"ing", "es", "ed", "s"}) {
+            if (w.endsWith(suffix) && w.length() - suffix.length() >= 4) return w.substring(0, w.length() - suffix.length());
+        }
+        return w;
     }
 
     // Only [n] that match a document we actually sent become sources, in order of first use.

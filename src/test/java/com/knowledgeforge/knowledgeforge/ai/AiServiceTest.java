@@ -272,6 +272,15 @@ class AiServiceTest {
     }
 
     @Test
+    void askMatchesPluralAndOtherWordForms() {
+        spaceHas(docOf("a", "Vacation policy", "20 days"));
+        AskResponse r = service.ask(SPACE_ID, "Which vacations policies exist?");
+        assertEquals(1, r.usedDocuments());
+        assertEquals("vacation", AiService.stem("vacations"));
+        assertEquals("policy", AiService.stem("policies"));
+    }
+
+    @Test
     void askOverUserCapGets429() {
         spaceHas(docOf("a", "Vacation policy", "20 days"));
         when(usage.countByUserIdAndCreatedAtGreaterThanEqual(eq(USER_ID), any(Date.class))).thenReturn(10L);
