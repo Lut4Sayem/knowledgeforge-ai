@@ -56,6 +56,10 @@ public class AiClient {
 
     // Tests pass a builder that already has a mock server bound to it.
     AiClient(String baseUrl, String model, String apiKey, RestClient.Builder builder) {
+        // Values pasted into a dashboard often carry stray spaces or new lines
+        baseUrl = baseUrl.strip();
+        model = model.strip();
+        apiKey = apiKey.strip();
         this.configured = !baseUrl.isBlank() && !model.isBlank() && !apiKey.isBlank();
         this.model = model;
         this.http = builder.baseUrl(baseUrl)
@@ -98,6 +102,10 @@ public class AiClient {
                     .body(body)
                     .retrieve()
                     .body(Completion.class);
+        } catch (IllegalArgumentException e) {
+            // Bad AI_BASE_URL (e.g. no https://) or a header-breaking character in the key: a setup problem, not a busy provider.
+            log.warn("AI config invalid: check AI_BASE_URL (must start with https://) and AI_API_KEY (no spaces or new lines)");
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI is not configured on this server");
         } catch (Exception e) {
             // 429, 5xx, timeout, bad JSON: log only the exception type, never the message (could echo input).
             log.warn("AI request failed: {}", e.getClass().getSimpleName());

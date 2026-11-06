@@ -85,4 +85,18 @@ class AiClientTest {
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, e.getStatusCode());
         assertEquals("AI is not configured on this server", e.getReason());
     }
+
+    @Test
+    void urlWithoutSchemeIsReportedAsNotConfiguredNotBusy() {
+        AiClient c = new AiClient("api.groq.com/openai/v1", "m", "k", RestClient.builder());
+        ResponseStatusException e = thrown(c);
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, e.getStatusCode());
+        assertEquals("AI is not configured on this server", e.getReason());
+    }
+
+    @Test
+    void keyWithNewlineIsReportedAsNotConfiguredNotBusy() {
+        AiClient c = new AiClient("https://api.groq.com/openai/v1", "m", "k\nx", RestClient.builder());
+        assertEquals("AI is not configured on this server", thrown(c).getReason());
+    }
 }
