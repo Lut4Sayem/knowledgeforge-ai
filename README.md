@@ -31,6 +31,7 @@ Deployed on Render:
 | Database | MongoDB Atlas |
 | Frontend | Plain HTML + CSS + JavaScript (no framework) |
 | Markdown | marked.js (CDN) |
+| AI | Groq API (OpenAI-compatible), model `openai/gpt-oss-20b` |
 | Deployment | Render |
 
 ---
@@ -69,6 +70,14 @@ Deployed on Render:
 ### Attachments
 - Attach files (PDF, images, Office docs, text; up to 5 MB, stored in MongoDB GridFS) or links to documents
 - View and delete attachments
+
+### AI Assistant
+- **Summarize** a document into a few bullet points (cached until the document is edited)
+- **Ask this space**: ask a question and get an answer based only on that space's documents, with clickable `[n]` sources
+- Answers are cached per space and question until the space's documents change, so repeats cost nothing
+- Available to every team member, including viewers
+- Limits: 10 AI requests per user per day and a daily token budget for the whole site (both configurable)
+- **Privacy:** document text is sent to an AI provider (Groq) when you use these features
 
 ### Search
 - Global search across all documents in teams you belong to
@@ -199,6 +208,12 @@ src/
 | GET | `/api/attachments/{id}/download` | Download a file |
 | DELETE | `/api/attachments/{id}` | Delete an attachment (and its stored file) |
 
+### AI
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/documents/{id}/ai/summary` | Summarize a document (team members) |
+| POST | `/api/spaces/{id}/ai/ask` | Ask a question about a space, body `{"question": "..."}` (team members) |
+
 ### Search & Dashboard
 | Method | Endpoint | Description |
 |---|---|---|
@@ -228,6 +243,15 @@ cd knowledgeforge-ai
 export SPRING_DATA_MONGODB_URI="mongodb+srv://username:password@your-cluster.mongodb.net/knowledgeforge"
 ```
 
+   *(Optional)* To enable the AI assistant, also set a [Groq](https://console.groq.com) API key. Without it the app works normally and the AI buttons are hidden:
+```bash
+export AI_BASE_URL="https://api.groq.com/openai/v1"
+export AI_MODEL="openai/gpt-oss-20b"
+export AI_API_KEY="your-groq-key"
+# optional: AI_USER_DAILY_LIMIT (default 10), AI_SITE_DAILY_TOKENS (default 180000)
+```
+Values must have no quotes, spaces or trailing characters.
+
 3. **Run the application**
 ```bash
 ./mvnw spring-boot:run
@@ -247,6 +271,7 @@ http://localhost:8080/login.html
 3. Set the build command: `./mvnw clean package -DskipTests`
 4. Set the start command: `java -jar target/*.jar`
 5. Add environment variable: `SPRING_DATA_MONGODB_URI` = Atlas connection string.
+6. *(Optional)* For the AI assistant add `AI_BASE_URL`, `AI_MODEL` and `AI_API_KEY` (see above).
 
 ---
 
@@ -255,6 +280,7 @@ http://localhost:8080/login.html
 - No real-time collaboration (changes require a page refresh to see others' edits).
 - Uploaded files are not scanned for malware (no scanning service on the free hosting tier). Uploads are limited to an allowlist of file types, 5 MB each, and are always served as downloads.
 - Search is keyword-based with no advanced filters.
+- The AI assistant finds documents by keywords, not meaning, so a question worded very differently from the documents may get "I don't know". It relies on a free API tier, so heavy use can hit the provider's rate limits.
 
 ---
 
@@ -268,7 +294,8 @@ http://localhost:8080/login.html
 - Advanced search with filters (status, tag, date range)
 - Two-factor authentication (2FA)
 - PDF and Markdown export
-- Integration AI agent and many more
+- Semantic (embedding) search for the AI assistant
+- Streaming AI answers
 
 ---
 
