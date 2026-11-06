@@ -62,6 +62,7 @@ Deployed on Render:
 - Tagging system
 - Full version history: every save creates a snapshot
 - Restore any previous version
+- Export a document as Markdown (.md) or PDF (via the browser's print dialog)
 
 ### Comments
 - Add comments to any document
@@ -80,8 +81,8 @@ Deployed on Render:
 - **Privacy:** document text is sent to an AI provider (Groq) when you use these features
 
 ### Search
-- Global search across all documents in teams you belong to
-- Results show title, excerpt, tags, space, and team name
+- Global search across the documents, spaces, and teams you belong to
+- Filter by type, tag, and document status; results show the matched excerpt, tags, and team name
 
 ### Dashboard
 - Summary counts: total teams, spaces, and documents
@@ -104,43 +105,27 @@ Deployed on Render:
 ```
 src/
 ├── main/
-│   ├── java/com/knowledgeforge/
-│   │   ├── controller/        # REST API controllers
-│   │   │   ├── AuthController.java
-│   │   │   ├── UserController.java
-│   │   │   ├── TeamController.java
-│   │   │   ├── SpaceController.java
-│   │   │   ├── DocumentController.java
-│   │   │   ├── CommentController.java
-│   │   │   ├── AttachmentController.java
-│   │   │   ├── SearchController.java
-│   │   │   └── DashboardController.java
-│   │   ├── model/             # MongoDB document models
-│   │   │   ├── User.java
-│   │   │   ├── Team.java
-│   │   │   ├── TeamMembership.java
-│   │   │   ├── Space.java
-│   │   │   ├── Document.java
-│   │   │   ├── Comment.java
-│   │   │   ├── Attachment.java
-│   │   │   ├── DocumentVersion.java
-│   │   │   ├── JoinRequest.java
-│   │   │   └── ActivityLog.java
-│   │   ├── repository/        # Spring Data MongoDB repositories
-│   │   └── config/            # Spring Security configuration
+│   ├── java/com/knowledgeforge/knowledgeforge/
+│   │   │   # one package per feature: Entity, Repository, Service, Controller, DTOs
+│   │   ├── auth/              # register, login, session user
+│   │   ├── user/              # profile, profile picture
+│   │   ├── team/              # teams, members, invites, join requests
+│   │   ├── space/
+│   │   ├── documentPkg/       # documents
+│   │   ├── documentVersion/   # version history and restore
+│   │   ├── comment/
+│   │   ├── attachment/        # links and file uploads (GridFS)
+│   │   ├── search/
+│   │   ├── dashboard/
+│   │   ├── activity/          # activity log
+│   │   ├── ai/                # summaries and "Ask this space" (Groq)
+│   │   ├── SecurityConfig.java
+│   │   └── GlobalExceptionHandler.java
 │   └── resources/
-│       ├── static/            # Frontend HTML/CSS/JS files
-│       │   ├── login.html
-│       │   ├── register.html
-│       │   ├── dashboard.html
-│       │   ├── team.html
-│       │   ├── space.html
-│       │   ├── document.html
-│       │   ├── search.html
-│       │   ├── profile.html
-│       │   ├── join.html
-│       │   └── style.css
+│       ├── static/            # Frontend: login, register, dashboard, team, space,
+│       │                      # document, search, profile, join (.html), app.js, style.css
 │       └── application.properties
+└── test/                      # JUnit + Mockito unit tests (no database needed)
 ```
 
 ---
@@ -158,7 +143,10 @@ src/
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/me` | Get current user profile |
-| PUT | `/api/me` | Update name and profile picture |
+| PUT | `/api/me` | Update your name |
+| POST | `/api/me/picture` | Upload a profile picture (png, jpg, gif, webp, max 2 MB) |
+| DELETE | `/api/me/picture` | Remove your profile picture |
+| GET | `/api/users/{id}/picture` | Get a user's profile picture |
 | GET | `/api/me/teams` | Get current user's team memberships with roles |
 
 ### Teams
@@ -217,7 +205,7 @@ src/
 ### Search & Dashboard
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/search?q=keyword` | Search documents |
+| GET | `/api/search?q=&type=&tag=&status=` | Search documents, spaces and teams (`type`: all, documents, spaces, teams) |
 | GET | `/api/dashboard` | Get dashboard summary |
 
 ---
@@ -279,7 +267,7 @@ http://localhost:8080/login.html
 
 - No real-time collaboration (changes require a page refresh to see others' edits).
 - Uploaded files are not scanned for malware (no scanning service on the free hosting tier). Uploads are limited to an allowlist of file types, 5 MB each, and are always served as downloads.
-- Search is keyword-based with no advanced filters.
+- Search is a plain keyword (substring) match with no ranking.
 - The AI assistant finds documents by keywords, not meaning, so a question worded very differently from the documents may get "I don't know". It relies on a free API tier, so heavy use can hit the provider's rate limits.
 
 ---
@@ -291,9 +279,8 @@ http://localhost:8080/login.html
 - Email notifications for invite and approval events
 - Move file storage from MongoDB GridFS to S3 or Cloudflare R2
 - Document-level permissions (not just team-level)
-- Advanced search with filters (status, tag, date range)
+- Date-range filter and ranking for search
 - Two-factor authentication (2FA)
-- PDF and Markdown export
 - Semantic (embedding) search for the AI assistant
 - Streaming AI answers
 
