@@ -59,7 +59,6 @@ public class SecurityConfig {
                                 "/*.css",
                                 "/*.js",
                                 "/assets/**",
-                                "/styleguide.html", // temporary: remove with the file after the redesign
                                 "/favicon.ico",
                                 "/api/auth/register",
                                 "/api/auth/login",
