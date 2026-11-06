@@ -7,6 +7,7 @@ import com.knowledgeforge.knowledgeforge.space.SpaceRepository;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,7 @@ public class AiService {
 
     private final AiUsageRepository usageRepository;
     private final AiSummaryRepository summaryRepository;
+    private final AiAnswerRepository answerRepository;
     private final AiClient client;
     private final DocumentService documentService;
     private final UserRepository userRepository;
@@ -60,6 +62,7 @@ public class AiService {
 
     public AiService(AiUsageRepository usageRepository,
                      AiSummaryRepository summaryRepository,
+                     AiAnswerRepository answerRepository,
                      AiClient client,
                      DocumentService documentService,
                      UserRepository userRepository,
@@ -68,6 +71,7 @@ public class AiService {
                      @Value("${ai.site-daily-tokens:180000}") long siteDailyTokens) {
         this.usageRepository = usageRepository;
         this.summaryRepository = summaryRepository;
+        this.answerRepository = answerRepository;
         this.client = client;
         this.documentService = documentService;
         this.userRepository = userRepository;
@@ -122,6 +126,15 @@ public class AiService {
         }
         // 404 if the space is missing, 403 if not a team member. Viewers are allowed.
         List<DocumentEntity> docs = documentService.getDocuments(spaceId);
+        Space space = spaceRepository.findById(spaceId).orElse(null);
+
+        // Same question on unchanged documents: reuse the saved answer, no AI call, no quota
+        String questionKey = q.toLowerCase().replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
+        String fingerprint = fingerprint(space, docs);
+        AiAnswer cached = answerRepository.findBySpaceIdAndQuestionKey(spaceId, questionKey).orElse(null);
+        if (cached != null && fingerprint.equals(cached.getFingerprint())) {
+            return new AskResponse(cached.getAnswer(), cached.getSources(), cached.getUsedDocuments(), cached.isTrimmed(), true);
+        }
 
         List<DocumentEntity> top = topDocuments(docs, q);
         if (top.isEmpty()) {
@@ -133,13 +146,12 @@ public class AiService {
                     .toList();
         }
         if (top.isEmpty()) {
-            return new AskResponse("This space has no documents with text yet, so there is nothing to answer from.", List.of(), 0, false);
+            return new AskResponse("This space has no documents with text yet, so there is nothing to answer from.", List.of(), 0, false, false);
         }
 
         User user = currentUser();
         checkLimits(user.getId());
 
-        Space space = spaceRepository.findById(spaceId).orElse(null);
         boolean trimmed = false;
         StringBuilder prompt = new StringBuilder();
         if (space != null && space.getName() != null) {
@@ -166,7 +178,29 @@ public class AiService {
 
         recordUsage(user.getId(), space == null ? null : space.getTeamId(), "ASK", result);
 
-        return new AskResponse(result.text(), sourcesCited(result.text(), top), top.size(), trimmed);
+        List<SourceDTO> sources = sourcesCited(result.text(), top);
+        AiAnswer saved = cached != null ? cached : new AiAnswer();
+        saved.setSpaceId(spaceId);
+        saved.setQuestionKey(questionKey);
+        saved.setFingerprint(fingerprint);
+        saved.setAnswer(result.text());
+        saved.setSources(sources);
+        saved.setUsedDocuments(top.size());
+        saved.setTrimmed(trimmed);
+        saved.setCreatedAt(new Date());
+        try {
+            answerRepository.save(saved);
+        } catch (DuplicateKeyException ignored) {
+            // two identical questions raced; the other one already saved, our answer is still valid
+        }
+
+        return new AskResponse(result.text(), sources, top.size(), trimmed, false);
+    }
+
+    // Changes whenever a document is added, edited or removed, or the space name/description changes.
+    static String fingerprint(Space space, List<DocumentEntity> docs) {
+        int h = docs.stream().mapToInt(d -> Objects.hash(d.getId(), d.getUpdatedAt())).sum();
+        return docs.size() + ":" + h + ":" + (space == null ? 0 : Objects.hash(space.getName(), space.getDescription()));
     }
 
     // Top 3 documents by keyword overlap with the question; a title hit counts 3x a content hit.

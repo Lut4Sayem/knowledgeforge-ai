@@ -33,12 +33,13 @@ class AiServiceTest {
 
     AiUsageRepository usage = mock(AiUsageRepository.class);
     AiSummaryRepository summaries = mock(AiSummaryRepository.class);
+    AiAnswerRepository answers = mock(AiAnswerRepository.class);
     AiClient client = mock(AiClient.class);
     DocumentService documentService = mock(DocumentService.class);
     UserRepository users = mock(UserRepository.class);
     SpaceRepository spaces = mock(SpaceRepository.class);
 
-    AiService service = new AiService(usage, summaries, client, documentService, users, spaces, 10, 1000);
+    AiService service = new AiService(usage, summaries, answers, client, documentService, users, spaces, 10, 1000);
 
     Date docUpdatedAt = new Date(1_000_000L);
     DocumentEntity doc = new DocumentEntity();
@@ -63,6 +64,7 @@ class AiServiceTest {
         when(documentService.getDocumentByID(DOC_ID)).thenReturn(doc);
 
         when(summaries.findByDocumentId(DOC_ID)).thenReturn(Optional.empty());
+        when(answers.findBySpaceIdAndQuestionKey(anyString(), anyString())).thenReturn(Optional.empty());
         when(usage.countByUserIdAndCreatedAtGreaterThanEqual(eq(USER_ID), any(Date.class))).thenReturn(0L);
         when(usage.findByCreatedAtGreaterThanEqual(any(Date.class))).thenReturn(List.of());
         when(client.chat(anyString(), anyString(), anyInt()))
@@ -301,6 +303,58 @@ class AiServiceTest {
         assertEquals(1, r.usedDocuments());
         assertEquals("vacation", AiService.stem("vacations"));
         assertEquals("policy", AiService.stem("policies"));
+    }
+
+    @Test
+    void sameQuestionOnUnchangedDocsIsServedFromCacheForFree() {
+        DocumentEntity d = docOf("a", "Vacation policy", "20 days");
+        d.setUpdatedAt(new Date(5));
+        spaceHas(d);
+        Space space = spaces.findById(SPACE_ID).get();
+        AiAnswer saved = new AiAnswer();
+        saved.setFingerprint(AiService.fingerprint(space, List.of(d)));
+        saved.setAnswer("20 days [1]");
+        saved.setSources(List.of(new SourceDTO(1, "a", "Vacation policy")));
+        saved.setUsedDocuments(1);
+        // wording, case and punctuation differ, but the normalized key is the same
+        when(answers.findBySpaceIdAndQuestionKey(SPACE_ID, "how many vacation days")).thenReturn(Optional.of(saved));
+        when(usage.countByUserIdAndCreatedAtGreaterThanEqual(eq(USER_ID), any(Date.class))).thenReturn(99L); // over cap
+
+        AskResponse r = service.ask(SPACE_ID, "  How many VACATION days?? ");
+
+        assertTrue(r.cached());
+        assertEquals("20 days [1]", r.answer());
+        verifyNoInteractions(client);
+        verify(usage, never()).save(any());
+    }
+
+    @Test
+    void cachedAnswerIsDiscardedWhenADocumentChanged() {
+        DocumentEntity d = docOf("a", "Vacation policy", "20 days");
+        d.setUpdatedAt(new Date(5));
+        spaceHas(d);
+        AiAnswer stale = new AiAnswer();
+        stale.setFingerprint("stale");
+        stale.setAnswer("old");
+        when(answers.findBySpaceIdAndQuestionKey(SPACE_ID, "vacation policy")).thenReturn(Optional.of(stale));
+
+        AskResponse r = service.ask(SPACE_ID, "vacation policy");
+
+        assertFalse(r.cached());
+        verify(client).chat(anyString(), anyString(), anyInt());
+        ArgumentCaptor<AiAnswer> saved = ArgumentCaptor.forClass(AiAnswer.class);
+        verify(answers).save(saved.capture());
+        assertEquals("vacation policy", saved.getValue().getQuestionKey());
+        assertNotEquals("stale", saved.getValue().getFingerprint());
+    }
+
+    @Test
+    void failedAiCallSavesNoAnswer() {
+        spaceHas(docOf("a", "Vacation policy", "20 days"));
+        when(client.chat(anyString(), anyString(), anyInt()))
+                .thenThrow(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI is busy"));
+        assertThrows(ResponseStatusException.class, () -> service.ask(SPACE_ID, "vacation policy"));
+        verify(answers, never()).save(any());
     }
 
     @Test

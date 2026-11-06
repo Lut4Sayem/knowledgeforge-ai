@@ -220,7 +220,8 @@
       }).join("");
       askResult.innerHTML = '<div class="prose" style="font-size: 15px">' + html + "</div>" +
         (sources ? '<h3 class="caption" style="margin-top: var(--space-4); margin-bottom: var(--space-2)">Sources</h3><ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-1)">' + sources + "</ul>" : "") +
-        (r.trimmed ? '<p class="hint" style="margin-top: var(--space-3)">Long documents were cut short before being sent.</p>' : "");
+        (r.trimmed ? '<p class="hint" style="margin-top: var(--space-3)">Long documents were cut short before being sent.</p>' : "") +
+        (r.cached ? '<p class="hint" style="margin-top: var(--space-3)">Saved answer. Nothing changed in this space since it was asked.</p>' : "");
     }
 
     $("ask-form").addEventListener("submit", function (e) {
