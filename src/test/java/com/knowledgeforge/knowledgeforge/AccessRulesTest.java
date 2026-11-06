@@ -41,7 +41,8 @@ class AccessRulesTest {
 
     DocumentService documentService = new DocumentService(documents, spaces, members, users,
             mock(DocumentVersionRepository.class), mock(ActivityLogService.class),
-            mock(AttachmentRepository.class), mock(AttachmentStorageService.class));
+            mock(AttachmentRepository.class), mock(AttachmentStorageService.class),
+            mock(com.knowledgeforge.knowledgeforge.ai.AiSummaryRepository.class));
 
     @BeforeEach
     void setUp() {

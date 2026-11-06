@@ -22,8 +22,29 @@
       <p class="page-header__meta" id="space-desc" hidden></p>
       <p class="caption" id="space-meta"></p>
     </div>
-    <button type="button" class="btn btn--primary" id="new-doc-btn" hidden>New document</button>
+    <div class="btn-row">
+      <button type="button" class="btn btn--secondary" id="ask-btn" aria-expanded="false" aria-controls="ask-panel" hidden></button>
+      <button type="button" class="btn btn--primary" id="new-doc-btn" hidden>New document</button>
+    </div>
   </header>
+
+  <!-- Ask this space (AI) -->
+  <section class="card" id="ask-panel" aria-labelledby="ask-title" hidden style="margin-bottom: var(--space-6); background: var(--color-surface); border-color: transparent">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3)">
+      <h2 class="title-sm" id="ask-title" style="display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-primary)"><span id="ask-icon" aria-hidden="true"></span>Ask this space</h2>
+      <button type="button" class="btn btn--ghost btn--sm" id="ask-close">Close</button>
+    </div>
+    <form id="ask-form" novalidate>
+      <label class="sr-only" for="ask-q">Your question</label>
+      <textarea class="textarea" id="ask-q" maxlength="500" rows="2" placeholder="Ask a question about the documents in this space" style="background: var(--color-canvas)"></textarea>
+      <div class="btn-row" style="margin-top: var(--space-2); justify-content: space-between">
+        <span class="hint"><span id="ask-count">0</span>/500 · Ctrl+Enter to ask</span>
+        <button type="submit" class="btn btn--primary btn--sm" id="ask-submit">Ask</button>
+      </div>
+    </form>
+    <div id="ask-result" aria-live="polite" style="margin-top: var(--space-4)" hidden></div>
+    <p class="hint" style="margin-top: var(--space-3)">Answers use only this space's documents. Sends document text to an AI provider (Groq).</p>
+  </section>
 
   <!-- Whole-page load error -->
   <div class="error-state" id="load-error" role="alert" hidden>
@@ -75,6 +96,8 @@
   </dialog>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
 <script src="/app.js"></script>
 <script>
   (function () {
@@ -87,6 +110,10 @@
     $("doc-modal-x").innerHTML = KF.icon("x");
     $("new-doc-btn").innerHTML = KF.icon("plus") + "New document";
 
+    $("ask-btn").innerHTML = KF.icon("sparkles") + "Ask this space";
+    $("ask-icon").innerHTML = KF.icon("sparkles");
+
+    let aiOff = false; // server has no AI key
     let space = null;
     let docs = [];
     let filter = (new URLSearchParams(location.search).get("status") || "").toUpperCase();
@@ -165,7 +192,60 @@
       // Newest edits first
       docs = (Array.isArray(data) ? data : []).sort(function (a, b) { return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0); });
       renderDocs();
+      $("ask-btn").hidden = aiOff || !docs.length;
     }
+
+    /* ---------- Ask this space (AI) ---------- */
+    const askQ = $("ask-q"), askResult = $("ask-result");
+
+    function showAsk(open) {
+      $("ask-panel").hidden = !open;
+      $("ask-btn").setAttribute("aria-expanded", String(open));
+      if (open) askQ.focus(); else $("ask-btn").focus();
+    }
+    $("ask-btn").addEventListener("click", function () { showAsk($("ask-panel").hidden); });
+    $("ask-close").addEventListener("click", function () { showAsk(false); });
+    askQ.addEventListener("input", function () { $("ask-count").textContent = askQ.value.length; });
+    askQ.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $("ask-form").requestSubmit(); }
+    });
+
+    function renderAnswer(r) {
+      // Answer is markdown from the model: always sanitised, never raw HTML
+      const html = window.marked && window.DOMPurify
+        ? DOMPurify.sanitize(marked.parse(r.answer || "", { breaks: true, gfm: true }))
+        : '<p style="white-space: pre-wrap">' + esc(r.answer || "") + "</p>";
+      const sources = (r.sources || []).map(function (s) {
+        return '<li><span class="hint">[' + esc(String(s.n)) + ']</span> <a class="link" href="' + esc(docHref(s.id, "view")) + '">' + esc(s.title || "Untitled") + "</a></li>";
+      }).join("");
+      askResult.innerHTML = '<div class="prose" style="font-size: 15px">' + html + "</div>" +
+        (sources ? '<h3 class="caption" style="margin-top: var(--space-4); margin-bottom: var(--space-2)">Sources</h3><ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-1)">' + sources + "</ul>" : "") +
+        (r.trimmed ? '<p class="hint" style="margin-top: var(--space-3)">Long documents were cut short before being sent.</p>' : "") +
+        (r.cached ? '<p class="hint" style="margin-top: var(--space-3)">Saved answer. Nothing changed in this space since it was asked.</p>' : "");
+    }
+
+    $("ask-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const question = askQ.value.trim();
+      if (!question) { askQ.focus(); return; }
+      KF.withLoading($("ask-submit"), async function () {
+        askResult.hidden = false;
+        askResult.innerHTML = '<span class="skeleton skeleton--line" style="display: block; margin-bottom: var(--space-3)"></span>' +
+          '<span class="skeleton skeleton--line" style="display: block; margin-bottom: var(--space-3)"></span>' +
+          '<span class="skeleton skeleton--line" style="display: block; width: 60%"></span>';
+        try {
+          renderAnswer(await KF.api(base + "/ai/ask", { json: { question: question } }));
+        } catch (err) {
+          if (err.status === 503 && /not configured/i.test(err.message)) { // no key on this server: hide AI for this visit
+            $("ask-panel").hidden = true;
+            aiOff = true;
+            $("ask-btn").hidden = true;
+            return;
+          }
+          askResult.innerHTML = '<div class="error-state" role="alert">' + KF.icon("alert-circle") + '<span class="error-state__msg">' + esc(err.message) + "</span></div>";
+        }
+      });
+    });
 
     /* ---------- Filters ---------- */
     $("filters").addEventListener("click", function (e) {
