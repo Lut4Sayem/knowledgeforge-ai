@@ -228,4 +228,90 @@ class AiServiceTest {
         verify(client).chat(anyString(), prompt.capture(), anyInt());
         assertTrue(prompt.getValue().length() < 6100, "prompt should hold at most 6000 chars of content");
     }
+
+    // ---- ask ----
+
+    private static DocumentEntity docOf(String id, String title, String content) {
+        DocumentEntity d = new DocumentEntity();
+        d.setId(id);
+        d.setTitle(title);
+        d.setContent(content);
+        return d;
+    }
+
+    private void spaceHas(DocumentEntity... docs) {
+        when(documentService.getDocuments(SPACE_ID)).thenReturn(List.of(docs));
+    }
+
+    @Test
+    void askRejectsEmptyOrTooLongQuestion() {
+        for (String bad : new String[]{null, "   ", "x".repeat(501)}) {
+            ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> service.ask(SPACE_ID, bad));
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+            assertEquals("Question must be 1-500 characters", e.getReason());
+        }
+        verifyNoInteractions(client);
+    }
+
+    @Test
+    void askByNonMemberGets403AndNoAiCall() {
+        when(documentService.getDocuments(SPACE_ID)).thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden"));
+        ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> service.ask(SPACE_ID, "vacation policy"));
+        assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
+        verifyNoInteractions(client);
+    }
+
+    @Test
+    void askWithNoMatchingDocumentsSkipsTheAi() {
+        spaceHas(docOf("a", "Onboarding", "Welcome to the team"));
+        AskResponse r = service.ask(SPACE_ID, "vacation policy");
+        assertEquals(0, r.usedDocuments());
+        assertTrue(r.sources().isEmpty());
+        verifyNoInteractions(client);
+        verify(usage, never()).save(any());
+    }
+
+    @Test
+    void askOverUserCapGets429() {
+        spaceHas(docOf("a", "Vacation policy", "20 days"));
+        when(usage.countByUserIdAndCreatedAtGreaterThanEqual(eq(USER_ID), any(Date.class))).thenReturn(10L);
+        ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> service.ask(SPACE_ID, "vacation policy"));
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, e.getStatusCode());
+        verifyNoInteractions(client);
+    }
+
+    @Test
+    void askSendsOnlyTop3TrimmedAndRecordsUsage() {
+        spaceHas(docOf("a", "Vacation", "x"), docOf("b", "Vacation policy", "y"),
+                docOf("c", "Notes", "vacation " + "z".repeat(4000)), docOf("d", "Other", "vacation"),
+                docOf("e", "Unrelated", "nothing"));
+        when(client.chat(anyString(), anyString(), anyInt())).thenReturn(new AiClient.Result("See [1].", 10, 5, 15));
+
+        AskResponse r = service.ask(SPACE_ID, "What is the vacation policy?");
+
+        assertEquals(3, r.usedDocuments());
+        assertTrue(r.trimmed());
+        ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
+        verify(client).chat(anyString(), prompt.capture(), anyInt());
+        assertTrue(prompt.getValue().contains("[3] Title:"));
+        assertFalse(prompt.getValue().contains("[4]"));
+        assertFalse(prompt.getValue().contains("Unrelated"));
+        assertTrue(prompt.getValue().length() < 3 * 3300 + 200);
+        ArgumentCaptor<AiUsage> used = ArgumentCaptor.forClass(AiUsage.class);
+        verify(usage).save(used.capture());
+        assertEquals("ASK", used.getValue().getFeature());
+    }
+
+    @Test
+    void citationsMapToSentDocsIgnoreUnknownAndDeduplicate() {
+        spaceHas(docOf("a", "Vacation", "x"), docOf("b", "Vacation policy", "y"));
+        // best match first: "Vacation policy" (title hits both words) is [1], "Vacation" is [2]
+        when(client.chat(anyString(), anyString(), anyInt()))
+                .thenReturn(new AiClient.Result("Two [2] then [1, 2] and [9] and [1].", 10, 5, 15));
+
+        AskResponse r = service.ask(SPACE_ID, "vacation policy");
+
+        // [2] is cited first, so its doc comes first; [9] is dropped; repeats are removed
+        assertEquals(List.of(new SourceDTO("a", "Vacation"), new SourceDTO("b", "Vacation policy")), r.sources());
+    }
 }

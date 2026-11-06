@@ -2,6 +2,7 @@ package com.knowledgeforge.knowledgeforge.ai;
 
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -15,5 +16,10 @@ public class AiController {
     @PostMapping("/api/documents/{documentId}/ai/summary")
     public SummaryResponse summarize(@PathVariable String documentId) {
         return aiService.summarize(documentId);
+    }
+
+    @PostMapping("/api/spaces/{spaceId}/ai/ask")
+    public AskResponse ask(@PathVariable String spaceId, @RequestBody AskRequest request) {
+        return aiService.ask(spaceId, request == null ? null : request.question());
     }
 }
