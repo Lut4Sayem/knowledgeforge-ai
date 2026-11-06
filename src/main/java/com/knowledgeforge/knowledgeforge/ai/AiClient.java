@@ -48,11 +48,10 @@ public class AiClient {
     private final boolean configured;
 
     @Autowired
-    public AiClient(RestClient.Builder builder,
-                    @Value("${ai.base-url:}") String baseUrl,
+    public AiClient(@Value("${ai.base-url:}") String baseUrl,
                     @Value("${ai.model:}") String model,
                     @Value("${ai.api-key:}") String apiKey) {
-        this(baseUrl, model, apiKey, builder.requestFactory(timeoutFactory()));
+        this(baseUrl, model, apiKey, RestClient.builder().requestFactory(timeoutFactory()));
     }
 
     // Tests pass a builder that already has a mock server bound to it.
