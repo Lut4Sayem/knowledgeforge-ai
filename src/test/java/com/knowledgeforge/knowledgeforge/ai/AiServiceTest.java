@@ -262,13 +262,36 @@ class AiServiceTest {
     }
 
     @Test
-    void askWithNoMatchingDocumentsSkipsTheAi() {
-        spaceHas(docOf("a", "Onboarding", "Welcome to the team"));
+    void askWithNoTextAnywhereSkipsTheAi() {
+        spaceHas(docOf("a", "Empty", "   "));
         AskResponse r = service.ask(SPACE_ID, "vacation policy");
         assertEquals(0, r.usedDocuments());
         assertTrue(r.sources().isEmpty());
         verifyNoInteractions(client);
         verify(usage, never()).save(any());
+    }
+
+    @Test
+    void askWithNoKeywordMatchFallsBackToNewestDocsAndSendsSpaceName() {
+        Space space = new Space();
+        space.setId(SPACE_ID);
+        space.setTeamId(TEAM_ID);
+        space.setName("Handbook");
+        space.setDescription("How we work");
+        when(spaces.findById(SPACE_ID)).thenReturn(Optional.of(space));
+        DocumentEntity old = docOf("a", "Onboarding", "Welcome");
+        old.setUpdatedAt(new Date(1));
+        DocumentEntity fresh = docOf("b", "Deploys", "Run the script");
+        fresh.setUpdatedAt(new Date(2));
+        spaceHas(old, fresh);
+
+        AskResponse r = service.ask(SPACE_ID, "What is this space about?");
+
+        assertEquals(2, r.usedDocuments());
+        ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
+        verify(client).chat(anyString(), prompt.capture(), anyInt());
+        assertTrue(prompt.getValue().startsWith("Space: Handbook - How we work"));
+        assertTrue(prompt.getValue().indexOf("[1] Title: Deploys") > 0, "newest doc comes first");
     }
 
     @Test
