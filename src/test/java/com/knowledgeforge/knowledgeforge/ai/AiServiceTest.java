@@ -321,6 +321,6 @@ class AiServiceTest {
         AskResponse r = service.ask(SPACE_ID, "vacation policy");
 
         // [2] is cited first, so its doc comes first; [9] is dropped; repeats are removed
-        assertEquals(List.of(new SourceDTO("a", "Vacation"), new SourceDTO("b", "Vacation policy")), r.sources());
+        assertEquals(List.of(new SourceDTO(2, "a", "Vacation"), new SourceDTO(1, "b", "Vacation policy")), r.sources());
     }
 }

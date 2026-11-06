@@ -201,7 +201,7 @@ public class AiService {
                 if (i >= 1 && i <= sent.size()) used.add(i);
             }
         }
-        return used.stream().map(i -> new SourceDTO(sent.get(i - 1).getId(), sent.get(i - 1).getTitle())).toList();
+        return used.stream().map(i -> new SourceDTO(i, sent.get(i - 1).getId(), sent.get(i - 1).getTitle())).toList();
     }
 
     private User currentUser() {
