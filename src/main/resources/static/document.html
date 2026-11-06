@@ -38,9 +38,12 @@
         <div class="meta-line" id="v-meta" style="margin-top: var(--space-3)"></div>
         <div class="tag-list" id="v-tags" style="margin-top: var(--space-3)" hidden></div>
       </header>
-      <section class="card no-print" id="v-summary" aria-labelledby="v-summary-title" aria-live="polite" hidden style="margin-bottom: var(--space-6)">
-        <h2 class="title-sm" id="v-summary-title" style="margin-bottom: var(--space-3)">Summary</h2>
-        <div id="v-summary-body"></div>
+      <section class="card no-print" id="v-summary" aria-labelledby="v-summary-title" aria-live="polite" hidden style="margin-bottom: var(--space-6); background: var(--color-surface); border-color: transparent">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3)">
+          <h2 class="title-sm" id="v-summary-title" style="display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-primary)"><span id="v-summary-icon" aria-hidden="true"></span>AI summary</h2>
+          <button type="button" class="btn btn--ghost btn--sm" id="v-summary-hide">Hide</button>
+        </div>
+        <div id="v-summary-body" style="font-size: 15px"></div>
         <p class="hint" id="v-summary-note" style="margin-top: var(--space-3)"></p>
       </section>
       <div class="prose" id="v-body"></div>
@@ -510,6 +513,8 @@
       const card = $("v-summary"), body = $("v-summary-body"), note = $("v-summary-note");
       const privacy = "Sends document text to an AI provider (Groq).";
       btn.title = privacy;
+      $("v-summary-icon").innerHTML = KF.icon("sparkles");
+      $("v-summary-hide").addEventListener("click", function () { card.hidden = true; btn.focus(); });
       btn.addEventListener("click", function () {
         KF.withLoading(btn, async function () {
           card.hidden = false;
