@@ -38,6 +38,11 @@
         <div class="meta-line" id="v-meta" style="margin-top: var(--space-3)"></div>
         <div class="tag-list" id="v-tags" style="margin-top: var(--space-3)" hidden></div>
       </header>
+      <section class="card no-print" id="v-summary" aria-labelledby="v-summary-title" aria-live="polite" hidden style="margin-bottom: var(--space-6)">
+        <h2 class="title-sm" id="v-summary-title" style="margin-bottom: var(--space-3)">Summary</h2>
+        <div id="v-summary-body"></div>
+        <p class="hint" id="v-summary-note" style="margin-top: var(--space-3)"></p>
+      </section>
       <div class="prose" id="v-body"></div>
       <div class="empty" id="v-empty" hidden>
         <span class="empty__icon" id="v-empty-icon"></span>
@@ -500,8 +505,39 @@
       URL.revokeObjectURL(url);
     }
 
+    /* ---------- AI summary ---------- */
+    function summarizeUi(btn) {
+      const card = $("v-summary"), body = $("v-summary-body"), note = $("v-summary-note");
+      const privacy = "Sends document text to an AI provider (Groq).";
+      btn.title = privacy;
+      btn.addEventListener("click", function () {
+        KF.withLoading(btn, async function () {
+          card.hidden = false;
+          note.textContent = privacy;
+          body.innerHTML = '<span class="skeleton skeleton--line" style="display: block; margin-bottom: var(--space-3)"></span>' +
+            '<span class="skeleton skeleton--line" style="display: block; margin-bottom: var(--space-3)"></span>' +
+            '<span class="skeleton skeleton--line" style="display: block; width: 70%"></span>';
+          try {
+            const r = await KF.api(docUrl + "/ai/summary", { method: "POST" });
+            body.innerHTML = '<div class="prose">' + renderMarkdown(r.summary) + "</div>";
+            note.textContent = (r.cached ? "Saved summary. " : "Generated just now. ") +
+              (r.trimmed ? "Based on the first part of a long document. " : "") + privacy;
+          } catch (err) {
+            if (err.status === 503 && /not configured/i.test(err.message)) { // no key on this server: hide AI for this visit
+              card.hidden = true;
+              btn.hidden = true;
+              return;
+            }
+            body.innerHTML = '<div class="error-state" role="alert">' + KF.icon("alert-circle") + '<span class="error-state__msg">' + esc(err.message) + "</span></div>";
+          }
+        });
+      });
+    }
+
     function viewActions() {
+      const hasText = !!String(doc.content || "").trim();
       $("kf-actions").innerHTML =
+        (hasText ? '<button type="button" class="btn btn--secondary btn--sm" id="summarize-btn" aria-label="Summarize">' + KF.icon("sparkles") + '<span class="btn__label">Summarize</span></button>' : "") +
         '<div class="dropdown">' +
           '<button type="button" class="btn btn--secondary btn--sm" aria-haspopup="menu" aria-expanded="false" aria-label="Export">' + KF.icon("download") + '<span class="btn__label">Export</span></button>' +
           '<div class="menu" role="menu" hidden>' +
@@ -510,6 +546,7 @@
           "</div>" +
         "</div>" +
         (editable ? '<a class="btn btn--primary btn--sm" href="' + esc(pageHref("edit")) + '" aria-label="Edit">' + KF.icon("pencil") + '<span class="btn__label">Edit</span></a>' : "");
+      if (hasText) summarizeUi($("summarize-btn"));
       $("kf-actions").addEventListener("click", function (e) {
         const item = e.target.closest("[data-export]");
         if (!item) return;
