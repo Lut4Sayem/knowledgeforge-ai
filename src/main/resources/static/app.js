@@ -168,8 +168,14 @@
    * fetch() with the session cookie. Sends `json` as a JSON body. Returns parsed JSON (or null / text).
    * 401 -> redirect to login (unless opts.redirectOn401 === false). Other errors throw Error(message) with .status.
    */
+  function csrfHeaders() {
+    const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return m ? { "X-XSRF-TOKEN": decodeURIComponent(m[1]) } : {};
+  }
+
   async function api(url, opts) {
     const o = Object.assign({ credentials: "include", headers: {} }, opts || {});
+    o.headers = Object.assign(csrfHeaders(), o.headers);
     if (o.json !== undefined) {
       o.body = JSON.stringify(o.json);
       o.headers = Object.assign({ "Content-Type": "application/json" }, o.headers);
@@ -471,7 +477,7 @@
   }
 
   async function logout() {
-    try { await fetch("/logout", { method: "POST", credentials: "include" }); } catch (e) { /* go to login anyway */ }
+    try { await fetch("/logout", { method: "POST", credentials: "include", headers: csrfHeaders() }); } catch (e) { /* go to login anyway */ }
     location.href = "/login.html";
   }
 
