@@ -12,5 +12,5 @@ export default defineConfig({
     port: 5173,
     proxy: { '/api': spring, '/logout': spring, '/internal': spring },
   },
-  test: { environment: 'jsdom' },
+  test: { environment: 'jsdom', exclude: ['e2e/**', 'node_modules/**'] },
 })
