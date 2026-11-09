@@ -48,7 +48,7 @@ export default function Sidebar() {
 
       <h2 className="sidebar-heading">Projects</h2>
       {projects.map((s) => <SpaceSection key={s.id} space={s} activeId={activeId} />)}
-      {spaces.isSuccess && projects.length === 0 && <p className="tree-note">No projects in this team yet.</p>}
+      {spaces.isSuccess && teamList.length > 0 && projects.length === 0 &&<p className="tree-note">No projects in this team yet.</p>}
 
       {priv && (
         <>
