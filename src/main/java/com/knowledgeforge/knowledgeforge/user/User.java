@@ -22,6 +22,23 @@ public class User {
     private Date createdAt;
     private Date updatedAt;
 
+    /** Last opened pages, newest last, max 20. Written with $push/$slice by NodeService; mapped here so save() keeps it. */
+    private java.util.List<RecentNode> recentNodes = new java.util.ArrayList<>();
+
+    public static class RecentNode {
+        @org.springframework.data.mongodb.core.mapping.Field(targetType = org.springframework.data.mongodb.core.mapping.FieldType.OBJECT_ID)
+        private String nodeId;
+        private Date at;
+
+        public String getNodeId() { return nodeId; }
+        public void setNodeId(String nodeId) { this.nodeId = nodeId; }
+        public Date getAt() { return at; }
+        public void setAt(Date at) { this.at = at; }
+    }
+
+    public java.util.List<RecentNode> getRecentNodes() { return recentNodes; }
+    public void setRecentNodes(java.util.List<RecentNode> recentNodes) { this.recentNodes = recentNodes; }
+
     // IMPORTANT: Spring Data needs a no-args constructor
     public User() {
     }

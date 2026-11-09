@@ -176,14 +176,14 @@ Fields exactly as physical schema 3.4-3.7 and 3.14. `Node.restriction` is `Restr
 - `Node requireView(String nodeId)`, `Node requireEdit(String nodeId)`, `Node requireEditIgnoringLock(String nodeId)` (for unlock): load node, 404 if missing, 403 if insufficient. Current user from `SecurityContextHolder`.
 - `boolean canEditSpace(String userId, Space space)`.
 Shortcut allowed: no per-request cache in 1a (`shortcut: no cache; add a short (user,node) cache if the permission check shows up in profiling`).
-- [ ] Table test `resolveMatrix` covering: space type (TEAM/USER) x role (ADMIN/EDITOR/VIEWER/non-member) x restriction (none / on ancestor as viewer / as editor / not listed) x status (ACTIVE/ARCHIVED/TRASHED) x locked. At least these rows: `viewerIsCappedAtView`, `nonMemberIsNone`, `personalSpaceOtherUserIsNone`, `ancestorRestrictionAppliesToChild`, `childCannotWidenBeyondParent`, `adminNotListedSeesTitleOnly`, `archivedCapsAtView`, `lockedCapsEditorAtView`.
-- [ ] Commit `feat: node permission resolver`.
+- [x] Table test `resolveMatrix` covering: space type (TEAM/USER) x role (ADMIN/EDITOR/VIEWER/non-member) x restriction (none / on ancestor as viewer / as editor / not listed) x status (ACTIVE/ARCHIVED/TRASHED) x locked. At least these rows: `viewerIsCappedAtView`, `nonMemberIsNone`, `personalSpaceOtherUserIsNone`, `ancestorRestrictionAppliesToChild`, `childCannotWidenBeyondParent`, `adminNotListedSeesTitleOnly`, `archivedCapsAtView`, `lockedCapsEditorAtView`.
+- [x] Commit `feat: node permission resolver`.
 
 ### Task 2.2: Rank keys
 **Files:** Create `node/RankKeys.java`, `node/RankKeysTest.java`.
 **Produces:** `static String between(String before, String after)` (either may be null = open end), base-62 digits `0-9A-Za-z`, result strictly between, never ends in `0`, length <= 64 (throw `IllegalStateException` to trigger `rebalance`); `static List<String> spread(int n)` for rebalancing a sibling list.
-- [ ] Tests: `betweenNullsGivesMiddle`, `betweenIsStrictlyOrdered` (property: 1,000 random inserts keep sort order), `repeatedInsertAtFrontStaysUnder64` for 200 inserts, `spreadIsSorted`.
-- [ ] Commit `feat: fractional rank keys`.
+- [x] Tests: `betweenNullsGivesMiddle`, `betweenIsStrictlyOrdered` (property: 1,000 random inserts keep sort order), `repeatedInsertAtFrontStaysUnder64` for 200 inserts, `spreadIsSorted`.
+- [x] Commit `feat: fractional rank keys`.
 
 ### Task 2.3: Tree, create, rename, tags, move
 **Files:** Create `node/NodeService.java`, `node/NodeController.java`, DTOs `NodeSummaryDTO`, `NodeDTO`, `CreateNodeRequest`, `UpdateNodeRequest`, `MoveNodeRequest`. Integration test `node/NodeServiceIT.java`.
@@ -193,16 +193,16 @@ Shortcut allowed: no per-request cache in 1a (`shortcut: no cache; add a short (
 - `GET /api/nodes/{id}` -> `NodeDTO {id, spaceId, parentId, title, icon, tags, publishState, locked, lockedBy, status, access, breadcrumbs: [{id,title}], createdBy, updatedBy, contentUpdatedAt}`. Also pushes `{nodeId, at}` into `users.recentNodes` (`$push` + `$slice: -20`, removing an older entry for the same node first).
 - `PATCH /api/nodes/{id} {title?, icon?, tags?}` (tags trimmed, lower-cased, de-duplicated; limits from Global Constraints -> 400).
 - `POST /api/nodes/{id}/move {parentId (nullable), beforeId?, afterId?}`: same space only in 1a (cross-space is Move-to-team); requires edit on node and on destination parent (or space edit for top level); rewrites `ancestors` of the node and all descendants with one `updateMany` per depth change (use `{ancestors: id}` query); depth > 50 -> 400.
-- [ ] IT tests: `treeUsesIndex` (ExplainAssert), `createUnderParentSetsAncestors`, `moveRewritesDescendantAncestors`, `moveUnderOwnDescendantRejected`, `moveDeeperThan50Rejected`, `viewerCannotCreateOrMove` (403), `tagsAreNormalized`, `recentNodesCappedAt20`.
-- [ ] Commit `feat: page tree API`.
+- [x] IT tests: `treeUsesIndex` (ExplainAssert), `createUnderParentSetsAncestors`, `moveRewritesDescendantAncestors`, `moveUnderOwnDescendantRejected`, `moveDeeperThan50Rejected`, `viewerCannotCreateOrMove` (403), `tagsAreNormalized`, `recentNodesCappedAt20`.
+- [x] Commit `feat: page tree API`.
 
 ### Task 2.4: App shell, sidebar tree and page route (frontend)
 Wireframes `Sidebar` and `Main`. Plain layout.
 **Files:** `app/Shell.tsx`, `tree/Sidebar.tsx`, `tree/PageTree.tsx`, `tree/buildTree.ts`, `page/PageView.tsx`, `page/Breadcrumbs.tsx`, `api/nodes.ts`, `api/spaces.ts`. Routes: `/app` (dashboard placeholder until Phase 9), `/app/p/:nodeId`.
 **Produces:** `buildTree(nodes: NodeSummary[]): TreeNode[]` (hash map id -> node, children sorted by `rank` then `id`). Sidebar: team switcher, "Search Ctrl K" button, PROJECTS = team spaces of the selected team, PRIVATE = personal space, each with expandable tree, `+` new page under a node and at top, "Archived" and "Trash" links per project. Drag-and-drop with dnd-kit (reorder + nest, keyboard sensor enabled) calls `move` with `beforeId/afterId`. Expanded state remembered per space in `localStorage` (try/catch).
-- [ ] Vitest: `buildTreeNestsAndSorts`, `buildTreeHandlesOrphansAtTop` (parent not in list -> top level), `newPageButtonCreatesAndNavigates`.
+- [x] Vitest: `buildTreeNestsAndSorts`, `buildTreeHandlesOrphansAtTop` (parent not in list -> top level), `newPageButtonCreatesAndNavigates`.
 - [ ] Playwright `tree.spec.ts`: create page, create sub-page, drag sub-page to top level, breadcrumbs update.
-- [ ] Commit `feat: sidebar page tree and page route`.
+- [x] Commit `feat: sidebar page tree and page route`.
 
 ---
 
