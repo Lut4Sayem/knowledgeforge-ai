@@ -538,8 +538,6 @@ a.tag:hover { filter: brightness(0.96); }
 /* Wide modal for reading content (version preview); the body scrolls, header and footer stay */
 .modal--wide { max-width: 760px; }
 .modal--wide .modal__body { max-height: 60vh; overflow-y: auto; color: var(--color-ink); }
-/* Static preview of a modal (styleguide) */
-.modal--static { position: static; display: block; width: 100%; }
 
 .dropdown { position: relative; display: inline-block; }
 .menu {
