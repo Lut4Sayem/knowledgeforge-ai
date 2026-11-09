@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface SpaceRepository  extends MongoRepository<Space, String> {
     List<Space> findByTeamId(String teamId);
+    java.util.Optional<Space> findByOwnerUserId(String ownerUserId);
     List<Space> findByTeamIdIn(List<String> teamIds);
 }

@@ -4,14 +4,18 @@ import com.knowledgeforge.knowledgeforge.team.TeamMemberRepository;
 import com.knowledgeforge.knowledgeforge.team.TeamRepository;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -20,7 +24,9 @@ public class SpaceService {
     final TeamMemberRepository teamMemberRepository;
     final UserRepository userRepository;
     final SpaceRepository spaceRepository;
-    public SpaceService(TeamMemberRepository teamMemberRepository, SpaceRepository spaceRepository, UserRepository userRepository) {
+    final TeamRepository teamRepository;
+    public SpaceService(TeamMemberRepository teamMemberRepository, SpaceRepository spaceRepository, UserRepository userRepository, TeamRepository teamRepository) {
+        this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userRepository = userRepository;
         this.spaceRepository = spaceRepository;
@@ -45,6 +51,7 @@ public class SpaceService {
         space.setName(createSpaceRequest.getName());
         space.setDescription(createSpaceRequest.getDescription());
         space.setTeamId(teamId);
+        space.setOwnerType(Space.OwnerType.TEAM);
         space.setCreatedAt(new Date());
         space.setCreatedBy(userId);
         space.setUpdatedAt(new Date());
@@ -79,6 +86,51 @@ public class SpaceService {
         }
 
         return space;
+    }
+
+
+    /** Idempotent: the unique partial index on ownerUserId guarantees one personal space per user. */
+    public Space createPersonalSpace(String userId) {
+        return spaceRepository.findByOwnerUserId(userId).orElseGet(() -> {
+            Space space = new Space();
+            space.setName("Private");
+            space.setOwnerType(Space.OwnerType.USER);
+            space.setOwnerUserId(userId);
+            space.setCreatedBy(userId);
+            space.setCreatedAt(new Date());
+            space.setUpdatedAt(new Date());
+            try {
+                return spaceRepository.save(space);
+            } catch (DuplicateKeyException e) {
+                return spaceRepository.findByOwnerUserId(userId).orElseThrow(() -> e);
+            }
+        });
+    }
+
+    /** Team spaces where I am a member, then my personal space. */
+    public List<MySpaceDTO> getMySpaces() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        Map<String, String> roleByTeam = new HashMap<>();
+        teamMemberRepository.findByUserId(user.getId()).forEach(m -> roleByTeam.put(m.getTeamId(), m.getRole()));
+        Map<String, String> nameByTeam = new HashMap<>();
+        if (!roleByTeam.isEmpty()) {
+            teamRepository.findByIdIn(new ArrayList<>(roleByTeam.keySet()))
+                    .forEach(t -> nameByTeam.put(t.getId(), t.getName()));
+        }
+
+        List<MySpaceDTO> out = new ArrayList<>();
+        if (!roleByTeam.isEmpty()) {
+            for (Space s : spaceRepository.findByTeamIdIn(new ArrayList<>(roleByTeam.keySet()))) {
+                out.add(new MySpaceDTO(s.getId(), s.getName(), s.getIcon(), Space.OwnerType.TEAM, s.getTeamId(),
+                        nameByTeam.get(s.getTeamId()), roleByTeam.get(s.getTeamId())));
+            }
+        }
+        spaceRepository.findByOwnerUserId(user.getId()).ifPresent(s ->
+                out.add(new MySpaceDTO(s.getId(), s.getName(), s.getIcon(), Space.OwnerType.USER, null, null, null)));
+        return out;
     }
 
 }
