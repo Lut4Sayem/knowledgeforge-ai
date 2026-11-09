@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#37352f}a:hover{color:#1a1a1a}
+</style>
+</helmet>
+<nav aria-label="Workspace" style="width: 260px; height: 900px; box-sizing: border-box; background: #f6f5f4; border-right: 1px solid #e5e3df; display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #37352f;">
+<div style="padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 4px;">
+<button style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px; border: 0; background: transparent; border-radius: 6px; font: inherit; color: #1a1a1a; text-align: left; cursor: pointer;"><span style="width: 24px; height: 24px; border-radius: 6px; background: #d6d3ce; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">C</span><span style="flex-grow: 1; font-weight: 600;">CSE391 Team</span><span aria-hidden="true">▾</span></button>
+<button style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px; border: 1px solid #e5e3df; background: #ffffff; border-radius: 6px; font: inherit; color: #5d5b54; text-align: left; cursor: pointer;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5 14 14"></path></svg><span style="flex-grow: 1;">Search</span><span style="font-size: 12px; color: #5d5b54;">Ctrl K</span></button>
+<a href="#" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;">Home</a>
+</div>
+<div style="flex-grow: 1; overflow: auto; padding: 4px 10px; display: flex; flex-direction: column; gap: 2px;">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; color: #5d5b54;"><span>PROJECTS</span><button aria-label="New project" style="width: 24px; height: 24px; border: 0; background: transparent; color: #5d5b54; font: inherit; font-size: 16px; cursor: pointer;">+</button></div>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none; font-weight: 500;"><span aria-hidden="true">▾</span>Thesis</a>
+<div style="display: flex; flex-direction: column; gap: 2px; padding-left: 16px;">
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;"><span aria-hidden="true" style="color: #a4a097;">▸</span>Overview</a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;"><span aria-hidden="true" style="color: #a4a097;">▸</span><span style="flex-grow: 1;">Literature review</span><span style="font-size: 11px; padding: 1px 6px; border-radius: 9999px; background: #f0eeec; color: #5d5b54;">Draft</span></a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;"><span aria-hidden="true" style="color: #a4a097;">▾</span>Methodology</a>
+<div style="display: flex; flex-direction: column; gap: 2px; padding-left: 16px;">
+<a href="#" aria-current="page" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none; background: #e3ecf8; color: #1a1a1a; font-weight: 500;">Survey design</a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;">Data analysis</a>
+</div>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;"><span aria-hidden="true" style="color: #a4a097;">▸</span><span style="flex-grow: 1;">Budget</span><svg role="img" aria-label="Restricted page" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#5d5b54" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg></a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;"><span aria-hidden="true" style="color: #a4a097;">▸</span>Meeting notes</a>
+<button style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border: 0; background: transparent; border-radius: 6px; font: inherit; color: #5d5b54; text-align: left; cursor: pointer;">+ New page</button>
+</div>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none; font-weight: 500;"><span aria-hidden="true">▸</span>CSE370 Group Project</a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none; font-weight: 500;"><span aria-hidden="true">▸</span>Study notes</a>
+<div style="padding: 16px 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; color: #5d5b54;">PRIVATE</div>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;"><span aria-hidden="true" style="color: #a4a097;">▸</span>My drafts</a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;"><span aria-hidden="true" style="color: #a4a097;">▸</span>Ideas</a>
+</div>
+<div style="border-top: 1px solid #e5e3df; padding: 8px 10px 12px; display: flex; flex-direction: column; gap: 2px;">
+<a href="#" style="display: flex; align-items: center; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;">Archived</a>
+<a href="#" style="display: flex; align-items: center; height: 32px; padding: 0 8px; border-radius: 6px; text-decoration: none;">Trash</a>
+<div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px;"><span style="width: 28px; height: 28px; border-radius: 9999px; background: #d9e4f1; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #1a1a1a;">LS</span><span style="flex-grow: 1;">Lutfur Sayem</span></div>
+</div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":260,"height":900}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

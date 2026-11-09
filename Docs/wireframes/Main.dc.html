@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page view</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1f6fc5}a:hover{color:#17549a}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; display: flex; flex-wrap: wrap; background: #ffffff; font-family: Inter, system-ui, sans-serif; color: #1a1a1a;">
+<dc-import name="Sidebar" hint-size="260px,900px"></dc-import>
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+<header style="height: 56px; box-sizing: border-box; padding: 0 20px; border-bottom: 1px solid #e5e3df; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+<nav aria-label="Breadcrumb" style="flex-grow: 1; font-size: 13px; color: #5d5b54; display: flex; gap: 6px; align-items: center; min-width: 0;"><a href="#" style="color: #5d5b54; text-decoration: none;">Thesis</a><span aria-hidden="true">/</span><a href="#" style="color: #5d5b54; text-decoration: none;">Methodology</a><span aria-hidden="true">/</span><span style="color: #1a1a1a;">Survey design</span></nav>
+<span style="font-size: 13px; color: #5d5b54;">Saved</span>
+<button style="height: 32px; padding: 0 12px; border: 1px solid #c8c4be; background: #ffffff; border-radius: 8px; font: inherit; font-size: 13px; cursor: pointer;">Share</button>
+<button aria-label="Version history" style="width: 32px; height: 32px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; color: #5d5b54; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"></circle><path d="M9 5.5V9l2.5 1.5"></path></svg></button>
+<button aria-label="More actions" style="width: 32px; height: 32px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; color: #5d5b54; font-size: 18px;">···</button>
+</header>
+<div role="status" style="padding: 10px 20px; background: #f6f5f4; border-bottom: 1px solid #e5e3df; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px;">
+<span style="padding: 2px 8px; border-radius: 9999px; background: #f0eeec; font-weight: 600; font-size: 12px;">Draft</span>
+<span style="flex-grow: 1; color: #5d5b54;">Your team can see this page. Publish it when it's final.</span>
+<button style="height: 32px; padding: 0 14px; border: 0; background: #1f6fc5; color: #ffffff; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;">Publish</button>
+</div>
+<article style="width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; padding: 48px 20px 64px; display: flex; flex-direction: column; gap: 16px;">
+<h1 style="margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.5px;">Survey design</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: #5d5b54;"><span>Edited 5 min ago by Rafi</span><span aria-hidden="true">·</span><a href="#" style="padding: 2px 8px; border-radius: 4px; background: #d9f3e1; color: #136c27; text-decoration: none; font-size: 12px; font-weight: 600;">methods</a><a href="#" style="padding: 2px 8px; border-radius: 4px; background: #dcecfa; color: #004a8c; text-decoration: none; font-size: 12px; font-weight: 600;">survey</a><button style="border: 0; background: transparent; font: inherit; font-size: 12px; color: #5d5b54; cursor: pointer;">+ Add tag</button></div>
+<div style="display: flex; gap: 8px; align-items: center;"><span style="font-size: 14px; color: #5d5b54;">Status:</span><span style="padding: 2px 10px; border-radius: 9999px; background: #ffe8d4; color: #793400; font-size: 12px; font-weight: 600;">In progress</span></div>
+<h2 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Goal</h2>
+<p style="margin: 0; font-size: 16px; line-height: 1.65; color: #37352f;">Collect responses from 120 first-year students about how they organize group project notes.</p>
+<h2 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Tasks</h2>
+<label style="display: flex; gap: 10px; align-items: center; font-size: 16px;"><input type="checkbox" checked>Draft the questionnaire</label>
+<label style="display: flex; gap: 10px; align-items: center; font-size: 16px;"><input type="checkbox">Get supervisor approval</label>
+<label style="display: flex; gap: 10px; align-items: center; font-size: 16px;"><input type="checkbox">Pilot with 10 students</label>
+<div role="img" aria-label="Image block placeholder" style="height: 180px; border-radius: 8px; background: #edecea; display: flex; align-items: center; justify-content: center; color: #5d5b54; font-size: 13px;">Image block</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<a href="#" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e5e3df; border-radius: 8px; text-decoration: none; color: #1a1a1a; font-size: 13px;"><span style="width: 24px; height: 28px; border-radius: 4px; background: #fde0e0;" aria-hidden="true"></span>questionnaire-v2.pdf<span style="color: #5d5b54;">240 KB</span></a>
+</div>
+<a href="#" style="display: flex; gap: 12px; border: 1px solid #e5e3df; border-radius: 8px; padding: 12px; text-decoration: none; color: #1a1a1a;"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;"><span style="font-weight: 500; font-size: 14px;">Designing effective surveys</span><span style="font-size: 13px; color: #5d5b54;">Bookmark card: title, description and thumbnail from the link</span></span><span aria-hidden="true" style="width: 96px; height: 64px; border-radius: 6px; background: #edecea;"></span></a>
+</article>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
