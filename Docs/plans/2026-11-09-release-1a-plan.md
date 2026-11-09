@@ -1,3 +1,4 @@
+
 # Release 1a (Wiki Foundation) Implementation Plan
 
 Date: 2026-11-09 · Status: APPROVED 2026-11-09 (scope decisions D1-D5 accepted as recommended) · Owner: MD. Lutfur Rahman
@@ -112,22 +113,22 @@ collab/         Node package; in 1a only `migrate-content.ts` (ADR 0007). Hocusp
 ### Task 0.1: Integration test base with Atlas-local in Testcontainers
 **Files:** Modify `pom.xml` (add `org.testcontainers:mongodb`, `spring-boot-testcontainers`, `org.testcontainers:junit-jupiter`). Create `src/test/java/.../support/IntegrationTest.java`, `src/test/java/.../support/ExplainAssert.java`.
 **Produces:** `abstract class IntegrationTest` (`@SpringBootTest`, static `MongoDBAtlasLocalContainer` with `@ServiceConnection`, image `mongodb/mongodb-atlas-local:8.0`), `ExplainAssert.usesIndex(MongoTemplate t, String collection, Query q, String indexName)`.
-- [ ] Test `IntegrationTestSmokeTest.containerStartsAndAppConnects`: saves and reads a `User`.
-- [ ] Test `ExplainAssertTest.detectsCollectionScan`: query without index -> assertion fails; with index -> passes.
-- [ ] Make `KnowledgeforgeApplicationTests.contextLoads` extend `IntegrationTest` (no more Atlas env var needed for tests).
-- [ ] `./mvnw -q test` green. Commit `test: add Atlas-local integration test base`.
+- [x] Test `IntegrationTestSmokeTest.containerStartsAndAppConnects`: saves and reads a `User`.
+- [x] Test `ExplainAssertTest.detectsCollectionScan`: query without index -> assertion fails; with index -> passes.
+- [x] Make `KnowledgeforgeApplicationTests.contextLoads` extend `IntegrationTest` (no more Atlas env var needed for tests).
+- [x] `./mvnw -q test` green. Commit `test: add Atlas-local integration test base`.
 
 ### Task 0.2: CI on every PR
 **Files:** Create `.github/workflows/ci.yml`.
-- [ ] Jobs: `backend` (Temurin 17, `./mvnw -B verify`, Docker available for Testcontainers), `frontend` (Node 20, `npm ci`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`). Required on PR to `main`.
+- [x] Jobs: `backend` (Temurin 17, `./mvnw -B verify`, Docker available for Testcontainers), `frontend` (Node 20, `npm ci`, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`). Required on PR to `main`.
 - [ ] Open a test PR; both jobs green. Commit `ci: run backend and frontend checks on PRs`.
 
 ### Task 0.3: Turn CSRF protection on
 PRD 7 requires CSRF protection; it is disabled today.
 **Files:** Modify `SecurityConfig.java`; old `static/app.js` `KF.api` (send header) so old pages keep working until retired.
 **Produces:** cookie `XSRF-TOKEN` (`CookieCsrfTokenRepository.withHttpOnlyFalse()`), header `X-XSRF-TOKEN` required on POST/PUT/PATCH/DELETE under `/api/**`; exempt only `/api/auth/login`, `/api/auth/register` and (Phase 9) `/internal/**` (protected by its own secret).
-- [ ] Test `CsrfTest.postWithoutTokenIs403` and `postWithTokenSucceeds` (MockMvc).
-- [ ] Manual: log in on the old pages, edit a document. Commit `feat: enable CSRF protection`.
+- [x] Test `CsrfTest.postWithoutTokenIs403` and `postWithTokenSucceeds` (MockMvc).
+- [x] Manual: log in on the old pages, edit a document. Commit `feat: enable CSRF protection`.
 
 ### Task 0.4: React + TS app scaffold served by Spring
 **Files:** Create `frontend/` (Vite React-TS template, ESLint, Vitest, Playwright config), `frontend/src/api/client.ts`, `frontend/src/app/App.tsx`, `frontend/src/styles/tokens.css`. Modify `pom.xml` (`com.github.eirslett:frontend-maven-plugin`: install Node 20, `npm ci`, `npm run build` in `generate-resources`; Vite `build.outDir` = `../target/classes/static/app`, `base: '/app/'`). Create `src/main/java/.../SpaController.java`. Modify `Dockerfile` (no change needed if Maven builds the frontend; verify).
@@ -135,14 +136,14 @@ PRD 7 requires CSRF protection; it is disabled today.
 - `api<T>(path: string, init?: RequestInit): Promise<T>`: JSON, sends `X-XSRF-TOKEN` from cookie, throws `ApiError {status, message}`, on 401 navigates to `/app/login?next=<path>`.
 - `SpaController`: forwards `GET /app/**` (paths without a dot) to `/app/index.html`.
 - Dev: `npm run dev` on :5173 with proxy `/api`, `/logout`, `/internal` -> :8080.
-- [ ] Vitest `client.test.ts`: `sendsCsrfHeaderOnPost`, `redirectsToLoginOn401`, `throwsApiErrorWithServerMessage`.
-- [ ] Integration test `SpaControllerTest.deepLinkServesIndex` (`/app/p/123` -> 200 HTML).
-- [ ] `./mvnw -q package` produces a jar that serves `/app/`. Commit `feat: add React app scaffold served by Spring`.
+- [x] Vitest `client.test.ts`: `sendsCsrfHeaderOnPost`, `redirectsToLoginOn401`, `throwsApiErrorWithServerMessage`.
+- [x] Integration test `SpaControllerTest.deepLinkServesIndex` (`/app/p/123` -> 200 HTML).
+- [x] `./mvnw -q package` produces a jar that serves `/app/`. Commit `feat: add React app scaffold served by Spring`.
 
 ### Task 0.5: Port auth pages (login, register, join) to React
 Needed first so the new app is usable on its own. Same behaviour as the current pages (PROJECT_CONTEXT progress log), plain styling.
 **Files:** `frontend/src/pages/Login.tsx`, `Register.tsx`, `Join.tsx`; routes `/app/login`, `/app/register`, `/app/join/:code`.
-- [ ] Vitest: `loginShowsServerErrorOnBadCredentials`, `loginRedirectsToSafeNextOnly` (`next=//evil.com` -> dashboard), `registerValidatesPasswordLength8`.
+- [x] Vitest: `loginShowsServerErrorOnBadCredentials`, `loginRedirectsToSafeNextOnly` (`next=//evil.com` -> dashboard), `registerValidatesPasswordLength8`.
 - [ ] Commit `feat: React login, register and join pages`.
 
 ---
