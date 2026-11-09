@@ -7,12 +7,15 @@ import com.knowledgeforge.knowledgeforge.space.Space;
 import com.knowledgeforge.knowledgeforge.space.SpaceRepository;
 import com.knowledgeforge.knowledgeforge.team.TeamMember;
 import com.knowledgeforge.knowledgeforge.team.TeamMemberRepository;
+import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,35 +66,66 @@ public class NodeAccessService {
         return teamMemberRepository.canEdit(space.getTeamId(), userId);
     }
 
+    /** Logged-in user; 401 when missing. */
+    public User currentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+    }
+
+    /**
+     * Access to many nodes of one space with no extra queries: ancestors are looked up in {@code nodes} itself.
+     * Throws 403 when the user cannot enter the space at all.
+     */
+    public Map<String, Access> resolveAll(String userId, Space space, Collection<Node> nodes) {
+        Base base = base(userId, space);
+        if (base == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this space");
+        Map<String, Node> byId = nodes.stream().collect(Collectors.toMap(Node::getId, Function.identity()));
+        Map<String, Access> out = new HashMap<>();
+        for (Node n : nodes) {
+            out.put(n.getId(), finish(base, userId, n, byId, false, false));
+        }
+        return out;
+    }
+
     private Node require(String nodeId, Access needed, boolean ignoreLock) {
         Node node = nodeRepository.findById(nodeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Page not found"));
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        String userId = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found")).getId();
+        String userId = currentUser().getId();
         if (compute(userId, node, false, ignoreLock).compareTo(needed) < 0) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this page");
         }
         return node;
     }
 
+    private record Base(Access access, boolean admin, boolean team) {}
+
+    /** Space step (domain 4.1 step 2); null = not allowed in at all. */
+    private Base base(String userId, Space space) {
+        if (space.getOwnerType() == Space.OwnerType.USER) {
+            // Personal space: owner only, restrictions do not apply.
+            return userId.equals(space.getOwnerUserId()) ? new Base(Access.EDIT, false, false) : null;
+        }
+        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(space.getTeamId(), userId).orElse(null);
+        if (member == null) return null;
+        boolean admin = "ADMIN".equals(member.getRole());
+        return new Base((admin || "EDITOR".equals(member.getRole())) ? Access.EDIT : Access.VIEW, admin, true);
+    }
+
     private Access compute(String userId, Node node, boolean ignoreTrashed, boolean ignoreLock) {
         Space space = spaceRepository.findById(node.getSpaceId()).orElse(null);
         if (space == null) return Access.NONE;
+        Base base = base(userId, space);
+        if (base == null) return Access.NONE;
+        Map<String, Node> ancestors = !base.team() || node.getAncestors().isEmpty() ? Map.of()
+                : nodeRepository.findAllById(node.getAncestors()).stream()
+                        .collect(Collectors.toMap(Node::getId, Function.identity()));
+        return finish(base, userId, node, ancestors, ignoreTrashed, ignoreLock);
+    }
 
-        Access result;
-        if (space.getOwnerType() == Space.OwnerType.USER) {
-            // Personal space: owner only, restrictions do not apply.
-            if (!userId.equals(space.getOwnerUserId())) return Access.NONE;
-            result = Access.EDIT;
-        } else {
-            TeamMember member = teamMemberRepository.findByTeamIdAndUserId(space.getTeamId(), userId).orElse(null);
-            if (member == null) return Access.NONE;
-            boolean admin = "ADMIN".equals(member.getRole());
-            result = (admin || "EDITOR".equals(member.getRole())) ? Access.EDIT : Access.VIEW;
-            result = walkRestrictions(userId, node, result, admin);
-        }
-
+    private Access finish(Base base, String userId, Node node, Map<String, Node> ancestors,
+                          boolean ignoreTrashed, boolean ignoreLock) {
+        Access result = base.team() ? walkRestrictions(userId, node, base.access(), base.admin(), ancestors) : base.access();
         if (node.getStatus() == NodeStatus.TRASHED && !ignoreTrashed) return Access.NONE;
         if (node.getStatus() == NodeStatus.ARCHIVED) result = min(result, Access.VIEW);
         if (node.isLocked() && !ignoreLock) result = min(result, Access.VIEW);
@@ -99,10 +133,7 @@ public class NodeAccessService {
     }
 
     /** Rights only go down: each restriction from the top ancestor to the node can lower the result, never raise it. */
-    private Access walkRestrictions(String userId, Node node, Access result, boolean admin) {
-        Map<String, Node> ancestors = node.getAncestors().isEmpty() ? Map.of()
-                : nodeRepository.findAllById(node.getAncestors()).stream()
-                        .collect(Collectors.toMap(Node::getId, Function.identity()));
+    private Access walkRestrictions(String userId, Node node, Access result, boolean admin, Map<String, Node> ancestors) {
         for (String id : node.getAncestors()) {
             Node a = ancestors.get(id);
             if (a != null) result = applyRestriction(userId, a.getRestriction(), result, admin);
