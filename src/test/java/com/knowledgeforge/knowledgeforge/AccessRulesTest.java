@@ -135,7 +135,7 @@ class AccessRulesTest {
     @Test
     void viewerCannotCreateSpaces() {
         myRole("VIEWER");
-        SpaceService spaceService = new SpaceService(members, spaces, users);
+        SpaceService spaceService = new SpaceService(members, spaces, users, teams);
         assertStatus(() -> spaceService.createSpace(TEAM_ID, new CreateSpaceRequest()), HttpStatus.FORBIDDEN);
         verify(spaces, never()).save(any());
     }

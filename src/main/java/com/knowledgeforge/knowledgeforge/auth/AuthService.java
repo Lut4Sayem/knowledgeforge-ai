@@ -1,5 +1,6 @@
 package com.knowledgeforge.knowledgeforge.auth;
 
+import com.knowledgeforge.knowledgeforge.space.SpaceService;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,9 @@ public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SpaceService spaceService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -58,6 +62,7 @@ public class AuthService {
         user.setUpdatedAt(new Date());
 
         User savedUser = userRepository.save(user);
+        spaceService.createPersonalSpace(savedUser.getId());
 
         return new AuthController.UserResponse(
                 savedUser.getId(),

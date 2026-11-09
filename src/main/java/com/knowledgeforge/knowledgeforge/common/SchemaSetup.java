@@ -35,6 +35,7 @@ public class SchemaSetup implements ApplicationRunner {
         setupVersions();
         setupLocks();
         setupMigrations();
+        setupSpaces();
     }
 
     // ---------- collections ----------
@@ -140,6 +141,13 @@ public class SchemaSetup implements ApplicationRunner {
         validator("migrations", new Document("$jsonSchema", schema(req("startedAt", "status"),
                 new Document("startedAt", t("date")).append("finishedAt", t("date", "null"))
                         .append("status", en("RUNNING", "DONE", "FAILED")).append("counts", t("object", "null")))));
+    }
+
+    /** One personal space per user (physical schema 3.3). Existing spaces have no ownerUserId, so they are skipped. */
+    private void setupSpaces() {
+        mongo.indexOps("spaces").createIndex(new Index().named("ownerUserId_unique")
+                .on("ownerUserId", Sort.Direction.ASC).unique()
+                .partial(PartialIndexFilter.of(Criteria.where("ownerType").is("USER"))));
     }
 
     // ---------- helpers ----------
