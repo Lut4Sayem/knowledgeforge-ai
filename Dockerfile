@@ -12,6 +12,7 @@ RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline -B
 
 COPY src ./src
+COPY frontend ./frontend
 RUN ./mvnw clean package -DskipTests
 
 # --- STAGE 2: Run the application ---

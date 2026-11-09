@@ -10,6 +10,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 
@@ -37,8 +39,17 @@ public class SecurityConfig {
             SecurityContextRepository securityContextRepository
     ) throws Exception {
 
+        // Plain (non-XOR) handler + null attribute name = token cookie is written on every response,
+        // so JS can read XSRF-TOKEN and echo it in X-XSRF-TOKEN.
+        CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
+        csrfHandler.setCsrfRequestAttributeName(null);
+
         return http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(csrfHandler)
+                        // login/register have no session token yet; /internal/** joins here in Phase 9 (own secret)
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register"))
                 .securityContext(context -> context
                         .securityContextRepository(securityContextRepository)
                         .requireExplicitSave(true)
@@ -59,6 +70,7 @@ public class SecurityConfig {
                                 "/*.css",
                                 "/*.js",
                                 "/assets/**",
+                                "/app", "/app/**", // React app shell; its data calls go through the protected /api/**
                                 "/favicon.ico",
                                 "/api/auth/register",
                                 "/api/auth/login",
