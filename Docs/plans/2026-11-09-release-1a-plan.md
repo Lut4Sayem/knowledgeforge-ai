@@ -154,15 +154,15 @@ Needed first so the new app is usable on its own. Same behaviour as the current 
 **Files:** Create `node/Node.java`, `node/NodeRepository.java`, `nodecontent/NodeContent.java`, `nodecontent/NodeContentRepository.java`, `nodeversion/NodeVersion.java`, `nodeversion/NodeVersionRepository.java`, `editlock/EditLock.java`, `editlock/EditLockRepository.java`, `migration/MigrationRecord.java`, `common/UserRef.java`, `common/SchemaSetup.java`; enums `NodeType {PAGE, BOARD}`, `NodeStatus {ACTIVE, ARCHIVED, TRASHED}`, `PublishState {DRAFT, PUBLISHED}`, `ContentFormat {YJS_BLOCKNOTE_V1, YJS_BOARD_V1}`, `VersionKind {AUTO, NAMED, PUBLISHED, PUBLISHED_TO_TEAM, RESTORED, MIGRATED}`.
 Fields exactly as physical schema 3.4-3.7 and 3.14. `Node.restriction` is `Restriction {List<String> viewers, editors}` or null.
 `SchemaSetup` (`ApplicationRunner`): creates every index from physical schema 3.4-3.7 by name, and applies `$jsonSchema` (strict/error) to the new collections. Keep `auto-index-creation` off for new entities (indexes are explicit).
-- [ ] Integration test `SchemaSetupTest.createsAllIndexes`: list index names per collection equals the schema tables.
-- [ ] `SchemaSetupTest.rejectsTitleOver200`, `rejectsMoreThan20Tags`, `rejectsStateOver4MB` (validator rejects direct inserts).
-- [ ] Commit `feat: add node, content, version and lock collections`.
+- [x] Integration test `SchemaSetupTest.createsAllIndexes`: list index names per collection equals the schema tables.
+- [x] `SchemaSetupTest.rejectsTitleOver200`, `rejectsMoreThan20Tags`, `rejectsStateOver4MB` (validator rejects direct inserts).
+- [x] Commit `feat: add node, content, version and lock collections`.
 
 ### Task 1.2: Space ownerType + personal space per user
 **Files:** Modify `space/Space.java` (`ownerType`, `ownerUserId`, `icon`, `status`), `space/SpaceService.java`, `auth/AuthService.java` (register creates the personal space), `space/SpaceController.java`.
 **Produces:** `SpaceService.createPersonalSpace(String userId): Space` (idempotent; unique partial index guarantees one); `GET /api/me/spaces` -> `[{id, name, icon, ownerType, teamId, teamName, myRole}]` (team spaces where I'm a member + my personal space; personal space named "Private").
-- [ ] Tests: `registerCreatesPersonalSpace`, `createPersonalSpaceTwiceKeepsOne`, `meSpacesListsTeamAndPersonal`, `meSpacesExcludesOtherTeams`.
-- [ ] Commit `feat: personal space per user`.
+- [x] Tests: `registerCreatesPersonalSpace`, `createPersonalSpaceTwiceKeepsOne`, `meSpacesListsTeamAndPersonal`, `meSpacesExcludesOtherTeams`.
+- [x] Commit `feat: personal space per user`.
 
 ---
 
