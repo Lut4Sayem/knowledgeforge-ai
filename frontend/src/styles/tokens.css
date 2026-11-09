@@ -1,0 +1,78 @@
+/* Tokens copied from DESIGN.md section 0 (via static/style.css). Plain layout only in 1a. */
+:root {
+  /* Primary */
+  --color-primary: #1d6fcb;
+  --color-primary-pressed: #1a64b8;
+  --color-primary-deep: #15528f;
+  --color-primary-soft: #eef4fc;
+  --color-primary-ring: rgba(29, 111, 203, 0.35);
+  --color-on-primary: #ffffff;
+  --color-link: var(--color-primary-pressed);
+
+  /* Surfaces & lines */
+  --color-canvas: #ffffff;
+  --color-surface: #f7f7f5;
+  --color-surface-soft: #fbfbfa;
+  --color-hover: #efefed;
+  --color-hairline: #e5e3df;
+  --color-hairline-soft: #ede9e4;
+  --color-hairline-strong: #8f8b84;
+
+  /* Text */
+  --color-ink: #37352f;
+  --color-charcoal: #37352f;
+  --color-slate: #5d5b54;
+  --color-steel: #6b6964;
+  --color-stone: #a4a097;
+  --color-muted: #bbb8b1;
+
+  /* Semantic: bright for icons/borders, -text for words, -soft for backgrounds */
+  --color-success: #1aae39;  --color-success-text: #136c27;  --color-success-soft: #d9f3e1;
+  --color-warning: #dd5b00;  --color-warning-text: #92400e;  --color-warning-soft: #ffe8d4;
+  --color-error: #e03131;    --color-error-text: #b42318;    --color-error-soft: #fdecea;  --color-error-ink: #7a1d14;
+  --color-info: #0075de;     --color-info-text: #004a8c;     --color-info-soft: #dcecfa;
+  --color-highlight: #fef7d6;
+
+  /* Tints (bg / text on it) */
+  --tint-peach-bg: #ffe8d4;    --tint-peach-fg: #793400;
+  --tint-rose-bg: #fde0ec;     --tint-rose-fg: #a02e6d;
+  --tint-mint-bg: #d9f3e1;     --tint-mint-fg: #136c27;
+  --tint-lavender-bg: #e6e0f5; --tint-lavender-fg: #391c57;
+  --tint-sky-bg: #dcecfa;      --tint-sky-fg: #004a8c;
+  --tint-yellow-bg: #fef7d6;   --tint-yellow-fg: #6b5200;
+  --tint-gray-bg: #f0eeec;     --tint-gray-fg: #37352f;
+
+  /* Type */
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Fragment Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px;
+
+  /* Radius */
+  --radius-chip: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(15, 15, 15, 0.04);
+  --shadow-2: 0 4px 12px rgba(15, 15, 15, 0.08);
+  --shadow-3: 0 16px 48px -8px rgba(15, 15, 15, 0.16);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+
+  /* Layout */
+  --sidebar-width: 248px;
+  --sidebar-rail: 64px;
+  --topbar-height: 56px;
+  --content-max: 1120px;
+  --reading-max: 720px;
+  --page-pad: 32px;
+}
