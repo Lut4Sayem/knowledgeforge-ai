@@ -8,7 +8,7 @@ export interface Pending {
   text: string
   baseRevision: number
   epoch: number // content epoch the copy is based on; it may only be merged into the same epoch
-  at: number // ms, last write; copies untouched for a week are dropped
+  at: number // ms, last write (information only: a copy is never dropped for being old)
 }
 export type Slots = Record<string, Pending>
 
@@ -71,10 +71,24 @@ export function pendingFor(userId: string, nodeId: string): PendingStore {
   }
 }
 
-/** Logout: unsaved copies must not stay on a shared computer. */
-export async function clearAllPending(): Promise<void> {
+const mine = (userId: string) => [`${PREFIX}.${userId}.`, `${PREFIX}-bad.${userId}.`]
+
+/** Pages (node ids) this user has local copies of: sendable ones, and quarantined ones that cannot be read. */
+export async function pendingPages(userId: string): Promise<{ nodes: string[]; unreadable: string[] }> {
+  const [good, bad] = mine(userId)
   try {
-    await delMany((await keys()).filter((k) => String(k).startsWith(PREFIX)))
+    const all = (await keys()).map(String)
+    const under = (prefix: string) => all.filter((k) => k.startsWith(prefix)).map((k) => k.slice(prefix.length))
+    return { nodes: under(good), unreadable: under(bad) }
+  } catch {
+    return { nodes: [], unreadable: [] }
+  }
+}
+
+/** Logout: this user's copies must not stay on a shared computer. Call it only after trying to send them. */
+export async function clearPendingOf(userId: string): Promise<void> {
+  try {
+    await delMany((await keys()).filter((k) => mine(userId).some((prefix) => String(k).startsWith(prefix))))
   } catch {
     // no IndexedDB, so nothing was stored
   }

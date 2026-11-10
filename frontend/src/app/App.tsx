@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Join from '../pages/Join'
 import Login from '../pages/Login'
+import Logout from '../pages/Logout'
 import Register from '../pages/Register'
 import Shell from './Shell'
 
@@ -14,6 +15,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/logout" element={<Logout />} />
       <Route path="/register" element={<Register />} />
       <Route path="/join/:code" element={<Join />} />
       <Route element={<Shell />}>

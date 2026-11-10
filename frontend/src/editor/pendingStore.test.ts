@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto'
 import { get } from 'idb-keyval'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { saveContent } from '../api/content'
-import { clearAllPending, pendingFor, type Pending } from './pendingStore'
+import { clearPendingOf, pendingFor, pendingPages, type Pending } from './pendingStore'
 import { holdSlot, isHeld } from './slotLock'
 
 const apiMock = vi.hoisted(() => vi.fn())
@@ -12,7 +12,7 @@ vi.mock('../api/client', () => ({ api: apiMock }))
 const copy = (text: string): Pending => ({ state: 'c3RhdGU=', text, baseRevision: 3, epoch: 0, at: 1 })
 
 beforeEach(async () => {
-  await clearAllPending()
+  for (const user of ['userA', 'userB']) await clearPendingOf(user)
   apiMock.mockReset()
   apiMock.mockResolvedValue({ revision: 1, savedAt: '' })
 })
@@ -59,16 +59,22 @@ describe('pendingStore', () => {
     expect(await get('kf.pending-bad.userA.n1')).toEqual({ bad: copy('broken') }) // kept for a manual rescue
   })
 
-  it('logoutRemovesEveryLocalCopy', async () => {
+  it('listsAndClearsOnlyOneUsersCopies', async () => {
     await pendingFor('userA', 'n1').put('tab', copy('a'))
+    await pendingFor('userA', 'n2').put('tab', copy('a2'))
     await pendingFor('userB', 'n2').put('tab', copy('b'))
     await pendingFor('userA', 'n3').put('bad', copy('c'))
     await pendingFor('userA', 'n3').quarantine('bad')
 
-    await clearAllPending()
-    expect(await pendingFor('userA', 'n1').all()).toEqual({})
-    expect(await pendingFor('userB', 'n2').all()).toEqual({})
+    const pages = await pendingPages('userA')
+    expect(pages.nodes.sort()).toEqual(['n1', 'n2', 'n3'])
+    expect(pages.unreadable).toEqual(['n3'])
+    expect((await pendingPages('userB')).nodes).toEqual(['n2'])
+
+    await clearPendingOf('userA') // logout of A; B's unsent copy on this browser is not A's to delete
+    expect(await pendingPages('userA')).toEqual({ nodes: [], unreadable: [] })
     expect(await get('kf.pending-bad.userA.n3')).toBeUndefined()
+    expect(await pendingFor('userB', 'n2').all()).toEqual({ tab: copy('b') })
   })
 
   it('reportsWhenTheCopyCouldNotBeStored', async () => {
@@ -84,7 +90,8 @@ describe('pendingStore', () => {
       await expect(store.clear('tab')).resolves.toBeUndefined()
       await expect(store.quarantine('tab')).resolves.toBeUndefined()
       expect(await store.all()).toEqual({})
-      await expect(broken.clearAllPending()).resolves.toBeUndefined()
+      await expect(broken.clearPendingOf('userA')).resolves.toBeUndefined()
+      expect(await broken.pendingPages('userA')).toEqual({ nodes: [], unreadable: [] })
     } finally {
       vi.doUnmock('idb-keyval')
       vi.resetModules()
@@ -144,17 +151,25 @@ describe('saveContent', () => {
     expect(init()).toMatchObject({ keepalive: false, redirectOn401: true })
   })
 
-  it('aSaveThatHangsIsAbortedAfter15Seconds', async () => {
+  it('aSaveThatHangsIsAbortedAfter15SecondsPlus10PerMegabyte', async () => {
     vi.useFakeTimers()
     try {
       // Like fetch: never answers, rejects when its signal aborts.
       apiMock.mockImplementation((_path: string, i: RequestInit) =>
         new Promise((_resolve, reject) => i.signal!.addEventListener('abort', () => reject(new Error('aborted')))))
-      const outcome = saveContent('n1', body('small')).then(() => 'saved', () => 'gave up')
+
+      const small = saveContent('n1', body('small')).then(() => 'saved', () => 'gave up')
       await vi.advanceTimersByTimeAsync(14_999)
       expect(init().signal!.aborted).toBe(false)
-      await vi.advanceTimersByTimeAsync(1)
-      expect(await outcome).toBe('gave up')
+      await vi.advanceTimersByTimeAsync(2) // a few bytes of body add less than a millisecond
+      expect(await small).toBe('gave up')
+
+      // 2 MB of state: 15 s + 20 s. A big page on a slow line must not be cut off like a small one.
+      const big = saveContent('n1', body('x'.repeat(2 * 1024 * 1024))).then(() => 'saved', () => 'gave up')
+      await vi.advanceTimersByTimeAsync(34_999)
+      expect(init().signal!.aborted).toBe(false)
+      await vi.advanceTimersByTimeAsync(2)
+      expect(await big).toBe('gave up')
     } finally {
       vi.useRealTimers()
     }

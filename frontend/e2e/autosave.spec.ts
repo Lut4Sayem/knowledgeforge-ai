@@ -86,6 +86,51 @@ test('two tabs on one page: both edits end up in the page', async ({ page, conte
   for (const text of ['From the first tab.', 'From the second tab.', 'First again.']) await expect(editor(second)).toContainText(text)
 })
 
+test('logging out sends unsaved local copies first, or asks before dropping them', async ({ page, context }) => {
+  const email = `logout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`
+  const login = () => context.request.post('/api/auth/login', { data: { email, password: 'password123' } })
+  expect((await context.request.post('/api/auth/register', { data: { fullName: 'Logout Tester', email, password: 'password123' } })).ok()).toBeTruthy()
+  expect((await login()).ok()).toBeTruthy()
+  await page.goto('/app')
+  await page.getByRole('button', { name: /new page/i }).first().click()
+  await page.waitForURL(/\/app\/p\//)
+  const url = page.url()
+  await typeInEditor(page, 'Saved normally. ')
+  await expect(saveState(page)).toHaveText('Saved')
+
+  // Typed offline, then the tab is closed: the text now exists only in this browser.
+  await context.setOffline(true)
+  await page.keyboard.type('Typed offline. ')
+  await expect(saveState(page)).toHaveText('Offline: changes kept on this device')
+  await page.close()
+
+  // The page content cannot be reached: the copy cannot be sent, so logging out asks. "Cancel" keeps the session and the copy.
+  await context.setOffline(false)
+  const home = await context.newPage()
+  await home.goto('/app')
+  const logOutButton = home.getByRole('button', { name: 'Log out' })
+  await expect(logOutButton).toBeVisible()
+  await context.route('**/api/nodes/*/content', (route) => route.abort())
+  const question = home.waitForEvent('dialog')
+  await logOutButton.click()
+  const dialog = await question
+  expect(dialog.message()).toBe('You have unsaved changes on 1 page. Log out anyway?')
+  await dialog.dismiss()
+  await expect(logOutButton).toBeVisible() // still here
+  expect((await context.request.get('/api/me')).ok()).toBeTruthy() // and still logged in
+
+  // Reachable again: the copy is sent during logout, no question.
+  await context.unroute('**/api/nodes/*/content')
+  await logOutButton.click()
+  await home.waitForURL(/\/app\/login/)
+
+  // Nothing is left in the browser, yet the text is in the page: it was sent, not dropped.
+  expect((await login()).ok()).toBeTruthy()
+  await home.goto(url)
+  await expect(editor(home)).toContainText('Saved normally. Typed offline.')
+  await expect(saveState(home)).toHaveText('Saved')
+})
+
 test('slash menu inserts a status chip and Ctrl+Z removes it', async ({ page }) => {
   await openNewPage(page)
   await typeInEditor(page, '/status')

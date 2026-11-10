@@ -4,8 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as Y from 'yjs'
 import Editor, { useKfEditor } from './Editor'
+import { fromBase64 } from './base64'
+import { docText } from './docText'
 import { extractText } from './extractText'
-import { FRAGMENT, kfSchema, type KfEditor } from './schema'
+import { EMPTY_PAGE_STATE, FRAGMENT, kfSchema, type KfEditor } from './schema'
 import { getKfSlashItems } from './slashItems'
 import { StatusChip } from './StatusBlock'
 
@@ -123,6 +125,21 @@ describe('block editor', () => {
     await userEvent.click(await screen.findByRole('radio', { name: 'purple' }))
 
     await waitFor(() => expect(JSON.stringify(editor.document)).toContain('"color":"purple"'))
+  })
+
+  // Used when a copy is sent without an open editor (logout): the text must match what the editor would give.
+  it('docTextReadsAPageWithoutAMountedEditor', async () => {
+    const { ydoc, editor } = await mountEditor()
+    editor.replaceBlocks(editor.document, [
+      { type: 'heading', content: 'Plan' },
+      { type: 'paragraph', content: [{ type: 'text', text: 'State: ', styles: {} }, { type: 'status', props: { label: 'Done', color: 'green' } }] },
+    ])
+    expect(docText(ydoc)).toBe('Plan\nState: Done')
+    expect(docText(ydoc)).toBe(extractText(editor.document))
+
+    const empty = new Y.Doc()
+    Y.applyUpdate(empty, fromBase64(EMPTY_PAGE_STATE))
+    expect(docText(empty)).toBe('')
   })
 
   it('extractTextIncludesStatusAndTable', () => {

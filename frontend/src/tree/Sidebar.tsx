@@ -1,5 +1,3 @@
-import { api } from '../api/client'
-import { clearAllPending } from '../editor/pendingStore'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useMatch } from 'react-router-dom'
@@ -16,16 +14,12 @@ function savedTeam(): string | null {
   }
 }
 
-/** Unsaved copies of pages must not stay behind on a shared computer, so logging out removes them. */
-async function logout() {
-  await clearAllPending()
-  try {
-    await api('/logout', { method: 'POST', redirectOn401: false })
-  } catch {
-    // go to the login page anyway
-  }
-  location.assign('/app/login')
-}
+// Loaded on demand: sending unsaved copies needs the editor code, which the rest of the shell does not.
+const logOut = (userId: string) =>
+  import('../editor/logout').then(
+    (m) => m.logOut(userId),
+    () => window.alert('Could not log out. Check your connection and try again.'), // offline: the code could not load
+  )
 
 export default function Sidebar() {
   const me = useQuery({ queryKey: ['me'], queryFn: getMe })
@@ -72,7 +66,7 @@ export default function Sidebar() {
 
       <div className="sidebar-foot">
         {me.data?.fullName}{' '}
-        <button type="button" className="tree-add" onClick={logout}>Log out</button>
+        {me.data && <button type="button" className="tree-add" onClick={() => void logOut(me.data.id)}>Log out</button>}
       </div>
     </nav>
   )
