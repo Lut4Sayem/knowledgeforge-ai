@@ -15,10 +15,10 @@ document.elementsFromPoint ??= () => [] // nor layout; BlockNote's side menu ask
 
 afterEach(cleanup)
 
-function Harness({ ydoc, onEditor }: { ydoc: Y.Doc; onEditor: (e: KfEditor) => void }) {
-  const editor = useKfEditor(ydoc, 'Tester')
+function Harness({ ydoc, onEditor, editable = true }: { ydoc: Y.Doc; onEditor: (e: KfEditor) => void; editable?: boolean }) {
+  const editor = useKfEditor(ydoc, 'Tester', editable)
   onEditor(editor)
-  return <Editor editor={editor} editable />
+  return <Editor editor={editor} editable={editable} />
 }
 
 async function mountEditor() {
@@ -63,6 +63,30 @@ describe('block editor', () => {
     fireEvent.keyDown(dom, { key: 'y', code: 'KeyY', ctrlKey: true })
     expect(texts()).toContain('to undo')
     expect(fragment.toString()).toContain('to undo')
+  })
+
+  // Found in a real browser: every page opens read-only until the soft lock answers, and undo was dead after that.
+  it('undoStillWorksAfterReadOnlyBecomesEditable', async () => {
+    const ydoc = new Y.Doc()
+    let editor!: KfEditor
+    const view = render(<Harness ydoc={ydoc} editable={false} onEditor={(e) => (editor = e)} />)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(view.container.querySelector('[contenteditable="true"]')).toBeNull()
+
+    view.rerender(<Harness ydoc={ydoc} editable onEditor={(e) => (editor = e)} />)
+    const dom = await waitFor(() => {
+      const el = view.container.querySelector<HTMLElement>('[contenteditable="true"]')
+      if (!el) throw new Error('editor not editable yet')
+      return el
+    })
+    await new Promise((r) => setTimeout(r, 50))
+
+    editor.insertBlocks([{ type: 'paragraph', content: 'to undo' }], editor.document[0], 'after')
+    expect(extractText(editor.document)).toContain('to undo')
+    fireEvent.keyDown(dom, { key: 'z', code: 'KeyZ', ctrlKey: true })
+    expect(extractText(editor.document)).not.toContain('to undo')
+    fireEvent.keyDown(dom, { key: 'y', code: 'KeyY', ctrlKey: true })
+    expect(extractText(editor.document)).toContain('to undo')
   })
 
   it('statusChipEditableInPlace', async () => {

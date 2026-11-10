@@ -116,9 +116,10 @@ function PageContent({ node, slots }: { node: NodeDetail; slots: Slots }) {
 
 function PageEditor({ node, opened, slots, onReload }: { node: NodeDetail; opened: Opened; slots: Slots; onReload: () => void }) {
   const canEdit = node.access === 'EDIT'
-  const editor = useKfEditor(opened.ydoc, 'Me')
-  const save = useAutosave(node.id, opened, () => extractText(editor.document), canEdit)
   const lock = useEditLock(node.id, canEdit)
+  const editable = canEdit && lock.mode === 'editing'
+  const editor = useKfEditor(opened.ydoc, 'Me', editable)
+  const save = useAutosave(node.id, opened, () => extractText(editor.document), canEdit)
 
   return (
     <>
@@ -130,7 +131,7 @@ function PageEditor({ node, opened, slots, onReload }: { node: NodeDetail; opene
       )}
       {!canEdit && <p className="page-note">{node.locked ? 'This page is locked.' : 'You can read this page but not edit it.'}</p>}
       {lock.mode === 'readonly' && <p className="page-note">Opened read-only: {lock.holder} is editing this page.</p>}
-      <Editor editor={editor} editable={canEdit && lock.mode === 'editing'} />
+      <Editor editor={editor} editable={editable} />
     </>
   )
 }
