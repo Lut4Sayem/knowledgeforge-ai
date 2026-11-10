@@ -65,6 +65,8 @@ function pageWithUnsaved(nodeId: string, typed: string, copy: Partial<Pending> =
 }
 
 let assign: ReturnType<typeof vi.fn>
+const confirmDialog = vi.hoisted(() => vi.fn())
+vi.mock('../ui/ConfirmDialog', () => ({ confirmDialog }))
 let confirm: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
@@ -87,9 +89,10 @@ beforeEach(() => {
   })
   apiMock.mockResolvedValue(null)
   assign = vi.fn()
-  confirm = vi.fn(() => true)
+  confirmDialog.mockReset()
+  confirmDialog.mockResolvedValue(true)
+  confirm = confirmDialog
   vi.stubGlobal('location', { assign })
-  vi.stubGlobal('confirm', confirm)
 })
 
 afterEach(() => {
@@ -158,11 +161,11 @@ describe('logging out with unsaved local copies', () => {
     pageWithUnsaved('down-2', 'stuck two')
     pages.get('down-1')!.down = true
     pages.get('down-2')!.down = true
-    confirm.mockReturnValue(false) // "no, stay"
+    confirm.mockResolvedValue(false) // "no, stay"
 
     expect(await logOut(ME)).toBe(false)
 
-    expect(confirm).toHaveBeenCalledWith('You have unsaved changes on 2 pages. Log out anyway?')
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ title: 'Log out anyway?', body: expect.stringContaining('on 2 pages that') }))
     expect(slotsOf('ok')).toEqual({}) // confirmed by the server, so cleared
     expect(Object.values(slotsOf('down-1'))).toMatchObject([{ text: 'base stuck one' }]) // still on the device
     expect(Object.values(slotsOf('down-2'))).toMatchObject([{ text: 'base stuck two' }])
@@ -175,11 +178,11 @@ describe('logging out with unsaved local copies', () => {
     pages.get('down')!.down = true
     pageWithUnsaved('theirs', 'someone else on this browser', {}, 'other-user')
     idb.set(`kf.pending-bad.${ME}.broken`, { slot: { state: '!!!', text: '', baseRevision: 0, epoch: 0, at: 1 } }) // unreadable: cannot be sent either
-    confirm.mockReturnValue(true)
+    confirm.mockResolvedValue(true)
 
     expect(await logOut(ME)).toBe(true)
 
-    expect(confirm).toHaveBeenCalledWith('You have unsaved changes on 2 pages. Log out anyway?')
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ title: 'Log out anyway?', body: expect.stringContaining('on 2 pages that') }))
     expect([...idb.keys()].filter((k) => k.includes(`.${ME}.`))).toEqual([])
     expect(Object.values(slotsOf('theirs', 'other-user'))).toHaveLength(1) // not ours to send or to delete
     expect(pages.get('theirs')!.puts).toBe(0)
@@ -190,8 +193,8 @@ describe('logging out with unsaved local copies', () => {
   it('onePageIsSingular', async () => {
     pageWithUnsaved('down', 'stuck')
     pages.get('down')!.down = true
-    confirm.mockReturnValue(false)
+    confirm.mockResolvedValue(false)
     await logOut(ME)
-    expect(confirm).toHaveBeenCalledWith('You have unsaved changes on 1 page. Log out anyway?')
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ title: 'Log out anyway?', body: expect.stringContaining('on 1 page that') }))
   })
 })
