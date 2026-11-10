@@ -269,24 +269,24 @@ Behaviour: on open with edit access, `POST edit-lock {force:false}`; held by oth
 - `POST /api/nodes/{id}/trash` -> `{count}`: node + ACTIVE descendants -> TRASHED, `trashedAt/By`, `trashRootId = id`. Edit access.
 - `GET /api/spaces/{id}/trash` -> `[{trashRootId, title, path, descendantCount, trashedBy, trashedAt, purgeAt, parentGone}]` (roots only).
 - `POST /api/trash/{trashRootId}/restore`: whole branch -> ACTIVE; parent missing/TRASHED/ARCHIVED -> move to top level (rewrite `ancestors`), response `{movedToTop: true}`.
-- `DELETE /api/trash/{trashRootId}`: team ADMIN (personal: owner) only; deletes nodes, contents, versions, comments, attachments + GridFS files, edit locks, AI caches.
+- `DELETE /api/trash/{trashRootId}`: team ADMIN (personal: owner) only; deletes nodes, contents, versions (every kind, RECOVERED included), comments, attachments + GridFS files, edit locks, AI caches. Only the branch's TRASHED nodes go: an ARCHIVED descendant that was archived on its own earlier stays (orphaned until unarchived, which then restores it at the top level).
 - `TrashPurgeJob` (`@Scheduled` daily 03:00 UTC): same delete for roots with `trashedAt < now - 30 days`, batched 100 roots per run loop.
 - Archive: `POST /api/nodes/{id}/archive`, `POST /api/nodes/{id}/unarchive`, `GET /api/spaces/{id}/archived`, same branch logic with ARCHIVED (no purge).
 - Every action writes an `ActivityLog` (`TRASH_NODE`, `RESTORE_NODE`, `PURGE_NODE`, `ARCHIVE_NODE`, `UNARCHIVE_NODE`).
-- [ ] IT: `trashMovesWholeBranch`, `restoreBringsBranchBack`, `restoreWithMissingParentGoesToTop`, `cannotRestoreInsideTrashedBranch` (restore by a non-root id -> 400), `onlyAdminDeletesForever`, `purgeDeletesAfter30DaysWithFiles`, `archivedIsReadOnlyAndSearchable`, `purgeQueryUsesIndex`.
-- [ ] Commit `feat: trash, archive and purge`.
+- [x] IT: `trashMovesWholeBranch`, `restoreBringsBranchBack`, `restoreWithMissingParentGoesToTop`, `cannotRestoreInsideTrashedBranch` (restore by a non-root id -> 400), `onlyAdminDeletesForever`, `purgeDeletesAfter30DaysWithFiles`, `archivedIsReadOnlyAndSearchable`, `purgeQueryUsesIndex`.
+- [x] Commit `feat: trash, archive and purge`.
 
 ### Task 5.2: Publish, lock, tag listing (backend)
 **Produces:** `POST /api/nodes/{id}/publish` / `unpublish` (edit access; only flips `publishState` here. Task 6.1 adds the `PUBLISHED` version on publish), `POST /api/nodes/{id}/lock` / `unlock` (page editors only; unlock uses `requireEditIgnoringLock`), `GET /api/tags/{tag}/nodes` -> nodes with that tag across all my spaces that I can VIEW (index `{tags}`).
-- [ ] IT: `publishFlipsState`, `lockedPageRejectsSaveAndRename`, `unlockOnlyByEditor`, `tagListingHidesInaccessiblePages`.
-- [ ] Commit `feat: publish, lock and tag listing`.
+- [x] IT: `publishFlipsState`, `lockedPageRejectsSaveAndRename`, `unlockOnlyByEditor`, `tagListingHidesInaccessiblePages`.
+- [x] Commit `feat: publish, lock and tag listing`.
 
-### Task 5.3: Frontend: draft bar, page menu, tags, trash/archive pages
-Wireframes `Main` (draft bar, tags, page menu) and `Trash`.
+### Task 5.3: Frontend: draft bar, page menu, tags, trash/archive pages (+ confirm dialog)
+Wireframes `Main` (draft bar, tags, page menu) and `Trash`. First a small accessible confirm dialog (`ui/ConfirmDialog.tsx`: native `<dialog>`, focus trapped, Esc closes, focus returns to the trigger), used for the trash confirm, the Delete-forever confirm and the logout question (replaces the browser `confirm()`).
 **Files:** `page/DraftBar.tsx`, `page/PageMenu.tsx` (Lock/Unlock, Archive, Move to trash, Version history, Move to team (Phase 8)), `page/TagEditor.tsx`, `trash/TrashPage.tsx` (tabs Trash / Archived, table: Page, Was in, Deleted by, Deleted forever in, Actions), `trash/ConfirmTrashDialog.tsx` ("Move "<title>" to trash?" / "This also moves its N sub-pages. You can restore them from the trash for 30 days."), route `/app/s/:spaceId/trash`, `/app/tags/:tag`.
-- [ ] Vitest: `draftBarHiddenWhenPublished`, `confirmShowsSubpageCount`, `deleteForeverOnlyForAdmins`, `restoreToTopShowsNotice`.
-- [ ] Playwright `trash.spec.ts`: trash a parent with 2 children, restore, tree is back.
-- [ ] Commit `feat: draft bar, tags, trash and archive screens`.
+- [x] Vitest: `draftBarHiddenWhenPublished`, `confirmShowsSubpageCount`, `deleteForeverOnlyForAdmins`, `restoreToTopShowsNotice`.
+- [x] Playwright `trash.spec.ts`: trash a parent with 2 children, restore, tree is back.
+- [x] Commit `feat: draft bar, tags, trash and archive screens`.
 
 ---
 
