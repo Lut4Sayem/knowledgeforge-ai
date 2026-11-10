@@ -21,7 +21,8 @@ interface Props {
 
 interface Item {
   label: string
-  run: () => Promise<void>
+  /** May return a notice to show after the action (e.g. where a restored page landed). */
+  run: () => Promise<string | void>
   /** Why it cannot be used right now. */
   blocked?: string
 }
@@ -32,6 +33,7 @@ export default function PageMenu({ node, unsaved }: Props) {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
 
@@ -57,7 +59,14 @@ export default function PageMenu({ node, unsaved }: Props) {
 
   const items: Item[] = []
   if (node.status === 'ARCHIVED') {
-    items.push({ label: 'Unarchive', run: async () => (await unarchiveNode(node.id), await refresh()) })
+    items.push({
+      label: 'Unarchive',
+      run: async () => {
+        const { movedToTop } = await unarchiveNode(node.id)
+        await refresh()
+        if (movedToTop) return 'This page was moved to the top level of its space, because its parent was deleted or is in the trash.'
+      },
+    })
   } else {
     if (node.publishState === 'PUBLISHED') {
       items.push({ label: 'Unpublish', blocked: lockedNote, run: async () => (await unpublishNode(node.id), await refresh()) })
@@ -84,8 +93,9 @@ export default function PageMenu({ node, unsaved }: Props) {
   async function choose(item: Item) {
     setOpen(false)
     setError('')
+    setNotice('')
     try {
-      await item.run()
+      setNotice((await item.run()) || '')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'That did not work.')
     }
@@ -121,6 +131,7 @@ export default function PageMenu({ node, unsaved }: Props) {
         </div>
       )}
       {error && <p role="alert" className="page-menu-error">{error}</p>}
+      {notice && <p role="status" className="page-menu-note">{notice}</p>}
     </div>
   )
 }

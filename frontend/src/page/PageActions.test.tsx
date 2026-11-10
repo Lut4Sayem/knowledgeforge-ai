@@ -122,6 +122,23 @@ describe('page menu', () => {
     expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Unarchive'])
   })
 
+  it('unarchiveToTopShowsNotice', async () => {
+    api.unarchiveNode.mockResolvedValue({ movedToTop: true })
+    mount({ ...NODE, status: 'ARCHIVED', access: 'VIEW' })
+    await openMenu()
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Unarchive' }))
+    expect((await screen.findByRole('status')).textContent).toBe('This page was moved to the top level of its space, because its parent was deleted or is in the trash.')
+  })
+
+  it('plainUnarchiveShowsNoNotice', async () => {
+    api.unarchiveNode.mockResolvedValue({ movedToTop: false })
+    mount({ ...NODE, status: 'ARCHIVED', access: 'VIEW' })
+    await openMenu()
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Unarchive' }))
+    await waitFor(() => expect(api.unarchiveNode).toHaveBeenCalledWith('n1'))
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
   it('aRefusedActionShowsTheServersMessage', async () => {
     api.archiveNode.mockRejectedValue(new Error('This page is locked and read-only'))
     mount(NODE)
