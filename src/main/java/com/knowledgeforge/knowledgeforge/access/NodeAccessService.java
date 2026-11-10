@@ -49,6 +49,11 @@ public class NodeAccessService {
         return compute(userId, node, true, false);
     }
 
+    /** What the user's role allows, ignoring the page's own state (trashed, archived, locked): for menus. */
+    public Access resolveIgnoringState(String userId, Node node) {
+        return compute(userId, node, true, true);
+    }
+
     public Node requireView(String nodeId) {
         return require(nodeId, Access.VIEW, false);
     }

@@ -313,6 +313,7 @@ public class NodeService {
                 .map(a -> new NodeDTO.Crumb(a, up.get(a).getTitle())).toList();
         return new NodeDTO(n.getId(), n.getSpaceId(), n.getParentId(), n.getTitle(), n.getIcon(), n.getTags(),
                 n.getPublishState(), n.isLocked(), n.getLockedBy(), n.getStatus(), access.resolve(user.getId(), n),
+                access.resolveIgnoringState(user.getId(), n).compareTo(Access.EDIT) >= 0,
                 crumbs, n.getCreatedBy(), n.getUpdatedBy(), n.getContentUpdatedAt());
     }
 

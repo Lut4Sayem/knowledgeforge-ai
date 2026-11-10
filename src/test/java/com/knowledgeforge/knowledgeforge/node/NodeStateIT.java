@@ -1,5 +1,6 @@
 package com.knowledgeforge.knowledgeforge.node;
 
+import com.knowledgeforge.knowledgeforge.access.Access;
 import com.knowledgeforge.knowledgeforge.nodecontent.NodeContentRepository;
 import com.knowledgeforge.knowledgeforge.nodecontent.NodeContentService;
 import com.knowledgeforge.knowledgeforge.nodecontent.SaveContentRequest;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
 
@@ -51,6 +53,19 @@ class NodeStateIT extends NodeIntegrationTest {
         assertEquals(403, statusOf(() -> nodeService.publish(p.id())));
         // still readable
         assertTrue(nodeService.get(p.id()).locked());
+    }
+
+    @Test
+    void canManageSurvivesLockAndArchive() {
+        NodeDTO p = createPage("A");
+        assertTrue(p.canManage());
+        assertTrue(nodeService.lock(p.id()).canManage()); // locked: access is VIEW, but an editor can still unlock
+        assertEquals(Access.VIEW, nodeService.get(p.id()).access());
+        nodeService.unlock(p.id());
+        mongo.updateFirst(Query.query(Criteria.where("id").is(p.id())), new Update().set("status", "ARCHIVED"), Node.class);
+        assertTrue(nodeService.get(p.id()).canManage()); // archived: an editor can still unarchive
+        loginAs(newMember("VIEWER"));
+        assertFalse(nodeService.get(p.id()).canManage());
     }
 
     @Test
