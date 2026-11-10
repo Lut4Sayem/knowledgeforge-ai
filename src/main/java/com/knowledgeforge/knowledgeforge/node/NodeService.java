@@ -126,7 +126,19 @@ public class NodeService {
         if (req.tags() != null) node.setTags(normalizeTags(req.tags()));
         node.setUpdatedBy(ref(user));
         node.setUpdatedAt(new Date());
-        return toDto(nodes.save(node), user);
+        node = nodes.save(node);
+        syncSearchFields(node);
+        return toDto(node, user);
+    }
+
+    /** Keeps the copy of title/tags/status/publishState in node_contents.search current (call after any of them change). */
+    public void syncSearchFields(Node node) {
+        NodeContent.Search s = new NodeContent.Search();
+        s.setTitle(node.getTitle());
+        s.setTags(node.getTags());
+        s.setStatus(node.getStatus());
+        s.setPublishState(node.getPublishState());
+        mongo.updateFirst(Query.query(Criteria.where("id").is(node.getId())), new Update().set("search", s), NodeContent.class);
     }
 
     public NodeDTO move(String id, MoveNodeRequest req) {

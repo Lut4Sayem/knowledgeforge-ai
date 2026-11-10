@@ -1,5 +1,6 @@
 package com.knowledgeforge.knowledgeforge;
 
+import com.knowledgeforge.knowledgeforge.nodecontent.StaleRevisionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -17,6 +18,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handle(ResponseStatusException ex) {
         String message = ex.getReason() != null ? ex.getReason() : ex.getStatusCode().toString();
         return ResponseEntity.status(ex.getStatusCode()).body(Map.of("message", message));
+    }
+
+    @ExceptionHandler(StaleRevisionException.class)
+    public ResponseEntity<Map<String, Object>> handleStale(StaleRevisionException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage(), "currentRevision", ex.getCurrentRevision()));
     }
 
     // Thrown by Spring before our code runs when spring.servlet.multipart limits are exceeded.

@@ -214,14 +214,14 @@ Wireframes `Sidebar` and `Main`. Plain layout.
 - `GET /api/nodes/{id}/content` -> `{format, state: base64, revision}` (view access).
 - `PUT /api/nodes/{id}/content {baseRevision, state: base64, text}` -> `{revision, savedAt}`. Edit access. Atomic `findAndModify` on `{_id, revision: baseRevision}`; no match -> **409** `{message, currentRevision}`. Caps: state > 4 MB or text > 1 MB -> 413. Sets `contentHash = sha256(state)`, copies `search {title, tags, status, publishState}` from the node, updates `editSession` (`startedAt` if null, `lastEditAt = now`, add user to `authors` max 100), sets node `updatedBy`.
 - `NodeService` keeps `node_contents.search` in sync on rename/tags/status/publish changes (one helper `syncSearchFields(nodeId)`).
-- [ ] IT: `saveIncrementsRevision`, `staleRevisionReturns409`, `stateOver4MBRejected`, `viewerCannotSave`, `lockedPageCannotBeSaved`, `renameUpdatesSearchCopy`.
-- [ ] Commit `feat: page content load and save`.
+- [x] IT: `saveIncrementsRevision`, `staleRevisionReturns409`, `stateOver4MBRejected`, `viewerCannotSave`, `lockedPageCannotBeSaved`, `renameUpdatesSearchCopy`.
+- [x] Commit `feat: page content load and save`.
 
 ### Task 3.2: Soft lock (Release 1a only)
 **Files:** `editlock/EditLockService.java`, `editlock/EditLockController.java`. IT `EditLockServiceIT.java`.
 **Produces:** `POST /api/nodes/{id}/edit-lock {force: boolean}` -> `{mine: boolean, holder: UserRef|null, expiresAt}`: acquire if free/expired/mine (renew `expiresAt = now + 60 s`); held by someone else and `force=false` -> `{mine:false, holder}`; `force=true` -> take over. `DELETE /api/nodes/{id}/edit-lock` releases if mine. Reads check `expiresAt > now`.
-- [ ] IT: `acquireFreeLock`, `secondUserSeesHolder`, `expiredLockCanBeTaken`, `forceTakesOver`, `releaseOnlyOwn`.
-- [ ] Commit `feat: soft edit lock`.
+- [x] IT: `acquireFreeLock`, `secondUserSeesHolder`, `expiredLockCanBeTaken`, `forceTakesOver`, `releaseOnlyOwn`.
+- [x] Commit `feat: soft edit lock`.
 
 ---
 
