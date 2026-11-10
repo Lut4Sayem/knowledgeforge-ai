@@ -55,6 +55,16 @@ describe('kfSchema in Node', () => {
     expect(toBase64(Y.encodeStateAsUpdate(fresh))).toBe(EMPTY_PAGE_STATE)
   })
 
+  // DO NOT update this hash. Every page created so far has these exact bytes at the root of its Yjs history,
+  // and every browser tab starts a new page from them. If the constant changes, a tab on the new bytes and a
+  // tab (or a saved page) on the old ones have unrelated roots again, and merging them (stale save, D6)
+  // silently drops one side's text. A different first block needs a migration of all saved pages, not an edit here.
+  it('emptyPageStateIsPinned', async () => {
+    const digest = await crypto.subtle.digest('SHA-256', fromBase64(EMPTY_PAGE_STATE))
+    const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+    expect(hex).toBe('cd20d361e8b714573442a0fcb416a81eb4e913b6e25ce7ea5cb594ba6c9c14ac')
+  })
+
   // Found in the browser: two tabs on a brand-new page, merged after a stale save, lost one tab's text.
   it('twoTabsStartingFromAnEmptyPageMergeIntoOneDocument', () => {
     const server = ServerBlockNoteEditor.create({ schema: kfSchema }, getDocument())
