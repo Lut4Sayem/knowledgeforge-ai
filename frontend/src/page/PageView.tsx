@@ -10,6 +10,7 @@ import Editor, { useKfEditor } from '../editor/Editor'
 import { extractText } from '../editor/extractText'
 import { pendingStore } from '../editor/pendingStore'
 import SaveIndicator, { ConflictBanner } from '../editor/SaveIndicator'
+import SoftLockBanner, { useEditLock } from '../editor/SoftLockBanner'
 import Breadcrumbs from './Breadcrumbs'
 
 interface Slots {
@@ -117,13 +118,19 @@ function PageEditor({ node, opened, slots, onReload }: { node: NodeDetail; opene
   const canEdit = node.access === 'EDIT'
   const editor = useKfEditor(opened.ydoc, 'Me')
   const save = useAutosave(node.id, opened, () => extractText(editor.document), canEdit)
+  const lock = useEditLock(node.id, canEdit)
 
   return (
     <>
       {canEdit && slots.head && createPortal(<SaveIndicator state={save.state} />, slots.head)}
       {save.state === 'conflict' && slots.banners && createPortal(<ConflictBanner onReload={onReload} onKeepMine={save.keepMine} />, slots.banners)}
-      {!canEdit && <p className="page-note">You can read this page but not edit it.</p>}
-      <Editor editor={editor} editable={canEdit} />
+      {lock.mode === 'blocked' && slots.banners && createPortal(
+        <SoftLockBanner holder={lock.holder} onReadOnly={lock.openReadOnly} onEditAnyway={lock.editAnyway} />,
+        slots.banners,
+      )}
+      {!canEdit && <p className="page-note">{node.locked ? 'This page is locked.' : 'You can read this page but not edit it.'}</p>}
+      {lock.mode === 'readonly' && <p className="page-note">Opened read-only: {lock.holder} is editing this page.</p>}
+      <Editor editor={editor} editable={canEdit && lock.mode === 'editing'} />
     </>
   )
 }
