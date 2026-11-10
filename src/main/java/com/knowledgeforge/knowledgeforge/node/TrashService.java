@@ -239,10 +239,11 @@ public class TrashService {
         int purged = 0;
         Set<String> done = new HashSet<>();
         while (true) {
-            // status literal + trashedAt: the partial index trashedAt_trashed serves this query
+            // status literal + trashedAt: the partial index trashedAt_trashed serves this query. Branches that
+            // already failed in this run are left out in the query, or a big failing branch would fill every batch.
             Set<String> roots = mongo.find(Query.query(Criteria.where("status").is(NodeStatus.TRASHED)
-                            .and("trashedAt").lt(cutoff)).limit(BATCH), Node.class).stream()
-                    .map(Node::getTrashRootId).filter(r -> r != null && !done.contains(r))
+                            .and("trashedAt").lt(cutoff).and("trashRootId").nin(done)).limit(BATCH), Node.class).stream()
+                    .map(Node::getTrashRootId).filter(Objects::nonNull)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             if (roots.isEmpty()) return purged;
             for (String root : roots) {

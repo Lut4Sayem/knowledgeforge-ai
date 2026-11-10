@@ -239,7 +239,8 @@ class TrashIT extends NodeIntegrationTest {
 
     @Test
     void purgeQueryUsesIndex() {
-        Query q = Query.query(Criteria.where("status").is("TRASHED").and("trashedAt").lt(new Date()));
+        Query q = Query.query(Criteria.where("status").is("TRASHED").and("trashedAt").lt(new Date())
+                .and("trashRootId").nin(List.of(new org.bson.types.ObjectId())));
         ExplainAssert.usesIndex(mongo, "nodes", q, "trashedAt_trashed");
     }
 
