@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../api/client'
 import SoftLockBanner, { useEditLock } from './SoftLockBanner'
 
 const contentApi = vi.hoisted(() => ({ acquireEditLock: vi.fn(), releaseEditLock: vi.fn() }))
@@ -105,6 +106,43 @@ describe('soft lock', () => {
     view.unmount()
     expect(contentApi.acquireEditLock).not.toHaveBeenCalled()
     expect(contentApi.releaseEditLock).not.toHaveBeenCalled()
+  })
+
+  // Review finding 13: the banner used to stay forever, even after the other person had left.
+  it('bannerRechecksEvery20sAndGoesAwayWhenTheLockIsFree', async () => {
+    contentApi.acquireEditLock.mockResolvedValue(rafi)
+    render(<Harness />)
+    await tick(0)
+    expect(mode()).toBe('blocked')
+
+    await tick(20_000)
+    expect(contentApi.acquireEditLock).toHaveBeenCalledTimes(2)
+    expect(contentApi.acquireEditLock).toHaveBeenLastCalledWith('n1', false) // asking, never forcing
+    expect(mode()).toBe('blocked')
+
+    contentApi.acquireEditLock.mockResolvedValue(mine) // Rafi left; his lock is gone
+    await tick(20_000)
+    expect(mode()).toBe('editing')
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  // Review finding 15: a refused lock check used to let the user type into a page that can't be saved.
+  it('lockRefusedByTheServerMakesThePageReadOnly', async () => {
+    contentApi.acquireEditLock.mockRejectedValue(new ApiError(403, 'Forbidden'))
+    render(<Harness />)
+    await tick(0)
+    expect(mode()).toBe('denied')
+    await tick(60_000)
+    expect(contentApi.acquireEditLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('losingEditRightsWhileEditingIsNoticedByTheHeartbeat', async () => {
+    contentApi.acquireEditLock.mockResolvedValueOnce(mine).mockRejectedValue(new ApiError(403, 'Forbidden'))
+    render(<Harness />)
+    await tick(0)
+    expect(mode()).toBe('editing')
+    await tick(20_000)
+    expect(mode()).toBe('denied')
   })
 
   it('aFailedLockCheckDoesNotBlockEditing', async () => {
