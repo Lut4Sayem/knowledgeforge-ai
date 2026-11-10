@@ -26,9 +26,15 @@ test('create page, create sub-page, drag it to top level, breadcrumbs update', a
 
   // Drag Child (keyboard sensor on its grip) down onto the "top level" drop zone.
   await priv.getByRole('button', { name: 'Move Child' }).focus()
+  // How many steps that takes depends on row heights (fonts), so step until the zone lights up.
   await page.keyboard.press('Space')
-  await page.keyboard.press('ArrowDown')
-  await page.keyboard.press('ArrowDown')
+  const dropZone = priv.locator('.tree-top-drop')
+  await expect(dropZone).toBeVisible()
+  for (let i = 0; i < 12 && !(await dropZone.evaluate((el) => el.classList.contains('is-over'))); i++) {
+    await page.keyboard.press('ArrowDown')
+    await page.waitForTimeout(50)
+  }
+  await expect(dropZone).toHaveClass(/is-over/)
   await page.keyboard.press('Space')
 
   await expect(crumbs).not.toContainText('Parent')
