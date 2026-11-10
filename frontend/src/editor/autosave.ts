@@ -47,7 +47,6 @@ export interface Opened {
 
 const DEBOUNCE_MS = 1000
 const BACKOFF_MS = [1000, 2000, 5000, 10_000, 30_000]
-const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 /** Statuses that will not get better by sending the same thing again. */
 const PERMANENT = new Set([400, 403, 404, 413])
 
@@ -74,8 +73,9 @@ export async function openContent(nodeId: string, canEdit: boolean, userId: stri
   const orphans: { id: string; pending: Pending }[] = []
   for (const [id, pending] of Object.entries(slots)) {
     if (await isHeld(lockName(store, id))) continue // belongs to a tab that is still open: not ours to touch
-    // The server already has exactly this copy (the flush on tab close worked), or nobody came back for a week.
-    if (pending.state === server.state || Date.now() - pending.at > MAX_AGE_MS) {
+    // The server already has exactly this copy (the flush on tab close worked). That is the ONLY reason a copy
+    // is removed without being sent: however old it is, it is merged or kept as a private version below.
+    if (pending.state === server.state) {
       await store.clear(id)
       continue
     }

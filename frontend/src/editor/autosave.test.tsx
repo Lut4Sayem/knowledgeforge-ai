@@ -531,17 +531,35 @@ describe('autosave', () => {
     expect(server.puts).toHaveLength(1)
   })
 
-  it('copiesUntouchedForAWeekAreDropped', async () => {
+  // Nothing is ever deleted unsent: age does not matter, only the epoch decides what happens to a copy.
+  it('anOldCopyOfTheSameEpochIsStillMergedAndSaved', async () => {
     const old = serverDoc()
-    type(old, 'eight days old')
-    leftover({ state: stateOf(old), text: 'x', at: Date.now() - 8 * 24 * 3600 * 1000 }, 'ancient')
-    const recent = serverDoc()
-    type(recent, 'six days old')
-    leftover({ state: stateOf(recent), text: 'base six days old', at: Date.now() - 6 * 24 * 3600 * 1000 }, 'recent')
+    type(old, 'typed a year ago')
+    leftover({ state: stateOf(old), text: 'base typed a year ago', at: Date.now() - 365 * 24 * 3600 * 1000 }, 'ancient')
 
-    const { doc } = await openTab()
-    expect(textOf(doc)).toBe('base six days old')
-    expect(pendingOf('ancient')).toBeUndefined()
+    const { a, doc } = await openTab()
+    expect(textOf(doc)).toBe('base typed a year ago')
+    await tick(1000)
+    expect(a.state).toBe('saved')
+    expect(textOf(serverDoc())).toBe('base typed a year ago')
+    expect(pending()).toBeUndefined() // gone only now that the server has it
+  })
+
+  it('anOldCopyFromAnotherEpochIsStillKeptAsAPrivateVersion', async () => {
+    const old = serverDoc()
+    type(old, 'typed a year ago')
+    leftover({ state: stateOf(old), text: 'base typed a year ago', at: Date.now() - 365 * 24 * 3600 * 1000 }, 'ancient')
+    const restored = new Y.Doc()
+    type(restored, 'restored')
+    server.restore(restored)
+
+    const { a } = await openTab()
+    expect(pending()).toMatchObject({ text: 'base typed a year ago' }) // still on the device while unsent
+    await tick(1000)
+    expect(server.recovered).toEqual([{ state: stateOf(old), text: 'base typed a year ago', baseEpoch: 0 }])
+    expect(a.state).toBe('recovered')
+    expect(server.state).toBe(stateOf(restored))
+    expect(pending()).toBeUndefined()
   })
 
   it('aCopyThatCannotBeReadIsQuarantinedAndThePageStillOpens', async () => {
