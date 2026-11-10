@@ -280,6 +280,100 @@ class TrashIT extends NodeIntegrationTest {
         assertNull(node(b.id()).getParentId());
     }
 
+    // ---------- trash and archive never touch each other's pages ----------
+
+    @Test
+    void trashActionsNeverTouchArchivedPagesAndArchiveNeverTouchesTrashed() {
+        NodeDTO p = createPage("P");
+        NodeDTO arch = child(p, "Archived on its own");
+        NodeDTO archKid = child(arch, "Its child");
+        NodeDTO gone = child(p, "Trashed on its own");
+        trash.archive(arch.id());
+        trash.trash(gone.id());
+        trash.archive(p.id());   // the trashed child stays trashed, the archived one keeps its own root
+        assertEquals(NodeStatus.TRASHED, node(gone.id()).getStatus());
+        assertEquals(gone.id(), node(gone.id()).getTrashRootId());
+        assertEquals(arch.id(), node(arch.id()).getTrashRootId());
+        assertEquals(arch.id(), node(archKid.id()).getTrashRootId());
+
+        // wrong-state calls are refused and change nothing
+        assertEquals(400, failure(() -> trash.unarchive(gone.id())).getStatusCode().value());
+        assertEquals(400, failure(() -> trash.restore(arch.id())).getStatusCode().value());
+        assertEquals(400, failure(() -> trash.deleteForever(arch.id())).getStatusCode().value());
+        assertEquals(400, failure(() -> trash.deleteForever(p.id())).getStatusCode().value());
+        assertEquals(NodeStatus.TRASHED, node(gone.id()).getStatus());
+        assertEquals(NodeStatus.ARCHIVED, node(arch.id()).getStatus());
+
+        // unarchiving P brings back P only; the other two keep their state
+        trash.unarchive(p.id());
+        assertEquals(NodeStatus.ACTIVE, node(p.id()).getStatus());
+        assertEquals(NodeStatus.TRASHED, node(gone.id()).getStatus());
+        assertEquals(NodeStatus.ARCHIVED, node(arch.id()).getStatus());
+        assertEquals(NodeStatus.ARCHIVED, node(archKid.id()).getStatus());
+    }
+
+    @Test
+    void purgeStaysInsideItsBranch() {
+        NodeDTO a = createPage("A");
+        NodeDTO arch = child(a, "Archived");
+        NodeDTO archKid = child(arch, "Archived kid");
+        NodeDTO other = createPage("Other");
+        NodeDTO solo = child(a, "Trashed earlier");
+        trash.archive(arch.id());
+        trash.trash(solo.id());
+        trash.trash(a.id());
+        String fileArch = seed(arch.id()), fileOther = seed(other.id()), fileSolo = seed(solo.id());
+
+        trash.deleteForever(a.id());
+
+        assertFalse(nodes.existsById(a.id()));
+        for (NodeDTO kept : List.of(arch, archKid, solo, other)) assertTrue(nodes.existsById(kept.id()), kept.title());
+        assertEquals(NodeStatus.ARCHIVED, node(arch.id()).getStatus());
+        assertEquals(NodeStatus.TRASHED, node(solo.id()).getStatus());
+        assertTrue(contents.existsById(arch.id()));
+        for (String f : List.of(fileArch, fileOther, fileSolo)) assertNotNull(storage.load(f)); // solo's file goes only when ITS branch is purged
+
+        // the daily job leaves the archived orphan alone too
+        mongo.updateFirst(Query.query(Criteria.where("id").is(solo.id())),
+                new Update().set("trashedAt", Date.from(Instant.now().minus(Duration.ofDays(40)))), Node.class);
+        assertTrue(trash.purgeExpired(new Date(System.currentTimeMillis() - Duration.ofDays(30).toMillis())) >= 1);
+        assertFalse(nodes.existsById(solo.id()));
+        assertTrue(nodes.existsById(arch.id()));
+    }
+
+    @Test
+    void restoreToTopRewritesAncestorsForTheWholeBranchOnly() {
+        NodeDTO p = createPage("P");
+        NodeDTO c = child(p, "C");
+        NodeDTO g = child(c, "G");
+        NodeDTO h = child(g, "H");
+        NodeDTO arch = child(h, "Archived below");
+        trash.archive(arch.id());
+        trash.trash(c.id());
+        trash.trash(p.id());
+
+        assertTrue(trash.restore(c.id()).movedToTop());
+        assertEquals(List.of(c.id()), node(g.id()).getAncestors());
+        assertEquals(List.of(c.id(), g.id()), node(h.id()).getAncestors());
+        assertEquals(List.of(c.id(), g.id(), h.id()), node(arch.id()).getAncestors()); // stale prefix gone here too
+        assertEquals(NodeStatus.ARCHIVED, node(arch.id()).getStatus());                 // ...but not restored
+        assertEquals(NodeStatus.TRASHED, node(p.id()).getStatus());
+    }
+
+    @Test
+    void listsSayWhoCanRestore() {
+        NodeDTO a = createPage("A");
+        NodeDTO b = createPage("B");
+        trash.trash(a.id());
+        trash.archive(b.id());
+        loginAs(newMember("VIEWER"));
+        assertFalse(trash.trashList(space.getId()).items().get(0).canRestore());
+        assertFalse(trash.archivedList(space.getId()).items().get(0).canRestore());
+        loginAs(newMember("EDITOR"));
+        assertTrue(trash.trashList(space.getId()).items().get(0).canRestore());
+        assertTrue(trash.archivedList(space.getId()).items().get(0).canRestore());
+    }
+
     @Test
     void outsiderAndViewerCannotTrashOrSeeLists() {
         NodeDTO a = createPage("A");

@@ -126,7 +126,9 @@ export default function TrashPage() {
                 <td>{b.by?.name ?? 'Unknown'}{b.at ? ` · ${timeAgo(b.at)}` : ''}</td>
                 {tab === 'trash' && <td>{daysLeft(b.purgeAt)}</td>}
                 <td className="trash-actions">
-                  <button type="button" onClick={() => restore.mutate(b)} disabled={restore.isPending}>{tab === 'trash' ? 'Restore' : 'Unarchive'}</button>
+                  {b.canRestore && (
+                    <button type="button" onClick={() => restore.mutate(b)} disabled={restore.isPending}>{tab === 'trash' ? 'Restore' : 'Unarchive'}</button>
+                  )}
                   {tab === 'trash' && canPurge && (
                     <button type="button" className="danger" onClick={() => forever.mutate(b)} disabled={forever.isPending}>Delete forever</button>
                   )}

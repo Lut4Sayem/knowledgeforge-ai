@@ -135,8 +135,9 @@ public class TrashService {
         for (Node n : all) sizes.merge(String.valueOf(n.getTrashRootId()), 1, Integer::sum);
 
         // shortcut: one access check per branch root (they are few); a restricted ancestor is honoured this way
+        Map<String, Access> levels = new HashMap<>();
         List<Node> roots = all.stream().filter(n -> n.getId().equals(n.getTrashRootId()))
-                .filter(n -> access.resolveForTrash(user.getId(), n).compareTo(Access.VIEW) >= 0)
+                .filter(n -> levels.computeIfAbsent(n.getId(), id -> access.resolveForTrash(user.getId(), n)).compareTo(Access.VIEW) >= 0)
                 .sorted(Comparator.comparing(Node::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))).toList();
 
         Set<String> related = new HashSet<>();
@@ -167,7 +168,8 @@ public class TrashService {
                 by = r.getUpdatedBy();
                 at = r.getUpdatedAt();
             }
-            out.add(new BranchDTO(r.getId(), r.getTitle(), r.getIcon(), path, sizes.get(r.getId()) - 1, by, at, purgeAt, parentGone));
+            out.add(new BranchDTO(r.getId(), r.getTitle(), r.getIcon(), path, sizes.get(r.getId()) - 1, by, at, purgeAt, parentGone,
+                    levels.get(r.getId()).compareTo(Access.EDIT) >= 0));
         }
         return new BranchListDTO(access.canPurge(user.getId(), space), out);
     }

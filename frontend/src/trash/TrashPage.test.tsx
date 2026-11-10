@@ -16,7 +16,7 @@ vi.mock('../api/spaces', () => spaces)
 const DAY = 24 * 60 * 60 * 1000
 const branch = (over: Partial<Branch> = {}): Branch => ({
   id: 'b1', title: 'Old outline', icon: null, path: [{ id: 'p', title: 'Overview' }], descendantCount: 4,
-  by: { id: 'u', name: 'Siam' }, at: new Date(Date.now() - 2 * DAY).toISOString(), purgeAt: new Date(Date.now() + 28 * DAY).toISOString(), parentGone: false, ...over,
+  by: { id: 'u', name: 'Siam' }, at: new Date(Date.now() - 2 * DAY).toISOString(), purgeAt: new Date(Date.now() + 28 * DAY).toISOString(), parentGone: false, canRestore: true, ...over,
 })
 
 beforeEach(() => {
@@ -50,6 +50,18 @@ describe('trash page', () => {
     expect(row.textContent).toContain('Thesis / Overview')
     expect(row.textContent).toContain('Siam · 2 days ago')
     expect(row.textContent).toContain('28 days')
+  })
+
+  it('hidesRestoreAndUnarchiveFromPeopleWhoCannotUseThem', async () => {
+    api.getTrash.mockResolvedValue({ canPurge: false, items: [branch({ canRestore: false }), branch({ id: 'b2', title: 'Mine', canRestore: true })] })
+    api.getArchived.mockResolvedValue({ canPurge: false, items: [branch({ id: 'a1', title: 'Old archive', canRestore: false })] })
+    mount()
+    const viewerRow = await screen.findByRole('row', { name: /Old outline/ })
+    expect(within(viewerRow).queryByRole('button')).toBeNull()
+    expect(within(screen.getByRole('row', { name: /Mine/ })).getByRole('button', { name: 'Restore' })).toBeTruthy()
+    await userEvent.click(screen.getByRole('tab', { name: /Archived/ }))
+    const row = await screen.findByRole('row', { name: /Old archive/ })
+    expect(within(row).queryByRole('button', { name: 'Unarchive' })).toBeNull()
   })
 
   it('deleteForeverOnlyForAdmins', async () => {

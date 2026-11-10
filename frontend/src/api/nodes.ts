@@ -81,6 +81,7 @@ export interface Branch {
   purgeAt: string | null
   /** the parent is gone or not active: a restore lands at the top level */
   parentGone: boolean
+  canRestore: boolean
 }
 export interface BranchList {
   canPurge: boolean
