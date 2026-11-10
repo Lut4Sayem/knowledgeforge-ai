@@ -18,7 +18,8 @@ const editor = (page: Page) => page.locator('.bn-editor')
 const saveState = (page: Page) => page.locator('.save-indicator')
 
 async function typeInEditor(page: Page, text: string) {
-  await editor(page).click()
+  // The editor is read-only until the soft lock answers, and is rebuilt (losing focus) when it turns editable.
+  await page.locator('.bn-editor[contenteditable="true"]').click()
   await page.keyboard.type(text)
 }
 
@@ -97,6 +98,7 @@ test('logging out sends unsaved local copies first, or asks before dropping them
   const url = page.url()
   await typeInEditor(page, 'Saved normally. ')
   await expect(saveState(page)).toHaveText('Saved')
+  await expect(editor(page)).toContainText('Saved normally.')
 
   // Typed offline, then the tab is closed: the text now exists only in this browser.
   await context.setOffline(true)
