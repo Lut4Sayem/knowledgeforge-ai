@@ -8,4 +8,6 @@ public interface AiSummaryRepository extends MongoRepository<AiSummary, String> 
     Optional<AiSummary> findByDocumentId(String documentId);
 
     void deleteByDocumentId(String documentId);
+
+    void deleteByDocumentIdIn(java.util.Collection<String> documentIds);
 }

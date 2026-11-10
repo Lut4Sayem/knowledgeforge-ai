@@ -41,7 +41,10 @@ public class NodeAccessService {
         return compute(userId, node, false, false);
     }
 
-    /** Same as resolve, but a TRASHED node is judged like an active one (trash list and restore). */
+    /**
+     * Same as resolve, but TRASHED and ARCHIVED are judged like ACTIVE (trash list, restore, unarchive): the
+     * caller already knows the node is in that state and wants to know what the user's role would allow.
+     */
     public Access resolveForTrash(String userId, Node node) {
         return compute(userId, node, true, false);
     }
@@ -57,6 +60,13 @@ public class NodeAccessService {
     /** For unlock: a locked page is still editable by its editors here. */
     public Node requireEditIgnoringLock(String nodeId) {
         return require(nodeId, Access.EDIT, true);
+    }
+
+    /** Delete forever: team ADMIN, or the owner of a personal space. */
+    public boolean canPurge(String userId, Space space) {
+        if (space.getOwnerType() == Space.OwnerType.USER) return userId.equals(space.getOwnerUserId());
+        return teamMemberRepository.findByTeamIdAndUserId(space.getTeamId(), userId)
+                .map(m -> "ADMIN".equals(m.getRole())).orElse(false);
     }
 
     public boolean canEditSpace(String userId, Space space) {
@@ -78,12 +88,17 @@ public class NodeAccessService {
      * Throws 403 when the user cannot enter the space at all.
      */
     public Map<String, Access> resolveAll(String userId, Space space, Collection<Node> nodes) {
+        return resolveAll(userId, space, nodes, false);
+    }
+
+    /** {@code ignoreStatus}: judge TRASHED/ARCHIVED nodes like ACTIVE ones (trash and archive lists). */
+    public Map<String, Access> resolveAll(String userId, Space space, Collection<Node> nodes, boolean ignoreStatus) {
         Base base = base(userId, space);
         if (base == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this space");
         Map<String, Node> byId = nodes.stream().collect(Collectors.toMap(Node::getId, Function.identity()));
         Map<String, Access> out = new HashMap<>();
         for (Node n : nodes) {
-            out.put(n.getId(), finish(base, userId, n, byId, false, false));
+            out.put(n.getId(), finish(base, userId, n, byId, ignoreStatus, false));
         }
         return out;
     }
@@ -93,9 +108,28 @@ public class NodeAccessService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Page not found"));
         String userId = currentUser().getId();
         if (compute(userId, node, false, ignoreLock).compareTo(needed) < 0) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this page");
+            throw denied(userId, node, needed, ignoreLock);
         }
         return node;
+    }
+
+    /**
+     * Says WHY, but only to a user who would have had enough access without the page's state; everybody else
+     * gets the plain message so nothing leaks about pages they cannot see. The editor shows this text.
+     */
+    private ResponseStatusException denied(String userId, Node node, Access needed, boolean ignoreLock) {
+        if (compute(userId, node, true, ignoreLock).compareTo(needed) >= 0) {
+            if (node.getStatus() == NodeStatus.TRASHED) {
+                return new ResponseStatusException(HttpStatus.NOT_FOUND, "This page is in the trash");
+            }
+            if (node.getStatus() == NodeStatus.ARCHIVED) {
+                return new ResponseStatusException(HttpStatus.FORBIDDEN, "This page is archived and read-only");
+            }
+        }
+        if (!ignoreLock && node.isLocked() && compute(userId, node, false, true).compareTo(needed) >= 0) {
+            return new ResponseStatusException(HttpStatus.FORBIDDEN, "This page is locked and read-only");
+        }
+        return new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this page");
     }
 
     private record Base(Access access, boolean admin, boolean team) {}
@@ -112,7 +146,7 @@ public class NodeAccessService {
         return new Base((admin || "EDITOR".equals(member.getRole())) ? Access.EDIT : Access.VIEW, admin, true);
     }
 
-    private Access compute(String userId, Node node, boolean ignoreTrashed, boolean ignoreLock) {
+    private Access compute(String userId, Node node, boolean ignoreStatus, boolean ignoreLock) {
         Space space = spaceRepository.findById(node.getSpaceId()).orElse(null);
         if (space == null) return Access.NONE;
         Base base = base(userId, space);
@@ -120,14 +154,14 @@ public class NodeAccessService {
         Map<String, Node> ancestors = !base.team() || node.getAncestors().isEmpty() ? Map.of()
                 : nodeRepository.findAllById(node.getAncestors()).stream()
                         .collect(Collectors.toMap(Node::getId, Function.identity()));
-        return finish(base, userId, node, ancestors, ignoreTrashed, ignoreLock);
+        return finish(base, userId, node, ancestors, ignoreStatus, ignoreLock);
     }
 
     private Access finish(Base base, String userId, Node node, Map<String, Node> ancestors,
-                          boolean ignoreTrashed, boolean ignoreLock) {
+                          boolean ignoreStatus, boolean ignoreLock) {
         Access result = base.team() ? walkRestrictions(userId, node, base.access(), base.admin(), ancestors) : base.access();
-        if (node.getStatus() == NodeStatus.TRASHED && !ignoreTrashed) return Access.NONE;
-        if (node.getStatus() == NodeStatus.ARCHIVED) result = min(result, Access.VIEW);
+        if (node.getStatus() == NodeStatus.TRASHED && !ignoreStatus) return Access.NONE;
+        if (node.getStatus() == NodeStatus.ARCHIVED && !ignoreStatus) result = min(result, Access.VIEW);
         if (node.isLocked() && !ignoreLock) result = min(result, Access.VIEW);
         return result;
     }

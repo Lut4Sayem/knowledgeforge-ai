@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface AiAnswerRepository extends MongoRepository<AiAnswer, String> {
     Optional<AiAnswer> findBySpaceIdAndQuestionKey(String spaceId, String questionKey);
+
+    void deleteBySpaceId(String spaceId);
 }
