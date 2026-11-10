@@ -64,6 +64,23 @@ class SchemaSetupTest extends IntegrationTest {
     }
 
     @Test
+    void acceptsContentEpochAndRecoveredVersions() {
+        mongo.getCollection("node_contents").insertOne(validContent(10).append("contentEpoch", 1));
+        assertThrows(Exception.class, () -> mongo.getCollection("node_contents")
+                .insertOne(validContent(10).append("contentEpoch", "one")));
+
+        Date now = new Date();
+        Document version = new Document("nodeId", new ObjectId()).append("spaceId", new ObjectId())
+                .append("kind", "RECOVERED").append("title", "T").append("state", new Binary(new byte[3]))
+                .append("text", "").append("contentHash", "h").append("authors", List.of(ref("A")))
+                .append("privateTo", new ObjectId()).append("baseEpoch", 0).append("createdAt", now)
+                .append("updatedAt", now).append("schemaVersion", 1);
+        mongo.getCollection("node_versions").insertOne(version);
+        Document unknownKind = new Document(version).append("_id", new ObjectId()).append("kind", "SOMETHING");
+        assertThrows(Exception.class, () -> mongo.getCollection("node_versions").insertOne(unknownKind));
+    }
+
+    @Test
     void rejectsTitleOver200() {
         Document d = validNode().append("title", "x".repeat(201));
         assertThrows(Exception.class, () -> mongo.getCollection("nodes").insertOne(d));

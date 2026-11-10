@@ -32,6 +32,8 @@ public class NodeVersion {
     private List<UserRef> authors = new ArrayList<>();
     @Field(targetType = FieldType.OBJECT_ID)
     private String privateTo;
+    /** RECOVERED only: the content epoch the lost copy was based on. */
+    private Integer baseEpoch;
     private Date createdAt;
     private Date updatedAt;
     private int schemaVersion = 1;
