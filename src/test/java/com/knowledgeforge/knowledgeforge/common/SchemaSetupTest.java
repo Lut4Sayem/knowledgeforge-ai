@@ -30,7 +30,7 @@ class SchemaSetupTest extends IntegrationTest {
     @Test
     void createsAllIndexes() {
         assertEquals(Set.of("spaceId_status_parentId_rank", "ancestors", "spaceId_status_contentUpdatedAt",
-                "trashedAt_trashed", "restriction_viewers", "restriction_editors"), indexNames("nodes"));
+                "trashedAt_trashed", "tags", "restriction_viewers", "restriction_editors"), indexNames("nodes"));
         assertEquals(Set.of("editSession_lastEditAt"), indexNames("node_contents"));
         assertEquals(Set.of("nodeId_createdAt", "nodeId_privateTo_createdAt"), indexNames("node_versions"));
         assertEquals(Set.of("expiresAt_ttl"), indexNames("edit_locks"));

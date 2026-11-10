@@ -96,6 +96,7 @@ Indexes:
 - `{ ancestors: 1 }`: subtree (trash/archive/move/permissions), breadcrumbs
 - `{ spaceId: 1, status: 1, contentUpdatedAt: -1 }`: recently updated
 - `{ trashedAt: 1 }` partial (`status: "TRASHED"`): 30-day purge job
+- `{ tags: 1 }`: tag listing across spaces (`GET /api/tags/{tag}/nodes`)
 - `{ "restriction.viewers": 1 }`, `{ "restriction.editors": 1 }` sparse: "pages restricted to me", cleanup when a member leaves
 Shard key (future): `{ spaceId: 1, _id: 1 }` (every tree query includes `spaceId`).
 Rule: `rank` uniqueness per parent is not enforced by an index (fractional keys); ties broken by `_id`.
