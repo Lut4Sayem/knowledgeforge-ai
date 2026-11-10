@@ -288,6 +288,8 @@ Wireframes `Main` (draft bar, tags, page menu) and `Trash`. First a small access
 - [x] Playwright `trash.spec.ts`: trash a parent with 2 children, restore, tree is back.
 - [x] Commit `feat: draft bar, tags, trash and archive screens`.
 
+**Release 1b note:** trashing or archiving a branch must check edit rights on every restricted descendant (1a checks the branch root only, which is safe while no restrictions can be set; the restrictions UI arrives in 1b). Restoring to the top level also drops restrictions inherited from the old parent, so decide there whether that needs a warning.
+
 ---
 
 ## Phase 6: Versions, compare, restore (US-5) + files and bookmarks (US-9)
@@ -310,6 +312,7 @@ Wireframes `Main` (draft bar, tags, page menu) and `Trash`. First a small access
 ### Task 6.2: Files in pages + bookmark previews (backend)
 **Files:** Modify `attachment/*` (`documentId` -> `nodeId`, endpoints `POST /api/nodes/{id}/attachments/upload`, `GET /api/nodes/{id}/attachments`; download/delete unchanged; access via `NodeAccessService`). Create `linkpreview/LinkPreviewService.java`, `linkpreview/LinkPreviewController.java`.
 **Produces:** `GET /api/link-preview?url=` -> `{url, title, description, imageUrl}` (all may be null). Rules: http/https only; resolve DNS and reject loopback, private, link-local, multicast, CGNAT, IPv6 ULA (check every redirect hop, max 3 redirects); timeouts connect 3 s / read 5 s; read at most 512 KB; parse `og:title`, `og:description`, `og:image`, `<title>`; per-user limit 30/min; result cached 24 h in memory (`shortcut: in-memory cache, move to Mongo TTL if multiple instances`).
+- [ ] Purge cleanup (`TrashService.purgeBranch`): switch attachment cleanup from `documentId` to `nodeId` together with the rename above (it still keys on `documentId`, same value as the node id).
 - [ ] Tests: `linkPreviewBlocksPrivateAddresses` (localhost, 127.0.0.1, 10.0.0.1, 169.254.169.254, [::1], redirect to private), `parsesOpenGraph` (local test server), `stopsAfter512KB`, `uploadRequiresEditOnNode`.
 - [ ] Commit `feat: node attachments and link previews`.
 
@@ -378,6 +381,7 @@ Rules: source in my personal space; destination a team space where I'm EDITOR/AD
 
 ### Task 9.3: Port remaining pages, comments, AI, dashboard to nodes
 Port Dashboard, Team, Profile pages to React (same behaviour as today, plain CSS). Comments: `/api/nodes/{id}/comments` (page-level list under the page, VIEWERs may comment). AI: Summary reads `node_contents.text` (`POST /api/nodes/{id}/ai/summary`), Ask uses Atlas Search hits instead of keyword scan. Dashboard "recently updated" from `nodes` `{spaceId, status, contentUpdatedAt}`.
+- [ ] Purge cleanup (`TrashService.purgeBranch`): switch comment and AI summary cleanup from `documentId` to `nodeId` with the renames above.
 - [ ] Existing tests updated (`AiServiceTest`, `DashboardServiceTest`, `AccessRulesTest`) + `commentsRespectNodeAccess`.
 - [ ] Commit per page/feature.
 
@@ -430,4 +434,4 @@ Screen order: Sidebar (owner's ideas: per-page colour dot, parent-child guide li
 | NFR CI, real MongoDB tests, indexes via explain | 0.1, 0.2, every IT |
 | NFR backups, health, uptime, $0 hosting | 10.1 |
 | NFR performance, accessibility, 360 px | 10.2 |
-| Deferred to 1b (PRD): page permissions UI, share links, inline comments, notifications, real-time | D1, D5 |
+| Deferred to 1b (PRD): page permissions UI, share links, inline comments, notifications, real-time; edit-rights check on restricted descendants when trashing/archiving a branch | D1, D5, 5.3 note |

@@ -232,8 +232,8 @@ public class TrashService {
         if (!trashRootId.equals(node.getTrashRootId())) {
             throw bad("This page was trashed together with another page. Delete that page instead.");
         }
-        log("PURGE_NODE", node);
         purgeBranch(trashRootId);
+        log("PURGE_NODE", node); // after the purge: a failed purge leaves no "purged" row
     }
 
     /** Deletes every branch trashed before {@code cutoff}; returns how many branches. Used by the daily job. */
