@@ -14,6 +14,7 @@ const HEARTBEAT_MS = 20_000 // the server lets a lock expire 60 s after the last
 export function useEditLock(nodeId: string, canEdit: boolean) {
   const [mode, setMode] = useState<LockMode>('checking')
   const [holder, setHolder] = useState('Someone')
+  const [reason, setReason] = useState('') // the server's words when mode is 'denied'
   const acquire = useRef<(force: boolean) => void>(() => {})
   const stopWaiting = useRef(() => {})
 
@@ -37,6 +38,7 @@ export function useEditLock(nodeId: string, canEdit: boolean) {
           if (e instanceof ApiError && (e.status === 403 || e.status === 404)) {
             // Locked, permission removed or page gone: typing on would only pile up changes that cannot be saved.
             mine = waiting = false
+            setReason(e.message)
             setMode('denied')
             return
           }
@@ -65,6 +67,7 @@ export function useEditLock(nodeId: string, canEdit: boolean) {
   return {
     mode,
     holder,
+    reason,
     editAnyway: () => acquire.current(true),
     openReadOnly: () => {
       stopWaiting.current() // a reader does not take the lock when it becomes free

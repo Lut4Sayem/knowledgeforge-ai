@@ -3,14 +3,17 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
-import { getNode, updateNode, type NodeDetail } from '../api/nodes'
+import { getNode, publishNode, updateNode, type NodeDetail } from '../api/nodes'
 import { getMe, getMySpaces } from '../api/spaces'
-import { openContent, RECOVERED_NOTICE, useAutosave, type Opened } from '../editor/autosave'
+import { openContent, RECOVERED_NOTICE, useAutosave, type Opened, type SaveState } from '../editor/autosave'
 import Editor, { useKfEditor } from '../editor/Editor'
 import { extractText } from '../editor/extractText'
 import SaveIndicator, { SaveNotice } from '../editor/SaveIndicator'
 import SoftLockBanner, { useEditLock } from '../editor/SoftLockBanner'
 import Breadcrumbs from './Breadcrumbs'
+import DraftBar from './DraftBar'
+import PageMenu from './PageMenu'
+import TagEditor from './TagEditor'
 
 interface Slots {
   head: HTMLElement | null // top bar, next to the breadcrumbs
@@ -26,6 +29,7 @@ export default function PageView() {
   const [title, setTitle] = useState('')
   const [head, setHead] = useState<HTMLElement | null>(null)
   const [banners, setBanners] = useState<HTMLElement | null>(null)
+  const [saveState, setSaveState] = useState<SaveState>('saved')
   const rename = useMutation({
     mutationFn: (t: string) => updateNode(nodeId, { title: t }),
     onSuccess: async (updated) => {
@@ -34,14 +38,24 @@ export default function PageView() {
     },
   })
 
+  const publish = useMutation({
+    mutationFn: () => publishNode(nodeId),
+    onSuccess: async (updated) => {
+      qc.setQueryData(['node', nodeId], updated)
+      await qc.invalidateQueries({ queryKey: ['tree', updated.spaceId] })
+    },
+  })
+
   useEffect(() => setTitle(node.data?.title ?? ''), [node.data?.title, nodeId])
 
-  if (node.isLoading) return <p>Loading…</p>
-  if (node.error) {
+  // Only a page that never loaded is replaced by an error. If a later refresh fails (trashed, archived, locked or
+  // access removed meanwhile), the editor stays mounted so nothing typed is lost; the server's words go above it.
+  if (!node.data) {
+    if (node.isLoading) return <p>Loading…</p>
     const s = node.error instanceof ApiError ? node.error.status : 0
     return <p role="alert">{s === 404 ? 'This page does not exist.' : s === 403 ? "You don't have access to this page." : 'Could not load this page.'}</p>
   }
-  const n = node.data!
+  const n = node.data
   const canEdit = n.access === 'EDIT'
   const spaceName = spaces.data?.find((s) => s.id === n.spaceId)?.name
 
@@ -50,8 +64,13 @@ export default function PageView() {
       <header className="page-head">
         <Breadcrumbs spaceName={spaceName} crumbs={n.breadcrumbs} current={n.title} />
         <span ref={setHead} />
+        <PageMenu node={n} unsaved={saveState !== 'saved' && saveState !== 'recovered'} />
       </header>
       <div ref={setBanners} />
+      {node.isError && <p role="alert" className="banner">{node.error.message}</p>}
+      <DraftBar publishState={n.publishState} canEdit={canEdit && n.status === 'ACTIVE'} busy={publish.isPending} onPublish={() => publish.mutate()} />
+      {publish.error && <p role="alert">{publish.error.message}</p>}
+      {n.status === 'ARCHIVED' && <p className="page-note" role="status">This page is archived and read-only.</p>}
       <article className="page">
         <input
           className="page-title"
@@ -65,10 +84,11 @@ export default function PageView() {
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
         />
         {rename.error && <p role="alert">{rename.error.message}</p>}
+        <TagEditor node={n} canEdit={canEdit} />
         {n.access === 'TITLE_ONLY' ? (
           <p className="page-note">You can see this page's title but not its content.</p>
         ) : me.data ? (
-          <PageContent key={n.id} node={n} userId={me.data.id} slots={{ head, banners }} />
+          <PageContent key={n.id} node={n} userId={me.data.id} slots={{ head, banners }} onSaveState={setSaveState} />
         ) : (
           <p className="page-note">Loading…</p>
         )}
@@ -78,7 +98,7 @@ export default function PageView() {
 }
 
 /** Loads the content (server copy + this user's unconfirmed local copies), then shows the editor. */
-function PageContent({ node, userId, slots }: { node: NodeDetail; userId: string; slots: Slots }) {
+function PageContent({ node, userId, slots, onSaveState }: { node: NodeDetail; userId: string; slots: Slots; onSaveState: (s: SaveState) => void }) {
   const canEdit = node.access === 'EDIT'
   const [opened, setOpened] = useState<Opened>()
   const [failed, setFailed] = useState(false)
@@ -113,6 +133,7 @@ function PageContent({ node, userId, slots }: { node: NodeDetail; userId: string
           node={node}
           opened={opened}
           slots={slots}
+          onSaveState={onSaveState}
           // The local copy is now a private version: say so and load what the server has.
           onRecovered={() => {
             setNotice(RECOVERED_NOTICE)
@@ -126,13 +147,19 @@ function PageContent({ node, userId, slots }: { node: NodeDetail; userId: string
   )
 }
 
-function PageEditor({ node, opened, slots, onRecovered }: { node: NodeDetail; opened: Opened; slots: Slots; onRecovered: () => void }) {
+function PageEditor({ node, opened, slots, onRecovered, onSaveState }: { node: NodeDetail; opened: Opened; slots: Slots; onRecovered: () => void; onSaveState: (s: SaveState) => void }) {
   const canEdit = node.access === 'EDIT'
   const lock = useEditLock(node.id, canEdit)
   const editable = canEdit && lock.mode === 'editing'
   const editor = useKfEditor(opened.ydoc, 'Me', editable)
   const save = useAutosave(node.id, opened, () => extractText(editor.document), canEdit)
   const problem = save.state === 'failed' ? `Not saved: ${save.message}` : save.state === 'retrying' || save.state === 'offline' ? save.message : undefined
+
+  useEffect(() => {
+    onSaveState(save.state)
+    return () => onSaveState('saved') // nothing is unsaved once this editor is gone
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [save.state])
 
   useEffect(() => {
     if (save.state === 'recovered') onRecovered()
@@ -147,9 +174,9 @@ function PageEditor({ node, opened, slots, onRecovered }: { node: NodeDetail; op
         <SoftLockBanner holder={lock.holder} onReadOnly={lock.openReadOnly} onEditAnyway={lock.editAnyway} />,
         slots.banners,
       )}
-      {!canEdit && <p className="page-note">{node.locked ? 'This page is locked.' : 'You can read this page but not edit it.'}</p>}
+      {!canEdit && <p className="page-note">{node.status === 'ARCHIVED' ? 'This page is archived and read-only.' : node.locked ? 'This page is locked.' : 'You can read this page but not edit it.'}</p>}
       {lock.mode === 'readonly' && <p className="page-note">Opened read-only: {lock.holder} is editing this page.</p>}
-      {lock.mode === 'denied' && <p className="page-note">You can no longer edit this page.</p>}
+      {lock.mode === 'denied' && <p className="page-note" role="alert">You can no longer edit this page{lock.reason ? `: ${lock.reason}` : '.'}</p>}
       <Editor editor={editor} editable={editable} />
     </>
   )
