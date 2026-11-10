@@ -229,33 +229,33 @@ Wireframes `Sidebar` and `Main`. Plain layout.
 
 ### Task 4.1: BlockNote on a local Y.Doc (spike, half a day, throwaway allowed)
 Decides one thing: how BlockNote edits a `Y.XmlFragment` with **no provider**, and how a server-free conversion blocks <-> Y.Doc works (needed for migration). Check the current BlockNote docs first (APIs move fast).
-- [ ] Prove: editor bound to `ydoc.getXmlFragment('document-store')`; `Y.encodeStateAsUpdate(ydoc)` -> base64 -> new doc -> same blocks.
-- [ ] Prove: a Node script can turn markdown into a Y.Doc (BlockNote markdown parse + blocks-to-Y.Doc helper, MPL packages only; `@blocknote/server-util` if MPL).
-- [ ] Write the result as 5-10 lines in `Docs/PROJECT_CONTEXT.md` (decisions). If either proof fails, stop and write a short ADR before Task 4.2.
+- [x] Prove: editor bound to `ydoc.getXmlFragment('document-store')`; `Y.encodeStateAsUpdate(ydoc)` -> base64 -> new doc -> same blocks.
+- [x] Prove: a Node script can turn markdown into a Y.Doc (BlockNote markdown parse + blocks-to-Y.Doc helper, MPL packages only; `@blocknote/server-util` if MPL).
+- [x] Write the result as 5-10 lines in `Docs/PROJECT_CONTEXT.md` (decisions). If either proof fails, stop and write a short ADR before Task 4.2.
 
 ### Task 4.2: Editor with slash menu and custom blocks
 **Files:** `editor/schema.ts`, `editor/Editor.tsx`, `editor/StatusBlock.tsx`, `editor/BookmarkBlock.tsx` (renders from props; fetching comes in Phase 6), `editor/slashItems.ts`, `editor/extractText.ts`.
-**Produces:** `kfSchema` = default blocks + inline content `status {label: string, color: 'gray'|'blue'|'green'|'yellow'|'red'|'purple'}` + block `bookmark {url, title, description, imageUrl}`. Slash menu contains at least: text, H1-H3, bulleted/numbered/to-do list, quote, divider, code, image, file, table, status, bookmark (US-2). `extractText(editor): string` = plain text of all blocks, newline-separated, status labels included.
-- [ ] Vitest: `slashMenuHasRequiredItems` (the 14 names above), `undoRedoWithCtrlZY` (Yjs undo manager, not the browser's), `statusChipEditableInPlace` (change label + colour), `extractTextIncludesStatusAndTable`.
-- [ ] Commit `feat: block editor with status and bookmark blocks`.
+**Produces:** `kfSchema` = default blocks + inline content `status {label: string, color: 'gray'|'blue'|'green'|'yellow'|'red'|'purple'}` + block `bookmark {url, title, description, imageUrl}`. Slash menu contains at least: text, H1-H3, bulleted/numbered/to-do list, quote, divider, code, image, file, table, status, bookmark (US-2). `extractText(blocks): string` (takes `editor.document`, so the Node migration script can use it too) = plain text of all blocks, newline-separated, status labels included.
+- [x] Vitest: `slashMenuHasRequiredItems` (the 14 names above), `undoRedoWithCtrlZY` (Yjs undo manager, not the browser's), `statusChipEditableInPlace` (change label + colour), `extractTextIncludesStatusAndTable`.
+- [x] Commit `feat: block editor with status and bookmark blocks`.
 
 ### Task 4.3: Autosave, local pending copy, flush, save states
 **Files:** `editor/autosave.ts`, `editor/pendingStore.ts`, `editor/SaveIndicator.tsx`, `api/content.ts`. Modify `page/PageView.tsx`.
 **Produces:**
-- `pendingStore`: `put(nodeId, {state, text, baseRevision})`, `get(nodeId)`, `clear(nodeId, revision)` on idb-keyval.
-- `useAutosave(nodeId, ydoc, editor)`: on Y.Doc update -> write pending immediately -> debounce 1 s -> `PUT`; states `saved | saving | offline | retrying | conflict`; retry with backoff 1, 2, 5, 10, 30 s; `online` event retries; on `visibilitychange=hidden`/`pagehide` -> `fetch keepalive` PUT (ignore failure, pending copy remains); on open: if pending exists with `baseRevision == server revision` apply pending state then save; if server is newer -> `conflict`.
-- `beforeunload` prompt only while state is `saving | offline | retrying`.
+- `pendingStore`: `put(nodeId, slot, {state, text, baseRevision, at})`, `all(nodeId)`, `clear(nodeId, slot)` on idb-keyval. One slot per editing session (tab), so two tabs on one page cannot overwrite each other's unsaved copy.
+- `useAutosave(nodeId, ydoc, editor)`: on Y.Doc update -> write pending immediately -> debounce 1 s -> `PUT`; states `saved | saving | offline | retrying | conflict`; retry with backoff 1, 2, 5, 10, 30 s; `online` event retries; on `visibilitychange=hidden`/`pagehide` -> `fetch keepalive` PUT (ignore failure, pending copy remains); on open: if pending exists with `baseRevision == server revision` apply pending state then save; if server is newer -> `conflict`; a pending copy identical to the server's state is just dropped (the flush on close had worked).
+- `beforeunload` prompt only while state is `saving | offline | retrying | conflict` (a conflict is unsaved too).
 - `SaveIndicator` texts exactly: "Saved", "Saving…", "Offline: changes kept on this device", "Couldn't save, retrying".
-- Conflict banner: "This page changed somewhere else." [Reload latest] [Keep mine] (Keep mine = save with the server's current revision).
-- [ ] Vitest (fake timers, mocked API): `debouncesOneSecond`, `pendingStateSurvivesFailedFlush`, `replaysPendingOnOpen`, `conflictKeepsLocalCopy`, `offlineShowsOfflineText`.
-- [ ] Playwright `autosave.spec.ts`: type, wait for "Saved", reload, text is there; go offline (context.setOffline), type, reload online, text is there.
-- [ ] Commit `feat: autosave with local pending copy`.
+- Conflict banner: "This page changed somewhere else." [Reload latest] [Keep mine] (Keep mine = save with the server's current revision). A 409 whose server state equals what was just sent is our own save with a lost answer, not a conflict.
+- [x] Vitest (fake timers, mocked API): `debouncesOneSecond`, `pendingStateSurvivesFailedFlush`, `replaysPendingOnOpen`, `conflictKeepsLocalCopy`, `offlineShowsOfflineText`.
+- [x] Playwright `autosave.spec.ts`: type, wait for "Saved", reload, text is there; go offline (context.setOffline), type, reload online, text is there.
+- [x] Commit `feat: autosave with local pending copy`.
 
 ### Task 4.4: Soft-lock banner and read-only mode
 **Files:** `editor/SoftLockBanner.tsx`, modify `page/PageView.tsx`.
 Behaviour: on open with edit access, `POST edit-lock {force:false}`; held by other -> banner "<name> is editing this page right now." [Open read-only] [Edit anyway]; while editing, heartbeat every 20 s; release on unmount/pagehide. Read-only also when `access=VIEW` or `locked`.
-- [ ] Vitest `showsBannerWhenOtherHolds`, `editAnywayForces`, `heartbeatEvery20s`.
-- [ ] Commit `feat: soft lock banner`.
+- [x] Vitest `showsBannerWhenOtherHolds`, `editAnywayForces`, `heartbeatEvery20s`. Playwright `softlock.spec.ts` (two users).
+- [x] Commit `feat: soft lock banner`.
 
 ---
 
