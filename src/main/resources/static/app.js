@@ -477,6 +477,8 @@
   }
 
   async function logout() {
+    // The React pages keep unsaved page edits in IndexedDB (idb-keyval); they must not stay on a shared computer.
+    try { indexedDB.deleteDatabase("keyval-store"); } catch (e) { /* no IndexedDB */ }
     try { await fetch("/logout", { method: "POST", credentials: "include", headers: csrfHeaders() }); } catch (e) { /* go to login anyway */ }
     location.href = "/login.html";
   }

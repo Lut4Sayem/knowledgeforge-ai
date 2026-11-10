@@ -1,3 +1,5 @@
+import { api } from '../api/client'
+import { clearAllPending } from '../editor/pendingStore'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useMatch } from 'react-router-dom'
@@ -12,6 +14,17 @@ function savedTeam(): string | null {
   } catch {
     return null
   }
+}
+
+/** Unsaved copies of pages must not stay behind on a shared computer, so logging out removes them. */
+async function logout() {
+  await clearAllPending()
+  try {
+    await api('/logout', { method: 'POST', redirectOn401: false })
+  } catch {
+    // go to the login page anyway
+  }
+  location.assign('/app/login')
 }
 
 export default function Sidebar() {
@@ -57,7 +70,10 @@ export default function Sidebar() {
         </>
       )}
 
-      <div className="sidebar-foot">{me.data?.fullName}</div>
+      <div className="sidebar-foot">
+        {me.data?.fullName}{' '}
+        <button type="button" className="tree-add" onClick={logout}>Log out</button>
+      </div>
     </nav>
   )
 }
