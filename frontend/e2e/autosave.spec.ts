@@ -59,27 +59,31 @@ test('offline edits are kept on the device and replayed on the next open', async
   await expect(editor(again)).toContainText('Before offline and typed offline')
 })
 
-test('two tabs on one page: the second save is a conflict, nothing is lost', async ({ page, context }) => {
-  const url = await openNewPage(page)
+// Two tabs of one user both pass the soft lock and race on the revision: the later save is merged in.
+test('two tabs on one page: both edits end up in the page', async ({ page, context }) => {
+  const url = await openNewPage(page) // brand-new page: neither tab has anything from the server yet
   const second = await context.newPage()
   await second.goto(url)
   await expect(saveState(second)).toHaveText('Saved')
 
-  await typeInEditor(page, 'From the first tab')
+  await typeInEditor(page, 'From the first tab. ')
   await expect(saveState(page)).toHaveText('Saved')
 
-  await typeInEditor(second, 'From the second tab')
-  const banner = second.getByRole('alert').filter({ hasText: 'This page changed somewhere else.' })
-  await expect(banner).toBeVisible()
-  await expect(editor(second)).toContainText('From the second tab') // still on screen
-
-  await second.reload() // even a reload keeps my copy and the question
-  await expect(editor(second)).toContainText('From the second tab')
-  await second.getByRole('button', { name: 'Keep mine' }).click()
+  await typeInEditor(second, 'From the second tab. ')
   await expect(saveState(second)).toHaveText('Saved')
+  await expect(second.getByRole('alert')).toHaveCount(0) // no question to answer any more
+  await expect(editor(second)).toContainText('From the first tab.') // the first tab's text arrived here
+  await expect(editor(second)).toContainText('From the second tab.')
 
-  await page.reload()
-  await expect(editor(page)).toContainText('From the second tab')
+  // The first tab still has its old copy; its next save merges too.
+  await editor(page).click()
+  await page.keyboard.press('Control+End')
+  await page.keyboard.type('First again. ')
+  await expect(saveState(page)).toHaveText('Saved')
+  for (const text of ['From the first tab.', 'From the second tab.', 'First again.']) await expect(editor(page)).toContainText(text)
+
+  await second.reload()
+  for (const text of ['From the first tab.', 'From the second tab.', 'First again.']) await expect(editor(second)).toContainText(text)
 })
 
 test('slash menu inserts a status chip and Ctrl+Z removes it', async ({ page }) => {

@@ -1,29 +1,32 @@
 import type { SaveState } from './autosave'
 
-// Exact texts from the Editing wireframe / domain spec 5.3. A conflict is explained by its banner instead.
+// The first four texts are exact (Editing wireframe / domain spec 5.3).
 const TEXT: Record<SaveState, string> = {
   saved: 'Saved',
   saving: 'Saving…',
   offline: 'Offline: changes kept on this device',
   retrying: "Couldn't save, retrying",
-  conflict: 'Not saved',
+  failed: 'Not saved',
+  recovered: 'Saved',
 }
 
-export default function SaveIndicator({ state }: { state: SaveState }) {
+/** `local` false = the unsaved changes could not be stored in the browser, so "kept on this device" would be a lie. */
+export default function SaveIndicator({ state, local }: { state: SaveState; local: boolean }) {
+  const text = state === 'offline' && !local ? 'Offline: changes are only in this open tab' : TEXT[state]
   return (
     <span role="status" className={`save-indicator save-indicator--${state}`}>
       <span aria-hidden="true" className="save-dot" />
-      {TEXT[state]}
+      {text}
     </span>
   )
 }
 
-export function ConflictBanner({ onReload, onKeepMine }: { onReload: () => void; onKeepMine: () => void }) {
+/** A message about saving that needs more room than the indicator. */
+export function SaveNotice({ children, onDismiss }: { children: string; onDismiss?: () => void }) {
   return (
     <div role="alert" className="banner">
-      <span>This page changed somewhere else.</span>
-      <button type="button" className="banner-btn" onClick={onReload}>Reload latest</button>
-      <button type="button" className="banner-btn banner-btn--quiet" onClick={onKeepMine}>Keep mine</button>
+      <span>{children}</span>
+      {onDismiss && <button type="button" className="banner-btn" onClick={onDismiss}>OK</button>}
     </div>
   )
 }

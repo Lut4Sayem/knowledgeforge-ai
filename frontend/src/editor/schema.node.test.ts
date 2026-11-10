@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
 import { fromBase64, toBase64 } from './base64'
 import { extractText } from './extractText'
-import { FRAGMENT, kfSchema } from './schema'
+import { EMPTY_PAGE_STATE, FRAGMENT, kfSchema } from './schema'
 
 const md = `# Title
 
@@ -31,6 +31,45 @@ const strip = (blocks: Loose[]): Loose[] =>
   })
 
 describe('kfSchema in Node', () => {
+  const emptyPage = () => {
+    const doc = new Y.Doc()
+    Y.applyUpdate(doc, fromBase64(EMPTY_PAGE_STATE))
+    return doc
+  }
+  /** Types into the page's first paragraph the way the editor binding stores text. */
+  const typeInFirstParagraph = (doc: Y.Doc, text: string) => {
+    const group = doc.getXmlFragment(FRAGMENT).get(0) as Y.XmlElement
+    const paragraph = (group.get(0) as Y.XmlElement).get(0) as Y.XmlElement
+    paragraph.insert(paragraph.length, [new Y.XmlText(text)])
+  }
+
+  it('emptyPageStateIsOneEmptyParagraphAndStaysTheSameBytes', () => {
+    const server = ServerBlockNoteEditor.create({ schema: kfSchema }, getDocument())
+    expect(server.yDocToBlocks(emptyPage(), FRAGMENT)).toMatchObject([{ id: 'first-block', type: 'paragraph', content: [], children: [] }])
+
+    // Regenerated the same way: if a BlockNote upgrade changes the encoding, this fails and the constant
+    // must NOT simply be replaced (pages already saved build on the old bytes).
+    const fresh = new Y.Doc()
+    fresh.clientID = 1
+    server.blocksToYXmlFragment([{ id: 'first-block', type: 'paragraph', content: [] }] as never, fresh.getXmlFragment(FRAGMENT))
+    expect(toBase64(Y.encodeStateAsUpdate(fresh))).toBe(EMPTY_PAGE_STATE)
+  })
+
+  // Found in the browser: two tabs on a brand-new page, merged after a stale save, lost one tab's text.
+  it('twoTabsStartingFromAnEmptyPageMergeIntoOneDocument', () => {
+    const server = ServerBlockNoteEditor.create({ schema: kfSchema }, getDocument())
+    const tabA = emptyPage()
+    const tabB = emptyPage()
+    typeInFirstParagraph(tabA, 'from A. ')
+    typeInFirstParagraph(tabB, 'from B. ')
+
+    Y.applyUpdate(tabB, Y.encodeStateAsUpdate(tabA)) // what a 409 does
+    expect(tabB.getXmlFragment(FRAGMENT).length).toBe(1) // still ONE root block group
+    const text = extractText(server.yDocToBlocks(tabB, FRAGMENT))
+    expect(text).toContain('from A. ')
+    expect(text).toContain('from B. ')
+  })
+
   it('customBlocksRoundTripThroughMarkdownToYDoc', async () => {
     const server = ServerBlockNoteEditor.create({ schema: kfSchema }, getDocument())
     const fromMarkdown = await server.tryParseMarkdownToBlocks(md)
