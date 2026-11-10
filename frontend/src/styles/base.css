@@ -47,3 +47,19 @@ body { margin: 0; font-family: var(--font-sans); color: var(--color-ink); backgr
 .crumbs a { color: inherit; }
 .page-title { width: 100%; border: 0; font: inherit; font-size: 32px; font-weight: 700; color: inherit; padding: 0; outline-offset: 4px; }
 .page-note { color: var(--color-slate); }
+
+/* Page top bar: breadcrumbs + save state (wireframe Editing) */
+.page-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
+.page-head .crumbs { flex: 1; min-width: 0; }
+.page-head .crumbs ol { margin: 0; }
+.save-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-slate); }
+.save-dot { width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--color-stone); }
+.save-indicator--saved .save-dot { background: var(--color-success); }
+.save-indicator--offline .save-dot, .save-indicator--retrying .save-dot { background: var(--color-warning); }
+.save-indicator--conflict .save-dot { background: var(--color-error); }
+.banner { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid #f5d75e; background: #fef7d6; border-radius: var(--radius-md); font-size: 14px; }
+.banner > span { flex: 1; min-width: 12em; }
+.banner-btn { min-height: 32px; padding: 0 var(--space-3); border: 1px solid var(--color-hairline-strong); background: var(--color-canvas); border-radius: var(--radius-md); font: inherit; font-size: 13px; cursor: pointer; }
+.banner-btn--quiet { border-color: transparent; background: transparent; color: var(--color-warning-text); }
+/* BlockNote indents its text to make room for the block handles; the title lines up with it. */
+.page-title { box-sizing: border-box; padding-inline: 54px; }
