@@ -108,6 +108,7 @@ Rule: `rank` uniqueness per parent is not enforced by an index (fractional keys)
 | `format` | enum `YJS_BLOCKNOTE_V1`, `YJS_BOARD_V1` | |
 | `state` | BinData | Yjs document state. **Max 4 MB** (reject larger saves; outlier pattern if ever needed) |
 | `revision` | long | +1 on every save (1a stale-save check) |
+| `contentEpoch` | int | default 0 (absent = 0). +1 ONLY when `state` is replaced wholesale (version restore, migration conversion), never on a normal save. A client may merge its unsaved copy into the server state only if both have the same epoch (plan decision D6) |
 | `text` | string | plain text extracted from the Yjs state by the collab service; max 1 MB |
 | `search` | `{ title, tags, status, publishState }` | copy of node fields (extended reference) so search runs on one collection |
 | `editSession` | `{ startedAt: Date, lastEditAt: Date, authors: ObjectId[] (max 100) }` \| null | moved here from nodes (fast-changing) |
@@ -124,7 +125,7 @@ Shard key (future): `{ _id: "hashed" }`.
 |---|---|---|
 | `nodeId` | ObjectId | |
 | `spaceId` | ObjectId | copy (purge/sharding) |
-| `kind` | enum `AUTO`, `NAMED`, `PUBLISHED`, `PUBLISHED_TO_TEAM`, `RESTORED`, `MIGRATED` | |
+| `kind` | enum `AUTO`, `NAMED`, `PUBLISHED`, `PUBLISHED_TO_TEAM`, `RESTORED`, `MIGRATED`, `RECOVERED` | `RECOVERED` = a client's unsaved copy from an older `contentEpoch`, kept instead of merged; always `privateTo` its author; never merged with other versions |
 | `name` | string\|null | max 100 (named versions) |
 | `title` | string | title at that time |
 | `state` | BinData | Yjs snapshot, max 4 MB |
@@ -132,6 +133,7 @@ Shard key (future): `{ _id: "hashed" }`.
 | `contentHash` | string | |
 | `authors` | UserRef[] | max 100 |
 | `privateTo` | ObjectId\|null | personal-history privacy rule |
+| `baseEpoch` | int\|null | `RECOVERED` only: the `contentEpoch` the copy was based on |
 | `createdAt`, `updatedAt` (merged versions), `schemaVersion` | | |
 Indexes: `{ nodeId: 1, createdAt: -1 }` · `{ nodeId: 1, privateTo: 1, createdAt: -1 }`.
 Growth control (archive pattern, only when storage numbers require): thin old AUTO versions; NAMED/PUBLISHED kept forever.

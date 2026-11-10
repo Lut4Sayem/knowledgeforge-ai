@@ -14,6 +14,13 @@ function savedTeam(): string | null {
   }
 }
 
+// Loaded on demand: sending unsaved copies needs the editor code, which the rest of the shell does not.
+const logOut = (userId: string) =>
+  import('../editor/logout').then(
+    (m) => m.logOut(userId),
+    () => window.alert('Could not log out. Check your connection and try again.'), // offline: the code could not load
+  )
+
 export default function Sidebar() {
   const me = useQuery({ queryKey: ['me'], queryFn: getMe })
   const teams = useQuery({ queryKey: ['teams'], queryFn: getMyTeams })
@@ -57,7 +64,10 @@ export default function Sidebar() {
         </>
       )}
 
-      <div className="sidebar-foot">{me.data?.fullName}</div>
+      <div className="sidebar-foot">
+        {me.data?.fullName}{' '}
+        {me.data && <button type="button" className="tree-add" onClick={() => void logOut(me.data.id)}>Log out</button>}
+      </div>
     </nav>
   )
 }

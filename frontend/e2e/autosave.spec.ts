@@ -1,0 +1,150 @@
+import { expect, test, type Page } from '@playwright/test'
+
+// Needs the full app on E2E_BASE_URL (default :8080) with Mongo behind it. Each test registers a fresh user.
+async function openNewPage(page: Page): Promise<string> {
+  const email = `autosave-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`
+  const register = await page.request.post('/api/auth/register', { data: { fullName: 'Autosave Tester', email, password: 'password123' } })
+  expect(register.ok()).toBeTruthy()
+  const login = await page.request.post('/api/auth/login', { data: { email, password: 'password123' } })
+  expect(login.ok()).toBeTruthy()
+  await page.goto('/app')
+  await page.getByRole('button', { name: /new page/i }).first().click() // a new user only has the private space
+  await page.waitForURL(/\/app\/p\//)
+  await expect(editor(page)).toBeVisible()
+  return page.url()
+}
+
+const editor = (page: Page) => page.locator('.bn-editor')
+const saveState = (page: Page) => page.locator('.save-indicator')
+
+async function typeInEditor(page: Page, text: string) {
+  // The editor is read-only until the soft lock answers, and is rebuilt (losing focus) when it turns editable.
+  await page.locator('.bn-editor[contenteditable="true"]').click()
+  await page.keyboard.type(text)
+}
+
+test('type, wait for "Saved", reload, text is there', async ({ page }) => {
+  const saves: string[] = []
+  page.on('request', (r) => r.method() === 'PUT' && r.url().endsWith('/content') && saves.push(r.url()))
+  await openNewPage(page)
+  await expect(saveState(page)).toHaveText('Saved')
+  await page.waitForTimeout(1500)
+  expect(saves).toHaveLength(0) // just opening a page must not save it
+
+  await typeInEditor(page, 'Hello autosave')
+  await expect(saveState(page)).toHaveText('Saving…')
+  await expect(saveState(page)).toHaveText('Saved')
+  expect(saves).toHaveLength(1) // one save for the whole burst of typing
+
+  await page.reload()
+  await expect(editor(page)).toContainText('Hello autosave')
+  await expect(saveState(page)).toHaveText('Saved')
+})
+
+test('offline edits are kept on the device and replayed on the next open', async ({ page, context }) => {
+  const url = await openNewPage(page)
+  await typeInEditor(page, 'Before offline')
+  await expect(saveState(page)).toHaveText('Saved')
+
+  await context.setOffline(true)
+  await page.keyboard.type(' and typed offline')
+  await expect(saveState(page)).toHaveText('Offline: changes kept on this device')
+  await page.close() // the tab dies without ever reaching the server
+
+  await context.setOffline(false)
+  const again = await context.newPage()
+  await again.goto(url)
+  await expect(editor(again)).toContainText('Before offline and typed offline')
+  await expect(saveState(again)).toHaveText('Saved')
+  await again.reload() // and now it really is on the server
+  await expect(editor(again)).toContainText('Before offline and typed offline')
+})
+
+// Two tabs of one user both pass the soft lock and race on the revision: the later save is merged in.
+test('two tabs on one page: both edits end up in the page', async ({ page, context }) => {
+  const url = await openNewPage(page) // brand-new page: neither tab has anything from the server yet
+  const second = await context.newPage()
+  await second.goto(url)
+  await expect(saveState(second)).toHaveText('Saved')
+
+  await typeInEditor(page, 'From the first tab. ')
+  await expect(saveState(page)).toHaveText('Saved')
+
+  await typeInEditor(second, 'From the second tab. ')
+  await expect(saveState(second)).toHaveText('Saved')
+  await expect(second.getByRole('alert')).toHaveCount(0) // no question to answer any more
+  await expect(editor(second)).toContainText('From the first tab.') // the first tab's text arrived here
+  await expect(editor(second)).toContainText('From the second tab.')
+
+  // The first tab still has its old copy; its next save merges too.
+  await editor(page).click()
+  await page.keyboard.press('Control+End')
+  await page.keyboard.type('First again. ')
+  await expect(saveState(page)).toHaveText('Saved')
+  for (const text of ['From the first tab.', 'From the second tab.', 'First again.']) await expect(editor(page)).toContainText(text)
+
+  await second.reload()
+  for (const text of ['From the first tab.', 'From the second tab.', 'First again.']) await expect(editor(second)).toContainText(text)
+})
+
+test('logging out sends unsaved local copies first, or asks before dropping them', async ({ page, context }) => {
+  const email = `logout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`
+  const login = () => context.request.post('/api/auth/login', { data: { email, password: 'password123' } })
+  expect((await context.request.post('/api/auth/register', { data: { fullName: 'Logout Tester', email, password: 'password123' } })).ok()).toBeTruthy()
+  expect((await login()).ok()).toBeTruthy()
+  await page.goto('/app')
+  await page.getByRole('button', { name: /new page/i }).first().click()
+  await page.waitForURL(/\/app\/p\//)
+  const url = page.url()
+  await typeInEditor(page, 'Saved normally. ')
+  await expect(saveState(page)).toHaveText('Saved')
+  await expect(editor(page)).toContainText('Saved normally.')
+
+  // Typed offline, then the tab is closed: the text now exists only in this browser.
+  await context.setOffline(true)
+  await page.keyboard.type('Typed offline. ')
+  await expect(saveState(page)).toHaveText('Offline: changes kept on this device')
+  await page.close()
+
+  // The page content cannot be reached: the copy cannot be sent, so logging out asks. "Cancel" keeps the session and the copy.
+  await context.setOffline(false)
+  const home = await context.newPage()
+  await home.goto('/app')
+  const logOutButton = home.getByRole('button', { name: 'Log out' })
+  await expect(logOutButton).toBeVisible()
+  await context.route('**/api/nodes/*/content', (route) => route.abort())
+  const question = home.waitForEvent('dialog')
+  await logOutButton.click()
+  const dialog = await question
+  expect(dialog.message()).toBe('You have unsaved changes on 1 page. Log out anyway?')
+  await dialog.dismiss()
+  await expect(logOutButton).toBeVisible() // still here
+  expect((await context.request.get('/api/me')).ok()).toBeTruthy() // and still logged in
+
+  // Reachable again: the copy is sent during logout, no question.
+  await context.unroute('**/api/nodes/*/content')
+  await logOutButton.click()
+  await home.waitForURL(/\/app\/login/)
+
+  // Nothing is left in the browser, yet the text is in the page: it was sent, not dropped.
+  expect((await login()).ok()).toBeTruthy()
+  await home.goto(url)
+  await expect(editor(home)).toContainText('Saved normally. Typed offline.')
+  await expect(saveState(home)).toHaveText('Saved')
+})
+
+test('slash menu inserts a status chip and Ctrl+Z removes it', async ({ page }) => {
+  await openNewPage(page)
+  await typeInEditor(page, '/status')
+  await page.getByRole('option', { name: /Status/ }).click()
+  await expect(editor(page).locator('.kf-status')).toHaveText('Status')
+
+  await editor(page).locator('.kf-status button').click()
+  await page.getByRole('radio', { name: 'green' }).click()
+  await expect(editor(page).locator('span.kf-status--green')).toBeVisible()
+
+  await editor(page).click()
+  await page.keyboard.press('Control+z')
+  await page.keyboard.press('Control+z')
+  await expect(editor(page).locator('.kf-status')).toHaveCount(0)
+})

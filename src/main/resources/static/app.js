@@ -477,8 +477,8 @@
   }
 
   async function logout() {
-    try { await fetch("/logout", { method: "POST", credentials: "include", headers: csrfHeaders() }); } catch (e) { /* go to login anyway */ }
-    location.href = "/login.html";
+    // The React app does the logout: it first sends unsaved page edits kept in this browser, then clears them.
+    location.href = "/app/logout";
   }
 
   /**

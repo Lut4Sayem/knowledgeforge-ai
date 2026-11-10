@@ -43,7 +43,7 @@ public class NodeContentService {
     public ContentDTO get(String nodeId) {
         access.requireView(nodeId);
         NodeContent c = contents.findById(nodeId).orElseThrow(NodeContentService::notFound);
-        return new ContentDTO(c.getFormat().name(), Base64.getEncoder().encodeToString(c.getState()), c.getRevision());
+        return new ContentDTO(c.getFormat().name(), Base64.getEncoder().encodeToString(c.getState()), c.getRevision(), c.getContentEpoch());
     }
 
     /** One atomic findAndModify on {_id, revision}: a save from an old revision matches nothing and gets 409. */
@@ -51,16 +51,8 @@ public class NodeContentService {
         Node node = access.requireEdit(nodeId);
         User user = access.currentUser();
         if (req.baseRevision() == null) throw bad("baseRevision is required");
-        if (req.state() == null) throw bad("state is required");
         String text = req.text() == null ? "" : req.text();
-        if (text.length() > MAX_TEXT || req.state().length() > MAX_STATE_BASE64) throw tooLarge();
-        byte[] state;
-        try {
-            state = Base64.getDecoder().decode(req.state());
-        } catch (IllegalArgumentException e) {
-            throw bad("state is not valid base64");
-        }
-        if (state.length > MAX_STATE) throw tooLarge();
+        byte[] state = decodeState(req.state(), text);
 
         Date now = new Date();
         ObjectId me = new ObjectId(user.getId());
@@ -90,11 +82,25 @@ public class NodeContentService {
         return new SavedDTO(((Number) saved.get("revision")).longValue(), now);
     }
 
+    /** Size caps and base64 check shared by every endpoint that stores page state (400 / 413). */
+    public static byte[] decodeState(String base64, String text) {
+        if (base64 == null) throw bad("state is required");
+        if (text.length() > MAX_TEXT || base64.length() > MAX_STATE_BASE64) throw tooLarge();
+        byte[] state;
+        try {
+            state = Base64.getDecoder().decode(base64);
+        } catch (IllegalArgumentException e) {
+            throw bad("state is not valid base64");
+        }
+        if (state.length > MAX_STATE) throw tooLarge();
+        return state;
+    }
+
     private static Document lit(Object v) {
         return new Document("$literal", v);
     }
 
-    private static String sha256(byte[] data) {
+    public static String sha256(byte[] data) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(data));
         } catch (java.security.NoSuchAlgorithmException e) {

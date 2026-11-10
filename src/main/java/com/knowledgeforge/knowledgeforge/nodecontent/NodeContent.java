@@ -42,6 +42,8 @@ public class NodeContent {
     private ContentFormat format = ContentFormat.YJS_BLOCKNOTE_V1;
     private byte[] state = new byte[0];
     private long revision;
+    /** Goes up only when the state is replaced wholesale (restore, migration conversion), never on a normal save. */
+    private int contentEpoch;
     private String text = "";
     private Search search = new Search();
     private EditSession editSession;

@@ -87,6 +87,7 @@ public class SchemaSetup implements ApplicationRunner {
                         .append("format", en("YJS_BLOCKNOTE_V1", "YJS_BOARD_V1"))
                         .append("state", t("binData"))
                         .append("revision", t("int", "long"))
+                        .append("contentEpoch", t("int", "long")) // absent = 0
                         .append("text", new Document("bsonType", "string").append("maxLength", 1_000_000))
                         .append("search", new Document("bsonType", "object")
                                 .append("properties", new Document("title", str(0, 200))
@@ -111,7 +112,7 @@ public class SchemaSetup implements ApplicationRunner {
                 req("nodeId", "spaceId", "kind", "title", "state", "text", "contentHash", "authors", "createdAt",
                         "updatedAt", "schemaVersion"),
                 new Document("nodeId", t(OID)).append("spaceId", t(OID))
-                        .append("kind", en("AUTO", "NAMED", "PUBLISHED", "PUBLISHED_TO_TEAM", "RESTORED", "MIGRATED"))
+                        .append("kind", en("AUTO", "NAMED", "PUBLISHED", "PUBLISHED_TO_TEAM", "RESTORED", "MIGRATED", "RECOVERED"))
                         .append("name", new Document("bsonType", java.util.List.of("string", "null")).append("maxLength", 100))
                         .append("title", str(0, 200))
                         .append("state", t("binData"))
@@ -119,6 +120,7 @@ public class SchemaSetup implements ApplicationRunner {
                         .append("contentHash", t("string"))
                         .append("authors", arr(userRef(), 100))
                         .append("privateTo", t(OID, "null"))
+                        .append("baseEpoch", t("int", "long", "null"))
                         .append("createdAt", t("date")).append("updatedAt", t("date"))
                         .append("schemaVersion", t("int", "long")));
         validator("node_versions", new Document("$jsonSchema", schema).append("$expr",
