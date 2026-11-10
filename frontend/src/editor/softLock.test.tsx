@@ -15,6 +15,7 @@ function Harness({ canEdit = true }: { canEdit?: boolean }) {
     <>
       {lock.mode === 'blocked' && <SoftLockBanner holder={lock.holder} onReadOnly={lock.openReadOnly} onEditAnyway={lock.editAnyway} />}
       <p data-testid="mode">{lock.mode}</p>
+      <p data-testid="reason">{lock.reason}</p>
     </>
   )
 }
@@ -150,5 +151,16 @@ describe('soft lock', () => {
     render(<Harness />)
     await tick(0)
     expect(mode()).toBe('editing')
+  })
+
+  it('deniedKeepsTheServersMessage', async () => {
+    // The page was trashed, archived or locked while open: the editor goes read-only (text stays), the reason is the server's.
+    contentApi.acquireEditLock.mockResolvedValueOnce(mine).mockRejectedValue(new ApiError(404, 'This page is in the trash'))
+    render(<Harness />)
+    await tick(0)
+    expect(mode()).toBe('editing')
+    await tick(20_000) // next heartbeat
+    expect(mode()).toBe('denied')
+    expect(screen.getByTestId('reason').textContent).toBe('This page is in the trash')
   })
 })

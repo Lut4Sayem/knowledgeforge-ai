@@ -113,11 +113,11 @@ test('logging out sends unsaved local copies first, or asks before dropping them
   const logOutButton = home.getByRole('button', { name: 'Log out' })
   await expect(logOutButton).toBeVisible()
   await context.route('**/api/nodes/*/content', (route) => route.abort())
-  const question = home.waitForEvent('dialog')
   await logOutButton.click()
-  const dialog = await question
-  expect(dialog.message()).toBe('You have unsaved changes on 1 page. Log out anyway?')
-  await dialog.dismiss()
+  const question = home.getByRole('dialog', { name: 'Log out anyway?' })
+  await expect(question).toContainText('You have unsaved changes on 1 page')
+  await question.getByRole('button', { name: 'Stay logged in' }).click()
+  await expect(question).toBeHidden()
   await expect(logOutButton).toBeVisible() // still here
   expect((await context.request.get('/api/me')).ok()).toBeTruthy() // and still logged in
 

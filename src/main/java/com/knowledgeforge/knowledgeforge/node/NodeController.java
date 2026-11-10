@@ -33,6 +33,31 @@ public class NodeController {
         return nodeService.update(id, request);
     }
 
+    @PostMapping("/api/nodes/{id}/publish")
+    public NodeDTO publish(@PathVariable String id) {
+        return nodeService.publish(id);
+    }
+
+    @PostMapping("/api/nodes/{id}/unpublish")
+    public NodeDTO unpublish(@PathVariable String id) {
+        return nodeService.unpublish(id);
+    }
+
+    @PostMapping("/api/nodes/{id}/lock")
+    public NodeDTO lock(@PathVariable String id) {
+        return nodeService.lock(id);
+    }
+
+    @PostMapping("/api/nodes/{id}/unlock")
+    public NodeDTO unlock(@PathVariable String id) {
+        return nodeService.unlock(id);
+    }
+
+    @GetMapping("/api/tags/{tag}/nodes")
+    public List<TaggedNodeDTO> tagged(@PathVariable String tag) {
+        return nodeService.taggedPages(tag);
+    }
+
     @PostMapping("/api/nodes/{id}/move")
     public NodeDTO move(@PathVariable String id, @RequestBody MoveNodeRequest request) {
         return nodeService.move(id, request);

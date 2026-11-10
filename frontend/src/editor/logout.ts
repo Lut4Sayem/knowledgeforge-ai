@@ -5,6 +5,7 @@ import * as Y from 'yjs'
 import { api, ApiError } from '../api/client'
 import { getContent, saveContent, saveRecovered } from '../api/content'
 import { fromBase64, toBase64 } from './base64'
+import { confirmDialog } from '../ui/ConfirmDialog'
 import { clearPendingOf, pendingFor, pendingPages, type PendingStore } from './pendingStore'
 import { EMPTY_PAGE_STATE } from './schema'
 
@@ -57,7 +58,16 @@ export async function sendAllPending(userId: string): Promise<number> {
 /** false = the user chose to stay logged in. */
 export async function logOut(userId: string): Promise<boolean> {
   const unsent = await sendAllPending(userId)
-  if (unsent > 0 && !window.confirm(`You have unsaved changes on ${unsent} page${unsent === 1 ? '' : 's'}. Log out anyway?`)) return false
+  if (unsent > 0) {
+    const leave = await confirmDialog({
+      title: 'Log out anyway?',
+      body: `You have unsaved changes on ${unsent} page${unsent === 1 ? '' : 's'} that could not be sent to the server. If you log out now, they are lost.`,
+      confirmLabel: 'Log out anyway',
+      cancelLabel: 'Stay logged in',
+      danger: true,
+    })
+    if (!leave) return false
+  }
   await clearPendingOf(userId)
   try {
     await api('/logout', { method: 'POST', redirectOn401: false })

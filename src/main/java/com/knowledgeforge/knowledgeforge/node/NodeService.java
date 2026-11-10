@@ -7,6 +7,8 @@ import com.knowledgeforge.knowledgeforge.nodecontent.NodeContent;
 import com.knowledgeforge.knowledgeforge.nodecontent.NodeContentRepository;
 import com.knowledgeforge.knowledgeforge.space.Space;
 import com.knowledgeforge.knowledgeforge.space.SpaceRepository;
+import com.knowledgeforge.knowledgeforge.team.TeamMember;
+import com.knowledgeforge.knowledgeforge.team.TeamMemberRepository;
 import com.knowledgeforge.knowledgeforge.user.User;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -36,14 +38,16 @@ public class NodeService {
     private final SpaceRepository spaces;
     private final NodeContentRepository contents;
     private final NodeAccessService access;
+    private final TeamMemberRepository members;
     private final MongoTemplate mongo;
 
     public NodeService(NodeRepository nodes, SpaceRepository spaces, NodeContentRepository contents,
-                       NodeAccessService access, MongoTemplate mongo) {
+                       NodeAccessService access, TeamMemberRepository members, MongoTemplate mongo) {
         this.nodes = nodes;
         this.spaces = spaces;
         this.contents = contents;
         this.access = access;
+        this.members = members;
         this.mongo = mongo;
     }
 
@@ -179,6 +183,66 @@ public class NodeService {
         return toDto(node, user);
     }
 
+    /** Only flips the state; the PUBLISHED version entry comes with Task 6.1. */
+    public NodeDTO publish(String id) {
+        return setPublishState(id, PublishState.PUBLISHED);
+    }
+
+    public NodeDTO unpublish(String id) {
+        return setPublishState(id, PublishState.DRAFT);
+    }
+
+    private NodeDTO setPublishState(String id, PublishState state) {
+        Node node = access.requireEdit(id);
+        User user = access.currentUser();
+        node.setPublishState(state);
+        node.setUpdatedBy(ref(user));
+        node.setUpdatedAt(new Date());
+        node = nodes.save(node);
+        syncSearchFields(node);
+        return toDto(node, user);
+    }
+
+    /** Page editors only. Both ignore the lock itself, so an editor can unlock (and re-locking is harmless). */
+    public NodeDTO lock(String id) {
+        return setLocked(id, true);
+    }
+
+    public NodeDTO unlock(String id) {
+        return setLocked(id, false);
+    }
+
+    private NodeDTO setLocked(String id, boolean locked) {
+        Node node = access.requireEditIgnoringLock(id);
+        User user = access.currentUser();
+        node.setLocked(locked);
+        node.setLockedBy(locked ? user.getId() : null);
+        node.setUpdatedBy(ref(user));
+        node.setUpdatedAt(new Date());
+        return toDto(nodes.save(node), user);
+    }
+
+    /** ACTIVE pages with this tag in every space I can enter, newest first, only those I can at least view. */
+    public List<TaggedNodeDTO> taggedPages(String rawTag) {
+        String tag = rawTag.trim().toLowerCase(Locale.ROOT);
+        User user = access.currentUser();
+        List<String> teamIds = members.findByUserId(user.getId()).stream().map(TeamMember::getTeamId).toList();
+        Map<String, Space> mine = new java.util.LinkedHashMap<>();
+        if (!teamIds.isEmpty()) spaces.findByTeamIdIn(teamIds).forEach(s -> mine.put(s.getId(), s));
+        spaces.findByOwnerUserId(user.getId()).ifPresent(s -> mine.put(s.getId(), s));
+        if (mine.isEmpty() || tag.isEmpty()) return List.of();
+
+        Query q = Query.query(Criteria.where("tags").is(tag).and("status").is(NodeStatus.ACTIVE)
+                .and("spaceId").in(mine.keySet())).limit(200);
+        // shortcut: one access check per hit (capped at 200 hits); needed so restrictions on ancestors are honoured
+        return mongo.find(q, Node.class).stream()
+                .filter(n -> access.resolve(user.getId(), n).compareTo(Access.VIEW) >= 0)
+                .sorted(java.util.Comparator.comparing(Node::getContentUpdatedAt, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                .map(n -> new TaggedNodeDTO(n.getId(), n.getSpaceId(), mine.get(n.getSpaceId()).getName(), n.getTitle(),
+                        n.getIcon(), n.getTags(), n.getPublishState()))
+                .toList();
+    }
+
     // ---------- helpers ----------
 
     private Space space(String spaceId) {
@@ -249,6 +313,7 @@ public class NodeService {
                 .map(a -> new NodeDTO.Crumb(a, up.get(a).getTitle())).toList();
         return new NodeDTO(n.getId(), n.getSpaceId(), n.getParentId(), n.getTitle(), n.getIcon(), n.getTags(),
                 n.getPublishState(), n.isLocked(), n.getLockedBy(), n.getStatus(), access.resolve(user.getId(), n),
+                access.resolveIgnoringState(user.getId(), n).compareTo(Access.EDIT) >= 0,
                 crumbs, n.getCreatedBy(), n.getUpdatedBy(), n.getContentUpdatedAt());
     }
 
