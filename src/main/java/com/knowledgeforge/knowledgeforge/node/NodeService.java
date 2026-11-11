@@ -26,6 +26,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import com.knowledgeforge.knowledgeforge.nodeversion.NodeVersionService;
+import com.knowledgeforge.knowledgeforge.nodeversion.VersionKind;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -40,15 +42,18 @@ public class NodeService {
     private final NodeAccessService access;
     private final TeamMemberRepository members;
     private final MongoTemplate mongo;
+    private final NodeVersionService versions;
 
     public NodeService(NodeRepository nodes, SpaceRepository spaces, NodeContentRepository contents,
-                       NodeAccessService access, TeamMemberRepository members, MongoTemplate mongo) {
+                       NodeAccessService access, TeamMemberRepository members, MongoTemplate mongo,
+                       NodeVersionService versions) {
         this.nodes = nodes;
         this.spaces = spaces;
         this.contents = contents;
         this.access = access;
         this.members = members;
         this.mongo = mongo;
+        this.versions = versions;
     }
 
     // ---------- reads ----------
@@ -183,9 +188,11 @@ public class NodeService {
         return toDto(node, user);
     }
 
-    /** Only flips the state; the PUBLISHED version entry comes with Task 6.1. */
+    /** Flips the state and records the published content as a PUBLISHED version. */
     public NodeDTO publish(String id) {
-        return setPublishState(id, PublishState.PUBLISHED);
+        NodeDTO dto = setPublishState(id, PublishState.PUBLISHED);
+        versions.createVersion(id, VersionKind.PUBLISHED, null);
+        return dto;
     }
 
     public NodeDTO unpublish(String id) {

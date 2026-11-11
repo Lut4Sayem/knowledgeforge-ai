@@ -46,9 +46,11 @@ class RecoveredVersionIT extends NodeIntegrationTest {
     void restoreThenStaleClientDoesNotResurrectContent() {
         NodeDTO p = createPage("A");
         contentService.save(p.id(), new SaveContentRequest(0L, b64("v1"), "v1"));
-        ContentDTO opened = contentService.get(p.id()); // the client that goes stale: revision 1, epoch 0
+        String v1 = versionService.name(p.id(), "v1").id();
+        contentService.save(p.id(), new SaveContentRequest(1L, b64("v2"), "v2"));
+        ContentDTO opened = contentService.get(p.id()); // the client that goes stale: revision 2, epoch 0
 
-        ContentTestHelper.replaceWholesale(mongo, p.id(), "restored".getBytes(StandardCharsets.UTF_8)); // what restore will do
+        versionService.restore(v1);
 
         ContentDTO now = contentService.get(p.id());
         assertEquals(opened.contentEpoch() + 1, now.contentEpoch()); // tells the client it must not merge
@@ -60,9 +62,25 @@ class RecoveredVersionIT extends NodeIntegrationTest {
         // instead its copy is kept as a private version and the page is untouched
         versionService.saveRecovered(p.id(), new RecoveredVersionRequest(b64("v1 + offline edits"), "x", opened.contentEpoch()));
         ContentDTO after = contentService.get(p.id());
-        assertEquals(b64("restored"), after.state());
+        assertEquals(b64("v1"), after.state());
         assertEquals(now.revision(), after.revision());
         assertEquals(now.contentEpoch(), after.contentEpoch());
+    }
+
+    @Test
+    void recoveredNeverMerged() {
+        NodeDTO p = createPage("A");
+        contentService.save(p.id(), new SaveContentRequest(0L, b64("one"), "one"));
+        versionService.closeSession(mongo.findById(p.id(), com.knowledgeforge.knowledgeforge.nodecontent.NodeContent.class)); // AUTO "one"
+        String recovered = versionService.saveRecovered(p.id(), new RecoveredVersionRequest(b64("one!"), "one!", 0)).id();
+        // a recovered copy is newer than the AUTO but is not "the latest version": the next small change still merges into the AUTO
+        contentService.save(p.id(), new SaveContentRequest(1L, b64("one?"), "one?"));
+        versionService.closeSession(mongo.findById(p.id(), com.knowledgeforge.knowledgeforge.nodecontent.NodeContent.class));
+        assertEquals(2, versionsOf(p.id()).size());
+        NodeVersion r = versions.findById(recovered).orElseThrow();
+        assertEquals("one!", r.getText());
+        assertEquals(VersionKind.RECOVERED, r.getKind());
+        assertEquals("one?", versionsOf(p.id()).stream().filter(v -> v.getKind() == VersionKind.AUTO).findFirst().orElseThrow().getText());
     }
 
     @Test
