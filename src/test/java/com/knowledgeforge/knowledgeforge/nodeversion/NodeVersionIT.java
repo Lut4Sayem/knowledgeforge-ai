@@ -49,6 +49,36 @@ class NodeVersionIT extends com.knowledgeforge.knowledgeforge.support.NodeIntegr
     }
 
     @Test
+    void saveDuringRestoreIsKeptAsVersion() {
+        NodeDTO p = createPage("A");
+        save(p, 0, "one");
+        String v1 = versionService.name(p.id(), "first").id();
+        save(p, 1, "two");
+        boolean[] fired = {false};
+        versionService.beforeRestoreWrite = () -> { // a save lands between closing the session and writing the old state
+            if (fired[0]) return;
+            fired[0] = true;
+            save(p, 2, "three");
+        };
+        try {
+            versionService.restore(v1);
+        } finally {
+            versionService.beforeRestoreWrite = () -> { };
+        }
+        assertEquals(b64("one"), contentService.get(p.id()).state());
+        assertTrue(versionService.list(p.id()).stream().anyMatch(v -> "three".equals(versionService.get(v.id()).text())),
+                "the save made during the restore must survive as a version");
+    }
+
+    @Test
+    void publishWithoutContentChangesNothing() {
+        NodeDTO p = createPage("A");
+        mongo.remove(Query.query(Criteria.where("_id").is(p.id())), NodeContent.class);
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> nodeService.publish(p.id()));
+        assertEquals(com.knowledgeforge.knowledgeforge.node.PublishState.DRAFT, nodeService.get(p.id()).publishState());
+    }
+
+    @Test
     void restoreCreatesNewVersionAndKeepsOld() {
         NodeDTO p = createPage("A");
         save(p, 0, "one");
