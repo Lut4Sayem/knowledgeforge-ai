@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
@@ -151,7 +151,9 @@ function PageEditor({ node, opened, slots, onRecovered, onSaveState }: { node: N
   const canEdit = node.access === 'EDIT'
   const lock = useEditLock(node.id, canEdit)
   const editable = canEdit && lock.mode === 'editing'
-  const editor = useKfEditor(opened.ydoc, 'Me', editable)
+  const [uploadError, setUploadError] = useState('')
+  const files = useMemo(() => ({ nodeId: node.id, onError: setUploadError }), [node.id])
+  const editor = useKfEditor(opened.ydoc, 'Me', editable, files)
   const save = useAutosave(node.id, opened, () => extractText(editor.document), canEdit)
   const problem = save.state === 'failed' ? `Not saved: ${save.message}` : save.state === 'retrying' || save.state === 'offline' ? save.message : undefined
 
@@ -169,6 +171,7 @@ function PageEditor({ node, opened, slots, onRecovered, onSaveState }: { node: N
   return (
     <>
       {canEdit && slots.head && createPortal(<SaveIndicator state={save.state} local={save.local} />, slots.head)}
+      {uploadError && slots.banners && createPortal(<SaveNotice onDismiss={() => setUploadError('')}>{uploadError}</SaveNotice>, slots.banners)}
       {problem && slots.banners && createPortal(<SaveNotice>{problem}</SaveNotice>, slots.banners)}
       {lock.mode === 'blocked' && slots.banners && createPortal(
         <SoftLockBanner holder={lock.holder} onReadOnly={lock.openReadOnly} onEditAnyway={lock.editAnyway} />,

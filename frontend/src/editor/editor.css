@@ -18,3 +18,4 @@
 .kf-bookmark-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .kf-bookmark-text span, .kf-bookmark-text small { color: var(--color-slate); font-size: 13px; }
 .kf-bookmark img { width: 96px; height: 64px; object-fit: cover; border-radius: var(--radius-sm); }
+.kf-offer { margin: var(--space-2) 0; font-size: 14px; color: var(--color-slate); }
