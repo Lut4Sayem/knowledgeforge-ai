@@ -320,8 +320,8 @@ Wireframes `Main` (draft bar, tags, page menu) and `Trash`. First a small access
 Wireframe `History`.
 **Files:** `history/HistoryPanel.tsx`, `history/groupVersions.ts`, `history/DiffView.tsx`.
 **Produces:** `groupVersions(v: VersionSummary[]): DayGroup[]` (Today / Yesterday / date; consecutive AUTO in one session collapsed as "▸ N checkpoints in this session"; private versions grouped as "N private drafts · Only you can see these"; RECOVERED versions are listed in that private group, labelled "Recovered unsaved changes", with "Restore this version" available to their owner). Panel: "Named versions only" filter, "Name the current version…" input, select a version -> main area shows the diff against the version before (jsdiff `diffWords` on `text`, insertions coloured by the version's authors per D3, deletions struck through), "Back to current", "Restore this version" (editors).
-- [ ] Vitest: `groupsByDayAndSession`, `namedOnlyFilter`, `diffMarksInsertAndDelete`.
-- [ ] Commit `feat: version history panel with compare`.
+- [x] Vitest: `groupsByDayAndSession`, `namedOnlyFilter`, `diffMarksInsertAndDelete`.
+- [x] Commit `feat: version history panel with compare`.
 
 ### Task 6.4: Image, file and bookmark blocks wired (frontend)
 `/image` and `/file` and drag-drop upload through `POST /api/nodes/{id}/attachments/upload`; blocks store the attachment id and render via the download URL (images inline). Pasting a lone URL offers "Create bookmark"; the bookmark block calls `link-preview` and shows title, description, image; falls back to the URL.
