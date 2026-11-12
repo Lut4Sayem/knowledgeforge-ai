@@ -1,6 +1,7 @@
 package com.knowledgeforge.knowledgeforge.attachment;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
@@ -11,7 +12,9 @@ public class Attachment {
     @Id
     private String id;
 
-    private String documentId;
+    private String documentId; // old document pages; new pages use nodeId (documentId goes away in Phase 9)
+    @Indexed
+    private String nodeId;
 
     // Display name for both kinds. Link attachments set url; file attachments set fileId/contentType/size.
     private String originalName;
@@ -38,6 +41,9 @@ public class Attachment {
 
     public String getDocumentId() { return documentId; }
     public void setDocumentId(String documentId) { this.documentId = documentId; }
+
+    public String getNodeId() { return nodeId; }
+    public void setNodeId(String nodeId) { this.nodeId = nodeId; }
 
     public String getOriginalName() { return originalName; }
     public void setOriginalName(String originalName) { this.originalName = originalName; }

@@ -44,6 +44,16 @@ public class AttachmentController {
         return ResponseEntity.status(201).body(attachmentService.uploadFile(documentId, file));
     }
 
+    @GetMapping("/nodes/{nodeId}/attachments")
+    public ResponseEntity<List<Attachment>> getNodeAttachments(@PathVariable String nodeId) {
+        return ResponseEntity.ok(attachmentService.getNodeAttachments(nodeId));
+    }
+
+    @PostMapping(value = "/nodes/{nodeId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Attachment> uploadNodeFile(@PathVariable String nodeId, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.status(201).body(attachmentService.uploadNodeFile(nodeId, file));
+    }
+
     @GetMapping("/attachments/{attachmentId}/download")
     public ResponseEntity<Resource> download(@PathVariable String attachmentId) {
         AttachmentService.FileDownload file = attachmentService.download(attachmentId);
