@@ -4,12 +4,16 @@ import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { getNode, publishNode, updateNode, type NodeDetail } from '../api/nodes'
+import { restoreVersion } from '../api/versions'
 import { getMe, getMySpaces } from '../api/spaces'
 import { openContent, RECOVERED_NOTICE, useAutosave, type Opened, type SaveState } from '../editor/autosave'
 import Editor, { useKfEditor } from '../editor/Editor'
 import { extractText } from '../editor/extractText'
 import SaveIndicator, { SaveNotice } from '../editor/SaveIndicator'
+import { useEndSessionOnLeave } from '../editor/session'
 import SoftLockBanner, { useEditLock } from '../editor/SoftLockBanner'
+import HistoryPanel, { type Viewing } from '../history/HistoryPanel'
+import VersionViewer from '../history/VersionViewer'
 import Breadcrumbs from './Breadcrumbs'
 import DraftBar from './DraftBar'
 import PageMenu from './PageMenu'
@@ -30,6 +34,18 @@ export default function PageView() {
   const [head, setHead] = useState<HTMLElement | null>(null)
   const [banners, setBanners] = useState<HTMLElement | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('saved')
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [viewing, setViewing] = useState<Viewing | null>(null)
+  const [contentKey, setContentKey] = useState(0) // bumped after a restore: the editor opens again on the server's state
+  const restore = useMutation({
+    mutationFn: (id: string) => restoreVersion(id),
+    onSuccess: async () => {
+      setViewing(null)
+      setContentKey((k) => k + 1)
+      await qc.invalidateQueries({ queryKey: ['versions', nodeId] })
+      await qc.invalidateQueries({ queryKey: ['node', nodeId] })
+    },
+  })
   const rename = useMutation({
     mutationFn: (t: string) => updateNode(nodeId, { title: t }),
     onSuccess: async (updated) => {
@@ -64,6 +80,9 @@ export default function PageView() {
       <header className="page-head">
         <Breadcrumbs spaceName={spaceName} crumbs={n.breadcrumbs} current={n.title} />
         <span ref={setHead} />
+        {n.access !== 'TITLE_ONLY' && (
+          <button type="button" className="banner-btn" aria-pressed={historyOpen} onClick={() => setHistoryOpen((o) => !o)}>History</button>
+        )}
         <PageMenu node={n} unsaved={saveState !== 'saved' && saveState !== 'recovered'} />
       </header>
       <div ref={setBanners} />
@@ -88,11 +107,28 @@ export default function PageView() {
         {n.access === 'TITLE_ONLY' ? (
           <p className="page-note">You can see this page's title but not its content.</p>
         ) : me.data ? (
-          <PageContent key={n.id} node={n} userId={me.data.id} slots={{ head, banners }} onSaveState={setSaveState} />
+          <>
+            {viewing && (
+              <VersionViewer viewing={viewing} busy={restore.isPending} error={restore.error?.message ?? ''} onBack={() => setViewing(null)} onRestore={() => restore.mutate(viewing.version.id)} />
+            )}
+            {/* hidden, not unmounted: the editor keeps saving what was typed */}
+            <div hidden={!!viewing}>
+              <PageContent key={`${n.id}:${contentKey}`} node={n} userId={me.data.id} slots={{ head, banners }} onSaveState={setSaveState} />
+            </div>
+          </>
         ) : (
           <p className="page-note">Loading…</p>
         )}
       </article>
+      {historyOpen && (
+        <HistoryPanel
+          nodeId={n.id}
+          canEdit={canEdit && n.status === 'ACTIVE'}
+          viewingId={viewing?.version.id ?? null}
+          onView={setViewing}
+          onClose={() => { setHistoryOpen(false); setViewing(null) }}
+        />
+      )}
     </>
   )
 }
@@ -154,6 +190,7 @@ function PageEditor({ node, opened, slots, onRecovered, onSaveState }: { node: N
   const [uploadError, setUploadError] = useState('')
   const files = useMemo(() => ({ nodeId: node.id, onError: setUploadError }), [node.id])
   const editor = useKfEditor(opened.ydoc, 'Me', editable, files)
+  useEndSessionOnLeave(node.id, canEdit)
   const save = useAutosave(node.id, opened, () => extractText(editor.document), canEdit)
   const problem = save.state === 'failed' ? `Not saved: ${save.message}` : save.state === 'retrying' || save.state === 'offline' ? save.message : undefined
 
