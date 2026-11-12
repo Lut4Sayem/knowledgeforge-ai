@@ -49,7 +49,7 @@ class AttachmentServiceTest {
 
     DocumentService documentService = new DocumentService(documents, spaces, members, users,
             mock(DocumentVersionRepository.class), mock(ActivityLogService.class), attachments, storage, summaries);
-    AttachmentService service = new AttachmentService(attachments, storage, documentService, users);
+    AttachmentService service = new AttachmentService(attachments, storage, documentService, users, mock(com.knowledgeforge.knowledgeforge.access.NodeAccessService.class));
 
     @BeforeEach
     void setUp() {

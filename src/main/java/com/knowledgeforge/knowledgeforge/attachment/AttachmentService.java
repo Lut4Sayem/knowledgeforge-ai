@@ -4,6 +4,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import com.knowledgeforge.knowledgeforge.access.NodeAccessService;
 import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
@@ -46,13 +47,16 @@ public class AttachmentService {
     private final AttachmentStorageService storage;
     private final DocumentService documentService;
     private final UserRepository userRepository;
+    private final NodeAccessService access;
 
     public AttachmentService(
             AttachmentRepository attachmentRepository,
             AttachmentStorageService storage,
             DocumentService documentService,
-            UserRepository userRepository
+            UserRepository userRepository,
+            NodeAccessService access
     ) {
+        this.access = access;
         this.attachmentRepository = attachmentRepository;
         this.storage = storage;
         this.documentService = documentService;
@@ -81,8 +85,22 @@ public class AttachmentService {
         return attachmentRepository.save(a);
     }
 
+    public List<Attachment> getNodeAttachments(String nodeId) {
+        access.requireView(nodeId);
+        return attachmentRepository.findByNodeId(nodeId);
+    }
+
+    public Attachment uploadNodeFile(String nodeId, MultipartFile file) {
+        access.requireEdit(nodeId);
+        return store(file, a -> a.setNodeId(nodeId));
+    }
+
     public Attachment uploadFile(String documentId, MultipartFile file) {
         documentService.getDocumentForEdit(documentId);
+        return store(file, a -> a.setDocumentId(documentId));
+    }
+
+    private Attachment store(MultipartFile file, java.util.function.Consumer<Attachment> owner) {
         User user = currentUser();
 
         if (file == null || file.isEmpty()) {
@@ -112,7 +130,7 @@ public class AttachmentService {
         }
 
         Attachment a = new Attachment();
-        a.setDocumentId(documentId);
+        owner.accept(a);
         a.setOriginalName(name);
         a.setFileId(fileId);
         a.setContentType(contentType);
@@ -129,7 +147,7 @@ public class AttachmentService {
 
     public FileDownload download(String attachmentId) {
         Attachment a = findAttachment(attachmentId);
-        documentService.getDocumentByID(a.getDocumentId()); // any team member may download
+        requireView(a); // anyone who can see the page may download
 
         if (a.getFileId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This attachment is a link, not a file");
@@ -139,11 +157,21 @@ public class AttachmentService {
 
     public void deleteAttachment(String attachmentId) {
         Attachment a = findAttachment(attachmentId);
-        documentService.getDocumentForEdit(a.getDocumentId());
+        requireEdit(a);
 
         // Record first: if the file delete then fails we only leak storage, never show a broken attachment.
         attachmentRepository.deleteById(attachmentId);
         storage.delete(a.getFileId());
+    }
+
+    private void requireView(Attachment a) {
+        if (a.getNodeId() != null) access.requireView(a.getNodeId());
+        else documentService.getDocumentByID(a.getDocumentId());
+    }
+
+    private void requireEdit(Attachment a) {
+        if (a.getNodeId() != null) access.requireEdit(a.getNodeId());
+        else documentService.getDocumentForEdit(a.getDocumentId());
     }
 
     private Attachment findAttachment(String attachmentId) {

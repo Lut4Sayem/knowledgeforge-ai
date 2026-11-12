@@ -426,7 +426,7 @@ class TrashIT extends NodeIntegrationTest {
 
         String fileId = storage.store(new ByteArrayInputStream(new byte[]{9, 9}), "text/plain");
         Attachment a = new Attachment();
-        a.setDocumentId(nodeId);
+        a.setNodeId(nodeId);
         a.setOriginalName("f.txt");
         a.setFileId(fileId);
         a.setContentType("text/plain");
@@ -467,7 +467,7 @@ class TrashIT extends NodeIntegrationTest {
         n += contents.existsById(id) ? 1 : 0;
         n += mongo.count(Query.query(Criteria.where("nodeId").is(id)), NodeVersion.class);
         n += comments.findByDocumentIdOrderByCreatedAtAsc(id).size();
-        n += attachments.findByDocumentId(id).size();
+        n += attachments.findByNodeId(id).size();
         n += locks.existsById(id) ? 1 : 0;
         n += summaries.findByDocumentId(id).isPresent() ? 1 : 0;
         return n;

@@ -270,9 +270,9 @@ public class TrashService {
         if (branch.isEmpty()) return;
         String spaceId = branch.get(0).getSpaceId();
         for (List<String> chunk : chunks(branch.stream().map(Node::getId).toList())) {
-            // shortcut: comments, attachments and AI summaries are still keyed by documentId (same value as the node id);
-            // switch to nodeId when Tasks 6.2 / 9.3 rename those fields.
-            List<Attachment> files = attachments.findByDocumentIdIn(chunk);
+            // shortcut: comments and AI summaries are still keyed by documentId (same value as the node id);
+            // switch to nodeId in Task 9.3.
+            List<Attachment> files = attachments.findByNodeIdIn(chunk);
             files.forEach(a -> storage.delete(a.getFileId())); // file first: a repeat run still finds the record
             attachments.deleteAll(files);
             comments.deleteByDocumentIdIn(chunk);
