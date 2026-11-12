@@ -188,11 +188,11 @@ public class NodeService {
         return toDto(node, user);
     }
 
-    /** Flips the state and records the published content as a PUBLISHED version. */
+    /** Records the published content as a PUBLISHED version, then flips the state. */
     public NodeDTO publish(String id) {
-        NodeDTO dto = setPublishState(id, PublishState.PUBLISHED);
-        versions.createVersion(id, VersionKind.PUBLISHED, null);
-        return dto;
+        access.requireEdit(id);
+        versions.createVersion(id, VersionKind.PUBLISHED, null); // first: a missing content (404) must leave the state alone
+        return setPublishState(id, PublishState.PUBLISHED);
     }
 
     public NodeDTO unpublish(String id) {
