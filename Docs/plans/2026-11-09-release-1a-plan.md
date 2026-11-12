@@ -314,8 +314,8 @@ Wireframes `Main` (draft bar, tags, page menu) and `Trash`. First a small access
 **Files:** Modify `attachment/*` (`documentId` -> `nodeId`, endpoints `POST /api/nodes/{id}/attachments/upload`, `GET /api/nodes/{id}/attachments`; download/delete unchanged; access via `NodeAccessService`). Create `linkpreview/LinkPreviewService.java`, `linkpreview/LinkPreviewController.java`.
 **Produces:** `GET /api/link-preview?url=` -> `{url, title, description, imageUrl}` (all may be null). Rules: http/https only; resolve DNS and reject loopback, private, link-local, multicast, CGNAT, IPv6 ULA (check every redirect hop, max 3 redirects); timeouts connect 3 s / read 5 s; read at most 512 KB; parse `og:title`, `og:description`, `og:image`, `<title>`; per-user limit 30/min; result cached 24 h in memory (`shortcut: in-memory cache, move to Mongo TTL if multiple instances`).
 - [x] Purge cleanup (`TrashService.purgeBranch`): switch attachment cleanup from `documentId` to `nodeId` together with the rename above (it still keys on `documentId`, same value as the node id).
-- [ ] Tests: `linkPreviewBlocksPrivateAddresses` (localhost, 127.0.0.1, 10.0.0.1, 169.254.169.254, [::1], redirect to private), `parsesOpenGraph` (local test server), `stopsAfter512KB`, `uploadRequiresEditOnNode`.
-- [ ] Commit `feat: node attachments and link previews`.
+- [x] Tests: `linkPreviewBlocksPrivateAddresses` (localhost, 127.0.0.1, 10.0.0.1, 169.254.169.254, [::1], redirect to private), `parsesOpenGraph` (local test server), `stopsAfter512KB`, `uploadRequiresEditOnNode`.
+- [x] Commit `feat: node attachments and link previews`.
 
 ### Task 6.3: History panel and compare (frontend)
 Wireframe `History`.
