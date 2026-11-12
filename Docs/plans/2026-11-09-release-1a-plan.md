@@ -326,8 +326,8 @@ Wireframe `History`.
 
 ### Task 6.4: Image, file and bookmark blocks wired (frontend)
 `/image` and `/file` and drag-drop upload through `POST /api/nodes/{id}/attachments/upload`; blocks store the attachment id and render via the download URL (images inline). Pasting a lone URL offers "Create bookmark"; the bookmark block calls `link-preview` and shows title, description, image; falls back to the URL.
-- [ ] Vitest: `pasteUrlOffersBookmark`, `bookmarkFallsBackToUrl`, `rejectedFileShowsServerMessage` (413 text).
-- [ ] Commit `feat: files, images and bookmarks in pages`.
+- [x] Vitest: `pasteUrlOffersBookmark`, `bookmarkFallsBackToUrl`, `rejectedFileShowsServerMessage` (413 text).
+- [x] Commit `feat: files, images and bookmarks in pages`.
 
 ---
 
