@@ -303,18 +303,19 @@ Wireframes `Main` (draft bar, tags, page menu) and `Trash`. First a small access
 - `GET /api/nodes/{id}/versions` -> `[{id, kind, name, authors, createdAt, updatedAt, private}]` newest first, excluding `privateTo` other users.
 - `GET /api/versions/{vid}` -> `{..., state: base64, text}`; `POST /api/nodes/{id}/versions {name}` (named: if content unchanged since latest version, name that one instead); `POST /api/versions/{vid}/restore` -> sets content to snapshot (`revision+1`, closes current session first so nothing is lost) and creates a `RESTORED` version.
 - Restore (D6 epoch rule): `POST /api/versions/{vid}/restore` replaces the state wholesale, so it must increment `node_contents.contentEpoch` together with `revision`. RECOVERED versions (already written by `POST /api/nodes/{id}/versions/recovered`, Phase 4) are never merged with other versions and never chosen as the "latest version" by the merge rule or the hash check.
-- [ ] IT `restoreThenStaleClientDoesNotResurrectContent` against the REAL restore (today `RecoveredVersionIT` uses `ContentTestHelper.replaceWholesale`; switch it to the restore endpoint and delete the helper), plus `restoreIncrementsContentEpoch`, `recoveredNeverMerged`.
-- [ ] Unit: `idleFiveMinutesCloses`, `longSessionClosesOnlyAfterPause`, `sameAuthorSmallChangeMerges`, `differentAuthorDoesNotMerge`, `namedNeverMerged`, `unchangedHashSkipped`.
-- [ ] Wire publish (Task 5.2) to `createVersion(id, PUBLISHED, null)`.
-- [ ] IT: `publishCreatesPublishedVersion`, `restoreCreatesNewVersionAndKeepsOld`, `privateVersionsHiddenFromOthers`, `versionListUsesIndex`.
-- [ ] Commit `feat: version sessions, named versions and restore`.
+- [x] IT `restoreThenStaleClientDoesNotResurrectContent` against the REAL restore (today `RecoveredVersionIT` uses `ContentTestHelper.replaceWholesale`; switch it to the restore endpoint and delete the helper), plus `restoreIncrementsContentEpoch`, `recoveredNeverMerged`.
+- [x] Unit: `idleFiveMinutesCloses`, `longSessionClosesOnlyAfterPause`, `sameAuthorSmallChangeMerges`, `differentAuthorDoesNotMerge`, `namedNeverMerged`, `unchangedHashSkipped`.
+- [x] Wire publish (Task 5.2) to `createVersion(id, PUBLISHED, null)`.
+- [x] IT: `publishCreatesPublishedVersion`, `restoreCreatesNewVersionAndKeepsOld`, `privateVersionsHiddenFromOthers`, `versionListUsesIndex`.
+- [x] Commit `feat: version sessions, named versions and restore`.
 
+- [x] Follow-up fixes: restore writes only if the revision is unchanged (retry, then 409); publish creates the version before flipping the state.
 ### Task 6.2: Files in pages + bookmark previews (backend)
 **Files:** Modify `attachment/*` (`documentId` -> `nodeId`, endpoints `POST /api/nodes/{id}/attachments/upload`, `GET /api/nodes/{id}/attachments`; download/delete unchanged; access via `NodeAccessService`). Create `linkpreview/LinkPreviewService.java`, `linkpreview/LinkPreviewController.java`.
 **Produces:** `GET /api/link-preview?url=` -> `{url, title, description, imageUrl}` (all may be null). Rules: http/https only; resolve DNS and reject loopback, private, link-local, multicast, CGNAT, IPv6 ULA (check every redirect hop, max 3 redirects); timeouts connect 3 s / read 5 s; read at most 512 KB; parse `og:title`, `og:description`, `og:image`, `<title>`; per-user limit 30/min; result cached 24 h in memory (`shortcut: in-memory cache, move to Mongo TTL if multiple instances`).
-- [ ] Purge cleanup (`TrashService.purgeBranch`): switch attachment cleanup from `documentId` to `nodeId` together with the rename above (it still keys on `documentId`, same value as the node id).
-- [ ] Tests: `linkPreviewBlocksPrivateAddresses` (localhost, 127.0.0.1, 10.0.0.1, 169.254.169.254, [::1], redirect to private), `parsesOpenGraph` (local test server), `stopsAfter512KB`, `uploadRequiresEditOnNode`.
-- [ ] Commit `feat: node attachments and link previews`.
+- [x] Purge cleanup (`TrashService.purgeBranch`): switch attachment cleanup from `documentId` to `nodeId` together with the rename above (it still keys on `documentId`, same value as the node id).
+- [x] Tests: `linkPreviewBlocksPrivateAddresses` (localhost, 127.0.0.1, 10.0.0.1, 169.254.169.254, [::1], redirect to private), `parsesOpenGraph` (local test server), `stopsAfter512KB`, `uploadRequiresEditOnNode`.
+- [x] Commit `feat: node attachments and link previews`.
 
 ### Task 6.3: History panel and compare (frontend)
 Wireframe `History`.
