@@ -37,6 +37,8 @@ public class NodeVersionService {
     private final MongoTemplate mongo;
     private final UserRepository users;
     private final Clock clock;
+    /** Test hook: runs between closing the session and writing the restored state. */
+    Runnable beforeRestoreWrite = () -> { };
 
     public NodeVersionService(NodeVersionRepository versions, NodeAccessService access, MongoTemplate mongo,
                               UserRepository users, Clock clock) {
@@ -128,12 +130,20 @@ public class NodeVersionService {
     public VersionSummaryDTO restore(String versionId) {
         NodeVersion v = visible(versionId);
         access.requireEdit(v.getNodeId());
-        closeSession(content(v.getNodeId()));
         Date now = Date.from(clock.instant());
-        mongo.getCollection("node_contents").updateOne(new Document("_id", new ObjectId(v.getNodeId())),
-                new Document("$set", new Document("state", new Binary(v.getState())).append("text", v.getText())
-                        .append("contentHash", v.getContentHash()).append("updatedAt", now))
-                        .append("$inc", new Document("revision", 1L).append("contentEpoch", 1)));
+        for (int attempt = 0; ; attempt++) {
+            NodeContent c = content(v.getNodeId());
+            closeSession(c);
+            beforeRestoreWrite.run();
+            // only if nothing was saved since the session was closed; otherwise close again so that save becomes a version
+            long matched = mongo.getCollection("node_contents").updateOne(new Document("_id", new ObjectId(v.getNodeId()))
+                            .append("revision", c.getRevision()),
+                    new Document("$set", new Document("state", new Binary(v.getState())).append("text", v.getText())
+                            .append("contentHash", v.getContentHash()).append("updatedAt", now))
+                            .append("$inc", new Document("revision", 1L).append("contentEpoch", 1))).getMatchedCount();
+            if (matched == 1) break;
+            if (attempt == 2) throw new ResponseStatusException(HttpStatus.CONFLICT, "The page keeps changing, try again");
+        }
         mongo.updateFirst(Query.query(Criteria.where("id").is(v.getNodeId())),
                 new Update().set("updatedBy", me()).set("contentUpdatedAt", now).set("updatedAt", now), Node.class);
         return summary(versions.save(snapshot(content(v.getNodeId()), VersionKind.RESTORED, null, List.of(me()))));
