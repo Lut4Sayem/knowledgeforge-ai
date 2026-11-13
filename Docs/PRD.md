@@ -1,6 +1,6 @@
 # KnowledgeForge: Product Requirements Document (PRD)
 
-Version 1.1 · 2026-11-09 (1.1: concurrent editors 50 -> 100) · Owner: MD. Lutfur Rahman
+Version 1.2 · 2026-11-14 (1.2: US-10 migration dropped by D7; 1.1: concurrent editors 50 -> 100) · Owner: MD. Lutfur Rahman
 Status: APPROVED. Feature priorities come from `MoSCoW (fixed).md`.
 Next phases after approval: domain model & schema -> wireframes -> architecture & tool decisions (ADRs) -> build.
 
@@ -53,7 +53,7 @@ Design rule: **build the wiki first, but design the data model for both pages an
 | Locking (pages) | Must | |
 | Media & files in pages | Should | Upload backend (GridFS) exists. |
 | Web bookmarks | Should | |
-| **Migration** | required | Existing markdown documents become block pages without data loss. |
+| **Migration** | dropped (D7) | Not needed: the 1a deploy starts on an empty database. |
 
 ### Release 1b: Collaboration
 | Feature | MoSCoW | Notes |
@@ -117,7 +117,7 @@ Format: *As a team member, I want ..., so that ...* · AC = acceptance criteria.
 **US-9 Files & bookmarks in pages**: As a member, I want to drop files and links into a page, so that resources live next to the notes.
 - AC: drag/drop or `/file` uploads (existing limits: allowlist, 5 MB); images render inline; pasting a URL offers a bookmark card (title, description, image when available).
 
-**US-10 Migration**: As an existing user, I want my old documents to keep working, so that the upgrade loses nothing.
+**US-10 Migration (dropped by D7, 2026-11-14: all existing data is dummy data and there are no real users, so nothing needs protecting)**: As an existing user, I want my old documents to keep working, so that the upgrade loses nothing.
 - AC: every existing document becomes a page with equivalent blocks; versions, comments, attachments and tags are preserved; a one-time migration is logged and re-runnable safely.
 
 (User stories for Releases 1b, 2 and 3 are written when each release starts.)

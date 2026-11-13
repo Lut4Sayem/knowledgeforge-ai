@@ -35,7 +35,6 @@ public class SchemaSetup implements ApplicationRunner {
         setupContents();
         setupVersions();
         setupLocks();
-        setupMigrations();
         setupSpaces();
     }
 
@@ -134,7 +133,7 @@ public class SchemaSetup implements ApplicationRunner {
                 req("nodeId", "spaceId", "kind", "title", "state", "text", "contentHash", "authors", "createdAt",
                         "updatedAt", "schemaVersion"),
                 new Document("nodeId", t(OID)).append("spaceId", t(OID))
-                        .append("kind", en("AUTO", "NAMED", "PUBLISHED", "PUBLISHED_TO_TEAM", "RESTORED", "MIGRATED", "RECOVERED"))
+                        .append("kind", en("AUTO", "NAMED", "PUBLISHED", "PUBLISHED_TO_TEAM", "RESTORED", "RECOVERED"))
                         .append("name", new Document("bsonType", java.util.List.of("string", "null")).append("maxLength", 100))
                         .append("title", str(0, 200))
                         .append("state", t("binData"))
@@ -159,12 +158,6 @@ public class SchemaSetup implements ApplicationRunner {
                 new Document("holder", userRef()).append("expiresAt", t("date")))));
         mongo.indexOps("edit_locks").createIndex(new Index().named("expiresAt_ttl")
                 .on("expiresAt", Sort.Direction.ASC).expire(0, TimeUnit.SECONDS));
-    }
-
-    private void setupMigrations() {
-        validator("migrations", new Document("$jsonSchema", schema(req("startedAt", "status"),
-                new Document("startedAt", t("date")).append("finishedAt", t("date", "null"))
-                        .append("status", en("RUNNING", "DONE", "FAILED")).append("counts", t("object", "null")))));
     }
 
     /** One personal space per user (physical schema 3.3). Existing spaces have no ownerUserId, so they are skipped. */

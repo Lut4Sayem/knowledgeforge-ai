@@ -1,11 +1,11 @@
 
 # Release 1a (Wiki Foundation) Implementation Plan
 
-Date: 2026-11-09 · Status: APPROVED 2026-11-09 (scope decisions D1-D5 accepted as recommended) · Owner: MD. Lutfur Rahman
+Date: 2026-11-09 · Status: APPROVED 2026-11-09 (scope decisions D1-D5 accepted as recommended; D6 approved 2026-11-10; D7 approved 2026-11-14) · Owner: MD. Lutfur Rahman
 
 **Goal:** Turn the flat Team -> Space -> Document app into a working wiki: nested pages in a tree, a BlockNote block
 editor with autosave, status lozenges, tags, version history with compare/restore, trash/archive, page lock,
-Ctrl+K palette with Atlas Search, files and bookmarks in pages, and a safe migration of all existing documents.
+Ctrl+K palette with Atlas Search, files and bookmarks in pages, and a fresh start on an empty database (no data migration, D7).
 
 **Functional first.** Every screen in this plan is built to the wireframes' STRUCTURE with plain, token-based CSS.
 The visual design pass happens AFTER 1a works, screen by screen (Phase 10 is only the hand-off list, not the pass).
@@ -14,7 +14,6 @@ The visual design pass happens AFTER 1a works, screen by screen (Phase 10 is onl
 in `frontend/` replaces the 9 plain-JS pages and is built into Spring's static resources (one deployable, ADR 0001/0006).
 Page content is a Yjs document edited by BlockNote **in the browser**; in 1a there is no collab server, so the browser
 sends the encoded Yjs state plus extracted plain text to Spring on autosave (the Node collab service arrives in 1b).
-A one-off Node script converts legacy markdown to BlockNote/Yjs during migration (ADR 0007).
 
 **Tech stack:** Java 17, Spring Boot 4.1, Spring Data MongoDB, Spring Security (session + CSRF), MongoDB Atlas +
 Atlas Search, Testcontainers (`mongodb/mongodb-atlas-local`), React 18 + TypeScript + Vite, BlockNote (MPL core only),
@@ -22,7 +21,7 @@ Yjs, TanStack Query, React Router, dnd-kit, cmdk, jsdiff, idb-keyval, Vitest + T
 
 **Specs this plan implements (read them with it):**
 - `Docs/PRD.md` v1.1, section 6 (US-1 ... US-10) and section 7 (NFRs)
-- `Docs/specs/2026-11-09-domain-model-design.md` (rules: permissions 4.1, trash 4.5, draft 4.7, lock 4.8, versions 5, migration 6)
+- `Docs/specs/2026-11-09-domain-model-design.md` (rules: permissions 4.1, trash 4.5, draft 4.7, lock 4.8, versions 5; section 6 migration is not used, D7)
 - `Docs/specs/2026-11-09-physical-schema.md` (collections, fields, limits, indexes)
 - `Docs/adr/0001` ... `0007` (0008 is Release 2)
 - `Docs/wireframes/` (Main, Editing, History, Palette, Trash, Sidebar; Share and MoveToTeam: see Scope decisions)
@@ -38,7 +37,8 @@ Yjs, TanStack Query, React Router, dnd-kit, cmdk, jsdiff, idb-keyval, Vitest + T
 | D3 | History wireframe colours changes per author. Without real-time (1b) a session with two authors can't attribute each word. | 1a colours a version's changes by the version's author; a multi-author version uses one shared colour labelled with all names. Exact per-author marks come in 1b from Yjs. |
 | D4 | Plain text for search comes from the browser in 1a (no collab server yet). | Accept: it is only the user's own editable content, capped at 1 MB, and only used for search/diff. In 1b the collab service extracts it server-side. |
 | D5 | Page-level comments and AI Summarize/Ask exist today and the migration must preserve comments. | Keep both working on nodes with the **existing** UI behaviour (comment list under the page; Summarize button; Ask on the project page). No inline comments (1b). |
-| D6 | A stale save (409) offered "Reload latest / Keep mine": one click threw away one side, with no version to go back to. | **Approved 2026-11-10: merge, guarded by an epoch.** Both copies are Yjs documents of one lineage, so on a 409 the client merges the server state into its document and saves again; the banner and both buttons are gone. `node_contents.contentEpoch` (int, default 0) goes up ONLY when the state is replaced wholesale (version restore, migration conversion), never on a normal save. A copy based on another epoch is NOT merged (it would bring back what the restore removed): it is stored as a private version (`kind RECOVERED`, `privateTo` = the user) through `POST /api/nodes/{id}/versions/recovered`, the user sees "Your unsaved changes were kept as a private version because this page was restored", and the page loads the server state. The local copy is cleared only after that save succeeded. RECOVERED versions are never merged with other versions. |
+| D6 | A stale save (409) offered "Reload latest / Keep mine": one click threw away one side, with no version to go back to. | **Approved 2026-11-10: merge, guarded by an epoch.** Both copies are Yjs documents of one lineage, so on a 409 the client merges the server state into its document and saves again; the banner and both buttons are gone. `node_contents.contentEpoch` (int, default 0) goes up ONLY when the state is replaced wholesale (version restore), never on a normal save. A copy based on another epoch is NOT merged (it would bring back what the restore removed): it is stored as a private version (`kind RECOVERED`, `privateTo` = the user) through `POST /api/nodes/{id}/versions/recovered`, the user sees "Your unsaved changes were kept as a private version because this page was restored", and the page loads the server state. The local copy is cleared only after that save succeeded. RECOVERED versions are never merged with other versions. |
+| D7 | **Approved 2026-11-14: no data migration.** All existing production data is dummy data and there are no real users, so a migration protects nothing. | The 1a deploy (Task 10.2) starts on a fresh, empty database after a `mongodump` backup. Removed: Tasks 9.1 and 9.2, the migration rehearsal in 9.4, `legacyMarkdown`, `VersionKind.MIGRATED`, the `migrations` collection, the Node conversion script. US-10 is dropped. **Alternative rejected:** the ADR 0007 migration runner + Node conversion script (superseded). |
 
 ---
 
@@ -83,9 +83,8 @@ Backend, new packages (each: entity, repository, service, controller, DTOs):
 | `nodeversion` | `NodeVersion` (`node_versions`): session job, merge rule, named versions, list, restore (replaces `documentVersion`) |
 | `editlock` | `EditLock` (`edit_locks`, TTL): soft lock acquire/heartbeat/release (deleted in 1b) |
 | `linkpreview` | Server-side bookmark metadata fetch with SSRF guard |
-| `migration` | `MigrationRunner`, `MigrationStep` interface, steps, `migrations` collection, internal content API for the Node script |
 | `space`, `user`, `comment`, `attachment`, `search`, `ai`, `dashboard`, `activity` | existing; changed as tasks say |
-| `documentPkg`, `documentVersion` | **deleted** in Phase 9 after migration |
+| `documentPkg`, `documentVersion` | **deleted** in Phase 9 (Task 9.4) |
 
 Frontend (`frontend/`, Vite root):
 
@@ -104,7 +103,7 @@ frontend/src/
   pages/        Login, Register, Join, Dashboard, Team, Profile, Search (ported old pages)
   styles/       tokens.css (copied from DESIGN.md section 0), base.css (plain layout only)
 frontend/e2e/   Playwright specs
-collab/         Node package; in 1a only `migrate-content.ts` (ADR 0007). Hocuspocus is added here in 1b.
+collab/         Node package; empty in 1a (D7: no migration script). Hocuspocus is added here in 1b.
 ```
 
 ---
@@ -151,9 +150,9 @@ Needed first so the new app is usable on its own. Same behaviour as the current 
 
 ## Phase 1: Data model (new collections, personal spaces)
 
-### Task 1.1: Node, NodeContent, NodeVersion, EditLock, Migration entities + indexes + validators
-**Files:** Create `node/Node.java`, `node/NodeRepository.java`, `nodecontent/NodeContent.java`, `nodecontent/NodeContentRepository.java`, `nodeversion/NodeVersion.java`, `nodeversion/NodeVersionRepository.java`, `editlock/EditLock.java`, `editlock/EditLockRepository.java`, `migration/MigrationRecord.java`, `common/UserRef.java`, `common/SchemaSetup.java`; enums `NodeType {PAGE, BOARD}`, `NodeStatus {ACTIVE, ARCHIVED, TRASHED}`, `PublishState {DRAFT, PUBLISHED}`, `ContentFormat {YJS_BLOCKNOTE_V1, YJS_BOARD_V1}`, `VersionKind {AUTO, NAMED, PUBLISHED, PUBLISHED_TO_TEAM, RESTORED, MIGRATED}`.
-Fields exactly as physical schema 3.4-3.7 and 3.14. `Node.restriction` is `Restriction {List<String> viewers, editors}` or null.
+### Task 1.1: Node, NodeContent, NodeVersion, EditLock entities + indexes + validators
+**Files:** Create `node/Node.java`, `node/NodeRepository.java`, `nodecontent/NodeContent.java`, `nodecontent/NodeContentRepository.java`, `nodeversion/NodeVersion.java`, `nodeversion/NodeVersionRepository.java`, `editlock/EditLock.java`, `editlock/EditLockRepository.java`, `common/UserRef.java`, `common/SchemaSetup.java`; enums `NodeType {PAGE, BOARD}`, `NodeStatus {ACTIVE, ARCHIVED, TRASHED}`, `PublishState {DRAFT, PUBLISHED}`, `ContentFormat {YJS_BLOCKNOTE_V1, YJS_BOARD_V1}`, `VersionKind {AUTO, NAMED, PUBLISHED, PUBLISHED_TO_TEAM, RESTORED, RECOVERED}`.
+Fields exactly as physical schema 3.4-3.7. `Node.restriction` is `Restriction {List<String> viewers, editors}` or null.
 `SchemaSetup` (`ApplicationRunner`): creates every index from physical schema 3.4-3.7 by name, and applies `$jsonSchema` (strict/error) to the new collections. Keep `auto-index-creation` off for new entities (indexes are explicit).
 - [x] Integration test `SchemaSetupTest.createsAllIndexes`: list index names per collection equals the schema tables.
 - [x] `SchemaSetupTest.rejectsTitleOver200`, `rejectsMoreThan20Tags`, `rejectsStateOver4MB` (validator rejects direct inserts).
@@ -298,7 +297,7 @@ Wireframes `Main` (draft bar, tags, page menu) and `Trash`. First a small access
 **Files:** `nodeversion/NodeVersionService.java`, `nodeversion/VersionSessionJob.java`, `nodeversion/NodeVersionController.java`, DTOs. Unit test `VersionRulesTest.java` (pure logic, injected `Clock`), IT `NodeVersionIT.java`.
 **Produces:**
 - `NodeVersion createVersion(String nodeId, VersionKind kind, String name)`: snapshot `state`, `text`, `title`, `contentHash`, `authors` (from `editSession`, else current user); clears `editSession`; sets node `contentUpdatedAt`.
-- `VersionSessionJob` every 60 s: for contents with `editSession.lastEditAt` matching the rules in Global Constraints -> `closeSession(nodeId)`; `closeSession` skips when hash equals latest version's hash; applies merge rule (update latest AUTO in place, `updatedAt = now`) or inserts AUTO. NAMED/PUBLISHED/PUBLISHED_TO_TEAM/RESTORED/MIGRATED are never merged.
+- `VersionSessionJob` every 60 s: for contents with `editSession.lastEditAt` matching the rules in Global Constraints -> `closeSession(nodeId)`; `closeSession` skips when hash equals latest version's hash; applies merge rule (update latest AUTO in place, `updatedAt = now`) or inserts AUTO. NAMED/PUBLISHED/PUBLISHED_TO_TEAM/RESTORED are never merged.
 - `POST /api/nodes/{id}/session/end` (called on leaving the page; `sendBeacon`-friendly, empty body) -> `closeSession`.
 - `GET /api/nodes/{id}/versions` -> `[{id, kind, name, authors, createdAt, updatedAt, private}]` newest first, excluding `privateTo` other users.
 - `GET /api/versions/{vid}` -> `{..., state: base64, text}`; `POST /api/nodes/{id}/versions {name}` (named: if content unchanged since latest version, name that one instead); `POST /api/versions/{vid}/restore` -> sets content to snapshot (`revision+1`, closes current session first so nothing is lost) and creates a `RESTORED` version.
@@ -360,36 +359,19 @@ Rules: source in my personal space; destination a team space where I'm EDITOR/AD
 
 ---
 
-## Phase 9: Migration, remaining pages, cutover (US-10)
-
-### Task 9.1: Migration runner and structural steps (Spring)
-**Files:** `migration/MigrationStep.java` (`String id(); Map<String,Long> run(boolean dryRun)`), `migration/MigrationRunner.java` (runs steps in order, records `migrations` `{_id, startedAt, finishedAt, status, counts}`, skips DONE, aborts on exception, enabled only with `kf.migration.enabled=true`, `kf.migration.dry-run`), steps:
-1. `S01_ConvertIdsToObjectId` (string references in spaces, team_members, comments, attachments, activity_logs, document_versions -> ObjectId); rename `teamInvites` -> `team_invites`.
-2. `S02_SpacesOwnerTypeTeam` + personal space for every user.
-3. `S03_DocumentsToNodes` (same `_id`; top-level PAGE ordered by `updatedAt` desc via `RankKeys.spread`; status DRAFT/PUBLISHED -> `publishState`; tags lower-cased; `node_contents` with `legacyMarkdown`, empty `state`, `format YJS_BLOCKNOTE_V1`).
-4. `S04_VersionsToNodeVersions` (`kind MIGRATED`, authors = saver, not private; `legacyMarkdown` kept in `text` until conversion).
-5. `S05_CommentsAndAttachments` (`documentId` -> `nodeId`, `anchor null`, `threadId = _id`).
-6. `S06_ClearAiCaches`.
-7. `S07_Verify`: counts in = counts out for documents/nodes, versions, comments, attachments; every user has one personal space; mismatch -> FAILED + loud log + non-zero exit.
-- [ ] IT on a seeded legacy dataset (`src/test/resources/migration/legacy-*.json`): `migrationPreservesCounts`, `idsArePreserved`, `rerunIsNoOp`, `dryRunWritesNothing`, `mismatchAbortsLoudly`.
-- [ ] Commit `feat: migration runner and structural steps`.
-
-### Task 9.2: Content conversion script (Node) + internal API
-**Files:** `migration/InternalContentController.java` (`GET /internal/migration/pending?limit=50` -> `[{nodeId|versionId, markdown}]`, `PUT /internal/migration/content/{nodeId}` and `/version/{versionId}` `{state, text}`); header `X-Internal-Secret` = env `KF_INTERNAL_SECRET` (constant-time compare; endpoints disabled when unset). `collab/migrate-content.ts` (loop: fetch pending -> markdown -> BlockNote blocks with `kfSchema` -> Y.Doc -> base64 + `extractText` -> PUT; idempotent: only rows with empty `state`; report converted/failed counts). The conversion replaces the state wholesale, so the internal `PUT .../content/{nodeId}` sets `contentEpoch` to 1 (D6 epoch rule): a browser that still holds a pre-conversion copy keeps it as a RECOVERED version instead of merging it.
-- [ ] Spring tests: `internalApiRejectsWrongSecret`, `internalApiDisabledWithoutSecret`.
-- [ ] Node test (Vitest): `convertsHeadingsListsCodeTablesLinks` against a fixture of real markdown from production docs; `rerunSkipsConverted`.
-- [ ] Commit `feat: markdown to block content conversion`.
+## Phase 9: Remaining pages, cutover
 
 ### Task 9.3: Port remaining pages, comments, AI, dashboard to nodes
 Port Dashboard, Team, Profile pages to React (same behaviour as today, plain CSS). Comments: `/api/nodes/{id}/comments` (page-level list under the page, VIEWERs may comment). AI: Summary reads `node_contents.text` (`POST /api/nodes/{id}/ai/summary`), Ask uses Atlas Search hits instead of keyword scan. Dashboard "recently updated" from `nodes` `{spaceId, status, contentUpdatedAt}`.
 - [ ] Purge cleanup (`TrashService.purgeBranch`): switch comment and AI summary cleanup from `documentId` to `nodeId` with the renames above.
+- [ ] Comments move from `documentId` to `nodeId` (was Task 9.1): comments, `CommentService` and the comment access checks use nodes (not legacy `documents`), `move-to-team`\'s comment privacy (`privateTo`) follows the node key, and the comment key becomes an ObjectId. No data conversion: the database starts empty (D7).
+- [ ] String references (`Space.teamId`, etc.) stay strings unless a task needs ObjectIds; there is no conversion step (D7).
 - [ ] Existing tests updated (`AiServiceTest`, `DashboardServiceTest`, `AccessRulesTest`) + `commentsRespectNodeAccess`.
 - [ ] Commit per page/feature.
 
 ### Task 9.4: Cutover
 - Old URLs: `document.html?id=X` -> `/app/p/X`; `space.html?id=` -> `/app/s/:id`; `/` and other old pages -> `/app` equivalents (`HomeController` redirects).
-- Delete `static/*.html`, `static/app.js`, `static/style.css`, `documentPkg`, `documentVersion`, old search code; remove `legacyMarkdown` only after the production verification report is reviewed (separate small step S08).
-- [ ] Rehearsal: `mongodump` production -> restore into a local Atlas-local -> run migration + script -> verification report -> click through 10 real pages. Write the result in PROJECT_CONTEXT.
+- Delete `static/*.html`, `static/app.js`, `static/style.css`, `documentPkg`, `documentVersion`, old search code; the `legacyMarkdown` field and the migration code are already gone (D7).
 - [ ] Commit `chore: retire legacy pages and document model`.
 
 ---
@@ -406,7 +388,8 @@ Port Dashboard, Team, Profile pages to React (same behaviour as today, plain CSS
 - [ ] Security pass (OWASP Top 10): every `/api/nodes/**` endpoint has a test for non-member 403/404; rate limit login/register (10/min per IP, `shortcut: in-memory bucket`); XSS check on titles, tags, bookmark data, snippets.
 - [ ] Accessibility pass: keyboard-only walk through tree, editor, palette, history, trash; axe check in Playwright (no serious violations).
 - [ ] 360 px check of every screen (no horizontal scroll).
-- [ ] Production migration (backup first), verification report, `legacyMarkdown` removal step, README update, tag `v1.0-1a`.
+- [ ] Fresh-start deploy (D7): `mongodump` backup of production (keep 30 days), drop all old collections and this week's test data, deploy 1a on the empty database, smoke test. Then README update, tag `v1.0-1a`.
+- [ ] Wrap multi-document moves (trash/restore/archive/move-to-team) in MongoDB transactions, or record why not.
 
 ### Hand-off to the visual design pass (after 1a works)
 Screen order: Sidebar (owner's ideas: per-page colour dot, parent-child guide lines with ticks) -> Page view -> Editing -> History -> Palette -> Trash -> Move to team -> ported pages. Source of truth: `DESIGN.md`. Each screen gets its own small design and the owner's approval before code.
@@ -426,7 +409,7 @@ Screen order: Sidebar (owner's ideas: per-page colour dot, parent-child guide li
 | US-7 Ctrl+K palette | 7.1, 7.2 |
 | US-8 page lock | 5.2, 5.3 |
 | US-9 files and bookmarks | 6.2, 6.4 |
-| US-10 migration | 9.1-9.4 |
+| US-10 migration | dropped by D7 (fresh database) |
 | Draft/publish (domain 4.7) | 5.2, 5.3 |
 | Soft lock (domain 5.4) | 3.2, 4.4 |
 | No lost edits (domain 5.3) | 4.3 |
