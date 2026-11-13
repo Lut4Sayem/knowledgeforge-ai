@@ -14,6 +14,7 @@ import { useEndSessionOnLeave } from '../editor/session'
 import SoftLockBanner, { useEditLock } from '../editor/SoftLockBanner'
 import HistoryPanel, { type Viewing } from '../history/HistoryPanel'
 import VersionViewer from '../history/VersionViewer'
+import { AskPanel, Comments, Summarize } from '../comments/PageExtras'
 import Breadcrumbs from './Breadcrumbs'
 import DraftBar from './DraftBar'
 import PageMenu from './PageMenu'
@@ -120,6 +121,13 @@ export default function PageView() {
           <p className="page-note">Loading…</p>
         )}
       </article>
+      {n.access !== 'TITLE_ONLY' && (
+        <>
+          <Summarize nodeId={n.id} />
+          <Comments nodeId={n.id} />
+          <AskPanel spaceId={n.spaceId} />
+        </>
+      )}
       {historyOpen && (
         <HistoryPanel
           nodeId={n.id}
