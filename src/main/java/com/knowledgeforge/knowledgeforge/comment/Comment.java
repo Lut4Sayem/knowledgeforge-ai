@@ -1,6 +1,7 @@
 package com.knowledgeforge.knowledgeforge.comment;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -14,7 +15,8 @@ public class Comment {
     @Id
     private String id;
 
-    private String documentId;
+    @Indexed
+    private String nodeId;
     private String content;
 
     private String createdBy;
@@ -26,8 +28,8 @@ public class Comment {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
-    public String getDocumentId() { return documentId; }
-    public void setDocumentId(String documentId) { this.documentId = documentId; }
+    public String getNodeId() { return nodeId; }
+    public void setNodeId(String nodeId) { this.nodeId = nodeId; }
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }

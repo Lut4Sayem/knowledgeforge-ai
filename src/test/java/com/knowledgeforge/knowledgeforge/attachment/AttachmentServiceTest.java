@@ -226,7 +226,7 @@ class AttachmentServiceTest {
         verify(attachments).deleteAll(list);
         verify(storage).delete("f1");
         verify(storage).delete(null); // link attachment: storage ignores a null id
-        verify(summaries).deleteByDocumentId(DOC_ID); // cached AI summary goes with the document
+        verify(summaries).deleteByNodeId(DOC_ID); // cached AI summary goes with the document
         verify(documents).deleteById(DOC_ID);
     }
 

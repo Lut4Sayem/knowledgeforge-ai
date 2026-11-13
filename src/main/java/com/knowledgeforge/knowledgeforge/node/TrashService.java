@@ -270,13 +270,11 @@ public class TrashService {
         if (branch.isEmpty()) return;
         String spaceId = branch.get(0).getSpaceId();
         for (List<String> chunk : chunks(branch.stream().map(Node::getId).toList())) {
-            // shortcut: comments and AI summaries are still keyed by documentId (same value as the node id);
-            // switch to nodeId in Task 9.3.
             List<Attachment> files = attachments.findByNodeIdIn(chunk);
             files.forEach(a -> storage.delete(a.getFileId())); // file first: a repeat run still finds the record
             attachments.deleteAll(files);
-            comments.deleteByDocumentIdIn(chunk);
-            summaries.deleteByDocumentIdIn(chunk);
+            comments.deleteByNodeIdIn(chunk);
+            summaries.deleteByNodeIdIn(chunk);
             mongo.remove(Query.query(Criteria.where("nodeId").in(chunk)), NodeVersion.class); // every kind, RECOVERED included
             mongo.remove(byIds(chunk), EditLock.class);
             mongo.remove(byIds(chunk), NodeContent.class);

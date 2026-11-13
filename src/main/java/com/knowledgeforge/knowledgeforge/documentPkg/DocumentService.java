@@ -201,7 +201,7 @@ public class DocumentService {
         attachmentRepository.deleteAll(attachments);
         attachments.forEach(a -> attachmentStorage.delete(a.getFileId()));
 
-        aiSummaryRepository.deleteByDocumentId(documentId);
+        aiSummaryRepository.deleteByNodeId(documentId);
         documentRepository.deleteById(documentId);
     }
 

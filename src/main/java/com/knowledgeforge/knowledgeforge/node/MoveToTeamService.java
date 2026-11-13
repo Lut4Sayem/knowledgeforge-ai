@@ -82,8 +82,7 @@ public class MoveToTeamService {
         mongo.getCollection("node_versions").updateMany(new Document("nodeId", new Document("$in", oids))
                         .append("kind", VersionKind.PUBLISHED_TO_TEAM.name()),
                 new Document("$set", new Document("spaceId", destId)));
-        // comments are still keyed by documentId (= node id) until Task 9.3; Task 9.1 turns that key into an ObjectId and must update this line
-        mongo.getCollection("comments").updateMany(new Document("documentId", new Document("$in", ids)),
+        mongo.getCollection("comments").updateMany(new Document("nodeId", new Document("$in", ids)),
                 new Document("$set", new Document("privateTo", me)));
 
         // The claim: only one request can move the page out of the personal space (a double submit gets 409).

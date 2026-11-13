@@ -418,7 +418,7 @@ class TrashIT extends NodeIntegrationTest {
             mongo.insert(v);
         }
         Comment c = new Comment();
-        c.setDocumentId(nodeId);
+        c.setNodeId(nodeId);
         c.setContent("hi");
         c.setCreatedBy(u.getId());
         c.setCreatedAt(now);
@@ -442,9 +442,9 @@ class TrashIT extends NodeIntegrationTest {
         locks.save(l);
 
         AiSummary s = new AiSummary();
-        s.setDocumentId(nodeId);
+        s.setNodeId(nodeId);
         s.setSummary("sum");
-        s.setDocumentUpdatedAt(now);
+        s.setContentUpdatedAt(now);
         s.setCreatedAt(now);
         summaries.save(s);
         return fileId;
@@ -466,10 +466,10 @@ class TrashIT extends NodeIntegrationTest {
         n += nodes.existsById(id) ? 1 : 0;
         n += contents.existsById(id) ? 1 : 0;
         n += mongo.count(Query.query(Criteria.where("nodeId").is(id)), NodeVersion.class);
-        n += comments.findByDocumentIdOrderByCreatedAtAsc(id).size();
+        n += comments.findByNodeIdOrderByCreatedAtAsc(id).size();
         n += attachments.findByNodeId(id).size();
         n += locks.existsById(id) ? 1 : 0;
-        n += summaries.findByDocumentId(id).isPresent() ? 1 : 0;
+        n += summaries.findByNodeId(id).isPresent() ? 1 : 0;
         return n;
     }
 }

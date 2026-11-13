@@ -2,7 +2,7 @@ package com.knowledgeforge.knowledgeforge.comment;
 
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
-import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
+import com.knowledgeforge.knowledgeforge.access.NodeAccessService;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,21 +16,20 @@ import java.util.List;
 public class CommentService {
 
     private final CommentRepository commentRepository;
-    private final DocumentService documentService; // reuse membership check
+    private final NodeAccessService access;
     private final UserRepository userRepository;
 
-    public CommentService(CommentRepository commentRepository, DocumentService documentService, UserRepository userRepository) {
+    public CommentService(CommentRepository commentRepository, NodeAccessService access, UserRepository userRepository) {
         this.commentRepository = commentRepository;
-        this.documentService = documentService;
+        this.access = access;
         this.userRepository = userRepository;
     }
 
-    public List<CommentResponseDTO> getComments(String documentId) {
-        // membership check (403 if not member)
-        documentService.getDocumentByID(documentId);
+    public List<CommentResponseDTO> getComments(String nodeId) {
+        access.requireView(nodeId);
 
         String me = currentUserId();
-        List<Comment> comments = commentRepository.findByDocumentIdOrderByCreatedAtAsc(documentId).stream()
+        List<Comment> comments = commentRepository.findByNodeIdOrderByCreatedAtAsc(nodeId).stream()
                 .filter(c -> c.getPrivateTo() == null || c.getPrivateTo().equals(me)).toList();
 
         List<CommentResponseDTO> out = new ArrayList<>();
@@ -59,9 +58,8 @@ public class CommentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found")).getId();
     }
 
-    public CommentResponseDTO addComment(String documentId, CreateCommentRequest request) {
-        // membership check
-        documentService.getDocumentByID(documentId);
+    public CommentResponseDTO addComment(String nodeId, CreateCommentRequest request) {
+        access.requireView(nodeId); // VIEWERs may comment
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -72,7 +70,7 @@ public class CommentService {
         }
 
         Comment c = new Comment();
-        c.setDocumentId(documentId);
+        c.setNodeId(nodeId);
         c.setContent(request.getContent().trim());
         c.setCreatedBy(user.getId());
         c.setCreatedAt(new Date());
@@ -93,8 +91,7 @@ public class CommentService {
         Comment c = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
 
-        // membership check based on comment's document
-        documentService.getDocumentByID(c.getDocumentId());
+        access.requireView(c.getNodeId());
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)

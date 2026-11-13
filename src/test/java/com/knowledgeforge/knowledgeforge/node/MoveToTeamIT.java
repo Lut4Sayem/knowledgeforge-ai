@@ -57,7 +57,7 @@ class MoveToTeamIT extends NodeIntegrationTest {
 
     private void comment(String nodeId) {
         Comment c = new Comment();
-        c.setDocumentId(nodeId);
+        c.setNodeId(nodeId);
         c.setContent("private note");
         c.setCreatedBy(admin.getId());
         c.setCreatedAt(new Date());
@@ -89,7 +89,7 @@ class MoveToTeamIT extends NodeIntegrationTest {
                 else assertEquals(admin.getId(), v.getPrivateTo());
             }
             assertEquals(1, vs.stream().filter(v -> v.getKind() == VersionKind.PUBLISHED_TO_TEAM).count());
-            List<Comment> cs = commentRepo.findByDocumentIdOrderByCreatedAtAsc(id);
+            List<Comment> cs = commentRepo.findByNodeIdOrderByCreatedAtAsc(id);
             assertEquals(1, cs.size());
             assertEquals(admin.getId(), cs.get(0).getPrivateTo());
         }

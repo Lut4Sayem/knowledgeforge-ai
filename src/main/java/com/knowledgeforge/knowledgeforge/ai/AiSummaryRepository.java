@@ -5,9 +5,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 
 public interface AiSummaryRepository extends MongoRepository<AiSummary, String> {
-    Optional<AiSummary> findByDocumentId(String documentId);
+    Optional<AiSummary> findByNodeId(String nodeId);
 
-    void deleteByDocumentId(String documentId);
+    void deleteByNodeId(String nodeId);
 
-    void deleteByDocumentIdIn(java.util.Collection<String> documentIds);
+    void deleteByNodeIdIn(java.util.Collection<String> nodeIds);
 }
