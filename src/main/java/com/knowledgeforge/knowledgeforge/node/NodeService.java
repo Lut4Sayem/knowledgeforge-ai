@@ -252,11 +252,11 @@ public class NodeService {
 
     // ---------- helpers ----------
 
-    private Space space(String spaceId) {
+    Space space(String spaceId) {
         return spaces.findById(spaceId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
     }
 
-    private static List<String> ancestorsUnder(Node parent) {
+    static List<String> ancestorsUnder(Node parent) {
         if (parent == null) return new ArrayList<>();
         List<String> a = new ArrayList<>(parent.getAncestors());
         a.add(parent.getId());
@@ -283,7 +283,7 @@ public class NodeService {
     }
 
     /** Rank for a node placed before/after a sibling (or at the end). {@code siblings} is sorted and excludes the node. */
-    private String rank(List<Node> siblings, String beforeId, String afterId) {
+    String rank(List<Node> siblings, String beforeId, String afterId) {
         try {
             return placeAmong(siblings, beforeId, afterId);
         } catch (IllegalStateException | IllegalArgumentException e) {
@@ -328,11 +328,11 @@ public class NodeService {
         return new UserRef(u.getId(), u.getFullName(), u.getProfilePicture());
     }
 
-    private static ResponseStatusException bad(String m) {
+    static ResponseStatusException bad(String m) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, m);
     }
 
-    private static ResponseStatusException forbidden(String m) {
+    static ResponseStatusException forbidden(String m) {
         return new ResponseStatusException(HttpStatus.FORBIDDEN, m);
     }
 }

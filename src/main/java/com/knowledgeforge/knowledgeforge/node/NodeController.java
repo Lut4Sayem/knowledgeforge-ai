@@ -8,9 +8,11 @@ import java.util.List;
 @RestController
 public class NodeController {
     private final NodeService nodeService;
+    private final MoveToTeamService moveToTeam;
 
-    public NodeController(NodeService nodeService) {
+    public NodeController(NodeService nodeService, MoveToTeamService moveToTeam) {
         this.nodeService = nodeService;
+        this.moveToTeam = moveToTeam;
     }
 
     @GetMapping("/api/spaces/{spaceId}/tree")
@@ -61,5 +63,10 @@ public class NodeController {
     @PostMapping("/api/nodes/{id}/move")
     public NodeDTO move(@PathVariable String id, @RequestBody MoveNodeRequest request) {
         return nodeService.move(id, request);
+    }
+
+    @PostMapping("/api/nodes/{id}/move-to-team")
+    public NodeDTO moveToTeam(@PathVariable String id, @RequestBody MoveToTeamRequest request) {
+        return moveToTeam.moveToTeam(id, request);
     }
 }

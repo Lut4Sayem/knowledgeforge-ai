@@ -29,7 +29,9 @@ public class CommentService {
         // membership check (403 if not member)
         documentService.getDocumentByID(documentId);
 
-        List<Comment> comments = commentRepository.findByDocumentIdOrderByCreatedAtAsc(documentId);
+        String me = currentUserId();
+        List<Comment> comments = commentRepository.findByDocumentIdOrderByCreatedAtAsc(documentId).stream()
+                .filter(c -> c.getPrivateTo() == null || c.getPrivateTo().equals(me)).toList();
 
         List<CommentResponseDTO> out = new ArrayList<>();
         for (Comment c : comments) {
@@ -49,6 +51,12 @@ public class CommentService {
         }
 
         return out;
+    }
+
+    private String currentUserId() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found")).getId();
     }
 
     public CommentResponseDTO addComment(String documentId, CreateCommentRequest request) {
