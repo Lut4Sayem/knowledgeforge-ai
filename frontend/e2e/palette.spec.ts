@@ -34,7 +34,8 @@ test('Ctrl+K finds a page by title, opens it, and Esc gives focus back', async (
   await expect(trigger).toBeFocused()
 
   await page.keyboard.press('Control+k')
-  await page.keyboard.type(word.toLowerCase())
+  await expect(palette).toBeVisible()
+  await palette.getByRole('combobox').fill(word.toLowerCase())
   await expect(palette.getByRole('option', { name: `${word} plan` })).toBeVisible()
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(new RegExp(`/app/p/${node.id}$`))
