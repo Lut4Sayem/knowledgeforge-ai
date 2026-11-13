@@ -31,6 +31,7 @@ public class SearchService {
 
     private static final int DEFAULT_LIMIT = 20;
     private static final int MAX_LIMIT = 50;
+    private static final int MAX_QUERY = 200;
     private static final int HEAD_CHARS = 160;
     private static final String CONTENTS = "node_contents";
 
@@ -53,8 +54,9 @@ public class SearchService {
 
     public List<SearchResultDTO> search(String q, String tag, String publishState, String spaceId, Integer limitParam) {
         String query = q == null ? "" : q.trim();
-        String tagFilter = tag == null || tag.isBlank() ? null : tag.trim().toLowerCase();
-        String stateFilter = publishState == null || publishState.isBlank() ? null : publishState.trim().toUpperCase();
+        if (query.length() > MAX_QUERY) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Search text is too long");
+        String tagFilter = tag == null || tag.isBlank() ? null : tag.trim().toLowerCase(Locale.ROOT);
+        String stateFilter = publishState == null || publishState.isBlank() ? null : publishState.trim().toUpperCase(Locale.ROOT);
         if (stateFilter != null && Arrays.stream(PublishState.values()).noneMatch(p -> p.name().equals(stateFilter))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid publishState: " + publishState);
         }
@@ -125,13 +127,16 @@ public class SearchService {
         Map<String, Map<String, Access>> bySpace = new HashMap<>();
         String userId = access.currentUser().getId();
         Lookup lookup = lookup(found.values());
+        // Ancestors go in too: resolveAll only sees restrictions on nodes it is given.
+        Map<String, Node> withAncestors = new HashMap<>(lookup.ancestors());
+        withAncestors.putAll(found);
 
         List<SearchResultDTO> out = new ArrayList<>();
         for (Document h : hits) {
             Node n = found.get(h.getObjectId("_id").toHexString());
-            if (n == null) continue;
+            if (n == null || !spaceById.containsKey(n.getSpaceId())) continue;
             Access a = bySpace.computeIfAbsent(n.getSpaceId(), sid -> access.resolveAll(userId, spaceById.get(sid),
-                    found.values().stream().filter(x -> x.getSpaceId().equals(sid)).toList())).get(n.getId());
+                    withAncestors.values().stream().filter(x -> x.getSpaceId().equals(sid)).toList())).get(n.getId());
             if (a.compareTo(Access.TITLE_ONLY) < 0) continue;
             List<Document> hl = h.getList("hl", Document.class, List.of());
             if (a == Access.TITLE_ONLY) {
@@ -164,7 +169,7 @@ public class SearchService {
         return out;
     }
 
-    private record Lookup(Map<String, String> spaceNames, Map<String, String> titles) {}
+    private record Lookup(Map<String, String> spaceNames, Map<String, Node> ancestors) {}
 
     /** Space names and ancestor titles for a set of nodes, in two queries. */
     private Lookup lookup(Collection<Node> ns) {
@@ -172,13 +177,14 @@ public class SearchService {
         Set<String> ancestorIds = ns.stream().flatMap(n -> n.getAncestors().stream()).collect(Collectors.toSet());
         Map<String, String> spaceNames = new HashMap<>();
         spaces.findAllById(spaceIds).forEach(s -> spaceNames.put(s.getId(), s.getName()));
-        Map<String, String> titles = new HashMap<>();
-        nodes.findAllById(ancestorIds).forEach(a -> titles.put(a.getId(), a.getTitle()));
-        return new Lookup(spaceNames, titles);
+        Map<String, Node> ancestors = nodes.findAllById(ancestorIds).stream()
+                .collect(Collectors.toMap(Node::getId, Function.identity()));
+        return new Lookup(spaceNames, ancestors);
     }
 
     private static SearchResultDTO dto(Node n, Lookup l, String snippet, List<String> tags) {
-        String path = n.getAncestors().stream().map(id -> l.titles().getOrDefault(id, "")).collect(Collectors.joining(" / "));
+        String path = n.getAncestors().stream().map(id -> l.ancestors().containsKey(id) ? l.ancestors().get(id).getTitle() : "")
+                .collect(Collectors.joining(" / "));
         return new SearchResultDTO("PAGE", n.getId(), null, n.getSpaceId(), l.spaceNames().get(n.getSpaceId()),
                 n.getTitle(), path, snippet, tags, n.getPublishState(), n.getStatus() == NodeStatus.ARCHIVED);
     }

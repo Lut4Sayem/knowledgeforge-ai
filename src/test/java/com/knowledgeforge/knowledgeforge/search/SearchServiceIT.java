@@ -119,6 +119,24 @@ class SearchServiceIT extends NodeIntegrationTest {
     }
 
     @Test
+    void restrictedParentHidesOpenChild() throws Exception {
+        String word = "vault" + UUID.randomUUID().toString().replace("-", "").substring(0, 6);
+        NodeDTO parent = page("Locked parent", null); // title does not match: only the child is a hit
+        NodeDTO child = nodeService.create(space.getId(), new CreateNodeRequest(parent.id(), word + " child", null));
+        Node n = nodes.findById(parent.id()).orElseThrow();
+        Node.Restriction r = new Node.Restriction();
+        r.setViewers(List.of());
+        r.setEditors(List.of(admin.getId()));
+        n.setRestriction(r);
+        nodes.save(n);
+        User unlisted = newMember("EDITOR");
+
+        assertEquals(child.id(), pages(awaitHits(() -> find(word))).get(0).nodeId());
+        loginAs(unlisted);
+        assertTrue(pages(find(word)).isEmpty());
+    }
+
+    @Test
     void snippetIsEscaped() throws Exception {
         page("Escaping", "alpha <script>alert(1)</script> bravo");
         List<SearchResultDTO> r = pages(awaitHits(() -> find("alpha")));

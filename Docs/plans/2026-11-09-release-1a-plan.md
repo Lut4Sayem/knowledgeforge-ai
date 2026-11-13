@@ -337,8 +337,8 @@ Wireframe `History`.
 **Files:** Create `src/main/resources/search/nodes_search.json` (index definition), modify `common/SchemaSetup.java` (create the search index if missing), rewrite `search/SearchService.java`, `search/SearchController.java`, `search/SearchResultDTO.java`.
 **Produces:** index `nodes_search` on `node_contents`: `search.title` (string + autocomplete), `text` (string), `search.tags` (token), filters `spaceId` (objectId), `search.status`, `search.publishState` (token). `GET /api/search?q=&tag=&publishState=&spaceId=&limit=20` -> `[{nodeId, spaceId, spaceName, title, path, snippetHtml, tags, publishState, archived}]`: `$search` compound (fuzzy `maxEdits 1` on title and text, title boosted x3), filter `spaceId in <my accessible space ids>` and `search.status in [ACTIVE, ARCHIVED]`, then `NodeAccessService.resolve` on each hit (drop below VIEW and TITLE_ONLY content snippets), highlights escaped server-side and only `<mark>` added. Teams and spaces are still matched by name (existing behaviour, simple regex over my teams/spaces).
 - `GET /api/me/recent` -> recent nodes (from `recentNodes`) the user can still VIEW, newest first.
-- [ ] IT (Atlas-local): `findsByTitleWithTypo`, `findsByContent`, `neverReturnsOtherTeamsPages`, `restrictedPageNotReturnedToUnlisted`, `snippetIsEscaped` (`<script>` in text), `archivedIsReturnedAndMarked`.
-- [ ] Commit `feat: Atlas Search for pages`.
+- [x] IT (Atlas-local): `findsByTitleWithTypo`, `findsByContent`, `neverReturnsOtherTeamsPages`, `restrictedPageNotReturnedToUnlisted`, `snippetIsEscaped` (`<script>` in text), `archivedIsReturnedAndMarked`.
+- [x] Commit `feat: Atlas Search for pages`.
 
 ### Task 7.2: Ctrl+K palette and search page (frontend)
 Wireframe `Palette`.
