@@ -8,6 +8,10 @@ Hard requirements for every choice: **security** and **scaling beyond student si
 
 ---
 
+> **Not used (decision D7, 2026-11-14):** there is no data migration; the 1a deploy starts on an empty database. Every migration remark below (`teamInvites` rename, id conversion, `moderate` + `warn` validation, cache clearing) is history; the `legacyMarkdown` field, the `MIGRATED` version kind and the `migrations` collection are removed.
+
+---
+
 ## 1. Environment and workload
 - Production: MongoDB Atlas M0 (free). Query stats / slow-query logs need M10+, so design is based on the codebase and
   the access-pattern table in the domain-model spec.
@@ -109,11 +113,10 @@ Rule: `rank` uniqueness per parent is not enforced by an index (fractional keys)
 | `format` | enum `YJS_BLOCKNOTE_V1`, `YJS_BOARD_V1` | |
 | `state` | BinData | Yjs document state. **Max 4 MB** (reject larger saves; outlier pattern if ever needed) |
 | `revision` | long | +1 on every save (1a stale-save check) |
-| `contentEpoch` | int | default 0 (absent = 0). +1 ONLY when `state` is replaced wholesale (version restore, migration conversion), never on a normal save. A client may merge its unsaved copy into the server state only if both have the same epoch (plan decision D6) |
+| `contentEpoch` | int | default 0 (absent = 0). +1 ONLY when `state` is replaced wholesale (version restore), never on a normal save. A client may merge its unsaved copy into the server state only if both have the same epoch (plan decision D6) |
 | `text` | string | plain text extracted from the Yjs state by the collab service; max 1 MB |
 | `search` | `{ title, tags, status, publishState }` | copy of node fields (extended reference) so search runs on one collection |
 | `editSession` | `{ startedAt: Date, lastEditAt: Date, authors: ObjectId[] (max 100) }` \| null | moved here from nodes (fast-changing) |
-| `legacyMarkdown` | string\|null | migration safety copy; removed after verification |
 | `contentHash` | string | SHA-256 of `state`, to skip duplicate versions |
 | `updatedAt`, `schemaVersion` | | |
 Indexes: `{ "editSession.lastEditAt": 1 }` sparse: version job finds ended sessions.
@@ -126,7 +129,7 @@ Shard key (future): `{ _id: "hashed" }`.
 |---|---|---|
 | `nodeId` | ObjectId | |
 | `spaceId` | ObjectId | copy (purge/sharding) |
-| `kind` | enum `AUTO`, `NAMED`, `PUBLISHED`, `PUBLISHED_TO_TEAM`, `RESTORED`, `MIGRATED`, `RECOVERED` | `RECOVERED` = a client's unsaved copy from an older `contentEpoch`, kept instead of merged; always `privateTo` its author; never merged with other versions |
+| `kind` | enum `AUTO`, `NAMED`, `PUBLISHED`, `PUBLISHED_TO_TEAM`, `RESTORED`, `RECOVERED` | `RECOVERED` = a client's unsaved copy from an older `contentEpoch`, kept instead of merged; always `privateTo` its author; never merged with other versions |
 | `name` | string\|null | max 100 (named versions) |
 | `title` | string | title at that time |
 | `state` | BinData | Yjs snapshot, max 4 MB |
@@ -187,9 +190,6 @@ Indexes: `{ teamId: 1, createdAt: -1 }` · TTL `{ createdAt: 1 }` **365 days**.
 
 ### 3.13 AI collections (existing)
 `ai_usage` (TTL 30 days, already), `ai_summaries` keyed by node id, `ai_answers` per space: caches, cleared in the migration.
-
-### 3.14 migrations (new)
-`_id` = step name, `startedAt`, `finishedAt`, `status` enum `RUNNING|DONE|FAILED`, `counts` object. Used by ADR 0007 runner.
 
 ## 4. Physical ERD
 ![Physical schema ERD](physical-schema-erd.png)
