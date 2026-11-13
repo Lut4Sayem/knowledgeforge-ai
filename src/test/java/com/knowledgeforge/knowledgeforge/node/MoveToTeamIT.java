@@ -36,6 +36,7 @@ class MoveToTeamIT extends NodeIntegrationTest {
     @Autowired CommentRepository commentRepo;
     @Autowired NodeRepository nodes;
     @Autowired SearchService search;
+    @Autowired TrashService trash;
 
     Space mine; // admin's personal space
 
@@ -88,11 +89,46 @@ class MoveToTeamIT extends NodeIntegrationTest {
                 else assertEquals(admin.getId(), v.getPrivateTo());
             }
             assertEquals(1, vs.stream().filter(v -> v.getKind() == VersionKind.PUBLISHED_TO_TEAM).count());
-            commentRepo.findByDocumentIdOrderByCreatedAtAsc(id)
-                    .forEach(c -> assertEquals(admin.getId(), c.getPrivateTo()));
+            List<Comment> cs = commentRepo.findByDocumentIdOrderByCreatedAtAsc(id);
+            assertEquals(1, cs.size());
+            assertEquals(admin.getId(), cs.get(0).getPrivateTo());
         }
         // the mover still sees the old ones
         assertTrue(versionService.list(a.id()).stream().anyMatch(v -> "draft 1".equals(v.name())));
+    }
+
+    @Test
+    void movesUnderATeamParentAndRewritesDescendantPaths() {
+        NodeDTO parent = createPage("Methodology");
+        NodeDTO a = privatePage("Notes", null);
+        NodeDTO b = privatePage("Sub", a.id());
+        moveToTeam.moveToTeam(a.id(), into(parent.id()));
+        assertEquals(parent.id(), nodes.findById(a.id()).orElseThrow().getParentId());
+        assertEquals(List.of(parent.id(), a.id()), nodes.findById(b.id()).orElseThrow().getAncestors());
+        assertEquals(space.getId(), nodes.findById(b.id()).orElseThrow().getSpaceId());
+    }
+
+    @Test
+    void trashedSubPageBlocksTheMove() {
+        NodeDTO a = privatePage("Notes", null);
+        NodeDTO b = privatePage("Sub", a.id());
+        trash.trash(b.id());
+        assertEquals(400, statusOf(() -> moveToTeam.moveToTeam(a.id(), into(null))));
+        assertEquals(mine.getId(), nodes.findById(a.id()).orElseThrow().getSpaceId());
+    }
+
+    @Test
+    void movingTwiceAndTeamToTeamAreRejected() {
+        NodeDTO a = privatePage("Notes", null);
+        moveToTeam.moveToTeam(a.id(), into(null));
+        assertEquals(400, statusOf(() -> moveToTeam.moveToTeam(a.id(), into(null))));
+    }
+
+    @Test
+    void parentFromAnotherSpaceRejected() {
+        NodeDTO a = privatePage("Notes", null);
+        NodeDTO other = nodeService.create(mine.getId(), new CreateNodeRequest(null, "Private parent", null));
+        assertEquals(400, statusOf(() -> moveToTeam.moveToTeam(a.id(), into(other.id()))));
     }
 
     @Test
