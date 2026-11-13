@@ -11,12 +11,15 @@ import {
   unpublishNode,
   type NodeDetail,
 } from '../api/nodes'
+import MoveToTeamDialog from '../move/MoveToTeamDialog'
 import { confirmTrash } from '../trash/ConfirmTrashDialog'
 
 interface Props {
   node: NodeDetail
   /** The open editor still has changes the server has not confirmed: do not take the page's edit rights away yet. */
   unsaved: boolean
+  /** The page is in my private space: it can be moved into a team project. */
+  personal?: boolean
 }
 
 interface Item {
@@ -28,12 +31,13 @@ interface Item {
 }
 
 /** The "..." menu of a page (wireframe Main). Only for page editors, even when the page is locked or archived. */
-export default function PageMenu({ node, unsaved }: Props) {
+export default function PageMenu({ node, unsaved, personal }: Props) {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [moving, setMoving] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
 
@@ -77,6 +81,9 @@ export default function PageMenu({ node, unsaved }: Props) {
         : { label: 'Lock page', blocked: savingNote, run: async () => (await lockNode(node.id), await refresh()) },
     )
     items.push({ label: 'Archive', blocked: lockedNote ?? savingNote, run: async () => (await archiveNode(node.id), await refresh()) })
+    if (personal) {
+      items.push({ label: 'Move to team', blocked: lockedNote ?? savingNote, run: async () => setMoving(true) })
+    }
     items.push({
       label: 'Move to trash',
       blocked: lockedNote ?? savingNote,
@@ -130,6 +137,7 @@ export default function PageMenu({ node, unsaved }: Props) {
           ))}
         </div>
       )}
+      {moving && <MoveToTeamDialog node={node} onClose={() => { setMoving(false); button.current?.focus() }} />}
       {error && <p role="alert" className="page-menu-error">{error}</p>}
       {notice && <p role="status" className="page-menu-note">{notice}</p>}
     </div>

@@ -354,9 +354,9 @@ Behaviour: Ctrl+K / Cmd+K anywhere (also the sidebar button); empty box = recent
 Wireframe `MoveToTeam`; domain spec 4.4.
 **Files:** `node/MoveToTeamService.java`, endpoint `POST /api/nodes/{id}/move-to-team {spaceId, parentId|null, beforeId?, afterId?}`; `move/MoveToTeamDialog.tsx`.
 Rules: source in my personal space; destination a team space where I'm EDITOR/ADMIN and I can edit the parent; whole branch moves (`spaceId`, `ancestors`, `restriction = null`); attachments, tags and comments come along; all existing versions **and comments** get `privateTo = me` (physical schema 3.9 and section 5). New `PUBLISHED_TO_TEAM` version per moved node; activity for the branch in the personal space not copied. One-way: team -> personal move is rejected (400 "Copy it instead").
-- [ ] IT: `moveToTeamMakesOldVersionsPrivate`, `teamSeesOnlyPublishedToTeamVersion`, `viewerCannotMoveIntoTeam`, `teamToPersonalRejected`.
-- [ ] Vitest: dialog lists only editable parents ("(you can't edit here)" disabled).
-- [ ] Commit `feat: move private pages to a team project`.
+- [x] IT: `moveToTeamMakesOldVersionsPrivate`, `teamSeesOnlyPublishedToTeamVersion`, `viewerCannotMoveIntoTeam`, `teamToPersonalRejected`.
+- [x] Vitest: dialog lists only editable parents ("(you can't edit here)" disabled).
+- [x] Commit `feat: move private pages to a team project`.
 
 ---
 

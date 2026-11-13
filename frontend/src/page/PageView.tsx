@@ -83,7 +83,7 @@ export default function PageView() {
         {n.access !== 'TITLE_ONLY' && (
           <button type="button" className="banner-btn" aria-pressed={historyOpen} onClick={() => setHistoryOpen((o) => !o)}>History</button>
         )}
-        <PageMenu node={n} unsaved={saveState !== 'saved' && saveState !== 'recovered'} />
+        <PageMenu node={n} personal={spaces.data?.find((s) => s.id === n.spaceId)?.ownerType === 'USER'} unsaved={saveState !== 'saved' && saveState !== 'recovered'} />
       </header>
       <div ref={setBanners} />
       {node.isError && <p role="alert" className="banner">{node.error.message}</p>}
