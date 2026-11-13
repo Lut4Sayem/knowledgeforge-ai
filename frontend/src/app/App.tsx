@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import Dashboard from '../dashboard/Dashboard'
 import Join from '../pages/Join'
 import Login from '../pages/Login'
 import Logout from '../pages/Logout'
@@ -25,7 +26,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/join/:code" element={<Join />} />
         <Route element={<Shell />}>
-          <Route path="/" element={<Plain>Dashboard arrives with the ported pages.</Plain>} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/p/:nodeId" element={<Suspense fallback={<p>Loading…</p>}><PageView /></Suspense>} />
           <Route path="/s/:spaceId/trash" element={<Suspense fallback={<p>Loading…</p>}><TrashPage /></Suspense>} />
           <Route path="/tags/:tag" element={<Suspense fallback={<p>Loading…</p>}><TagPage /></Suspense>} />
