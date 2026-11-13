@@ -1,6 +1,6 @@
 # ADR 0007: Data migration = small Spring migration runner + one-off Node conversion script
 
-Date: 2026-11-09 · Status: Accepted
+Date: 2026-11-09 · Status: Superseded by decision D7 (2026-11-14): no data migration, the 1a deploy starts on an empty database
 
 ## Context
 The domain-model spec requires a one-time, re-runnable, verified migration: spaces -> team spaces, personal spaces for

@@ -78,7 +78,7 @@ Every user gets exactly one personal space at sign-up (and existing users at mig
 | `createdBy`, `updatedBy`, timestamps | |
 
 ### NodeContent (new): one per node
-`nodeId`, `format` (set in tools phase), `data`, `revision` (incremented on each save), `textForSearch`, `legacyMarkdown` (migration safety copy, removed after verification), `updatedAt`.
+`nodeId`, `format` (set in tools phase), `data`, `revision` (incremented on each save), `textForSearch`, `updatedAt`.
 
 ### NodeVersion (replaces DocumentVersion)
 `nodeId`, `title`, `content snapshot`, `contentHash`, `authors[]`, `name` (named versions), `kind` (`AUTO` / `NAMED` / `PUBLISHED_TO_TEAM` / `PUBLISHED` / `RESTORED`), `privateTo` (userId or null), `createdAt`, `updatedAt` (for merged versions).
@@ -169,6 +169,8 @@ Every user gets exactly one personal space at sign-up (and existing users at mig
 - Removed in Release 1b when real-time co-editing replaces it.
 
 ## 6. Migration (one-time, re-runnable)
+> **Not used (decision D7, 2026-11-14):** there is no data migration; the 1a deploy starts on an empty database. Kept for history only.
+
 1. Full backup (`mongodump`); run first on a copy of production data.
 2. Migration steps recorded in a `migrations` collection; completed steps are skipped on re-run.
 3. Mapping (ids preserved: node id = old document id):
