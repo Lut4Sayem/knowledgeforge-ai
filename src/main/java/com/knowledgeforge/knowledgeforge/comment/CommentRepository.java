@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.List;
 
 public interface CommentRepository extends MongoRepository<Comment, String> {
-    List<Comment> findByDocumentIdOrderByCreatedAtAsc(String documentId);
+    List<Comment> findByNodeIdOrderByCreatedAtAsc(String nodeId);
 
-    void deleteByDocumentIdIn(java.util.Collection<String> documentIds);
+    void deleteByNodeIdIn(java.util.Collection<String> nodeIds);
 }

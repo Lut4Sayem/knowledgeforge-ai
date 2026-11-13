@@ -16,17 +16,17 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    @GetMapping("/documents/{documentId}/comments")
-    public ResponseEntity<List<CommentResponseDTO>> getComments(@PathVariable String documentId) {
-        return ResponseEntity.ok(commentService.getComments(documentId));
+    @GetMapping({"/nodes/{nodeId}/comments", "/documents/{nodeId}/comments"})
+    public ResponseEntity<List<CommentResponseDTO>> getComments(@PathVariable String nodeId) {
+        return ResponseEntity.ok(commentService.getComments(nodeId));
     }
 
-    @PostMapping("/documents/{documentId}/comments")
+    @PostMapping({"/nodes/{nodeId}/comments", "/documents/{nodeId}/comments"})
     public ResponseEntity<CommentResponseDTO> addComment(
-            @PathVariable String documentId,
+            @PathVariable String nodeId,
             @RequestBody CreateCommentRequest request
     ) {
-        return ResponseEntity.status(201).body(commentService.addComment(documentId, request));
+        return ResponseEntity.status(201).body(commentService.addComment(nodeId, request));
     }
 
     @DeleteMapping("/comments/{commentId}")
