@@ -119,6 +119,7 @@ public class SchemaSetup implements ApplicationRunner {
             }
             boolean exists = mongo.getCollection("node_contents").aggregate(java.util.List.of(
                     new Document("$listSearchIndexes", new Document("name", def.getString("name"))))).iterator().hasNext();
+            // shortcut: created only if missing, so a changed nodes_search.json never reaches an existing index; drop the index (or use updateSearchIndex) when the definition changes.
             if (!exists) {
                 mongo.getDb().runCommand(new Document("createSearchIndexes", "node_contents")
                         .append("indexes", java.util.List.of(def)));

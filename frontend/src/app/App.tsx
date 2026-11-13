@@ -11,6 +11,7 @@ import Shell from './Shell'
 const PageView = lazy(() => import('../page/PageView'))
 const TrashPage = lazy(() => import('../trash/TrashPage'))
 const TagPage = lazy(() => import('../page/TagPage'))
+const Search = lazy(() => import('../pages/Search'))
 
 const Plain = ({ children }: { children: string }) => <p style={{ padding: 'var(--space-8)' }}>{children}</p>
 
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/p/:nodeId" element={<Suspense fallback={<p>Loading…</p>}><PageView /></Suspense>} />
           <Route path="/s/:spaceId/trash" element={<Suspense fallback={<p>Loading…</p>}><TrashPage /></Suspense>} />
           <Route path="/tags/:tag" element={<Suspense fallback={<p>Loading…</p>}><TagPage /></Suspense>} />
+          <Route path="/search" element={<Suspense fallback={<p>Loading…</p>}><Search /></Suspense>} />
           <Route path="*" element={<Plain>Not found</Plain>} />
         </Route>
       </Routes>
