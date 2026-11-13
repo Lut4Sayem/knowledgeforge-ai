@@ -13,7 +13,8 @@ export default function Dashboard() {
   const make = useMutation({
     mutationFn: () => createTeam(name.trim(), ''),
     onSuccess: async (t) => {
-      await qc.invalidateQueries({ queryKey: ['dashboard'] })
+      // the sidebar's team picker and project list come from these
+      await Promise.all(['dashboard', 'teams', 'spaces'].map((k) => qc.invalidateQueries({ queryKey: [k] })))
       nav(`/teams/${t.id}`)
     },
   })
