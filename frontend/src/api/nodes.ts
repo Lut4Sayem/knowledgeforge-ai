@@ -49,6 +49,9 @@ export const updateNode = (id: string, body: { title?: string; icon?: string; ta
 export const moveNode = (id: string, body: MoveBody) =>
   api<NodeDetail>(`/api/nodes/${id}/move`, { method: 'POST', body: JSON.stringify(body) })
 
+export const moveToTeam = (id: string, body: { spaceId: string } & MoveBody) =>
+  api<NodeDetail>(`/api/nodes/${id}/move-to-team`, { method: 'POST', body: JSON.stringify(body) })
+
 // ---------- publish, lock, tags ----------
 const post = <T,>(path: string) => api<T>(path, { method: 'POST' })
 
