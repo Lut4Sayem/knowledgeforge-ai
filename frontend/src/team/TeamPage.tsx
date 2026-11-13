@@ -21,7 +21,7 @@ export default function TeamPage() {
   const [link, setLink] = useState('')
   const [spaceName, setSpaceName] = useState('')
   const [error, setError] = useState('')
-  const refresh = () => qc.invalidateQueries({ queryKey: ['team', teamId] })
+  const refresh = () => Promise.all(['team', 'dashboard', 'teams'].map((k) => qc.invalidateQueries({ queryKey: [k] })))
   const run = (fn: () => Promise<unknown>) => fn().then(() => setError(''), (e: Error) => setError(e.message))
 
   const addSpace = useMutation({

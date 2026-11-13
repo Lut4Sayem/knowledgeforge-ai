@@ -123,9 +123,9 @@ export default function PageView() {
       </article>
       {n.access !== 'TITLE_ONLY' && (
         <>
-          <Summarize nodeId={n.id} />
-          <Comments nodeId={n.id} />
-          <AskPanel spaceId={n.spaceId} />
+          <Summarize key={n.id} nodeId={n.id} />
+          <Comments key={n.id} nodeId={n.id} />
+          <AskPanel key={n.spaceId} spaceId={n.spaceId} />
         </>
       )}
       {historyOpen && (

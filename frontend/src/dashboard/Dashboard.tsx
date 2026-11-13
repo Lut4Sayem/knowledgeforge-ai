@@ -49,6 +49,7 @@ export default function Dashboard() {
       </ul>
 
       <h2>Recently updated</h2>
+      {d.recentDocuments.length === 0 && <p className="page-note">No pages yet.</p>}
       <ul>
         {d.recentDocuments.map((p) => (
           <li key={p.documentId}>

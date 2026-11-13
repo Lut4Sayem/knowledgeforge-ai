@@ -30,6 +30,7 @@ export function Comments({ nodeId }: { nodeId: string }) {
   return (
     <section className="comments" aria-label="Comments">
       <h2>Comments</h2>
+      {list.isError && <p role="alert">Could not load comments: {list.error.message}</p>}
       {list.data?.length === 0 && <p className="page-note">No comments yet. Questions and suggestions go here.</p>}
       <ul>
         {list.data?.map((c) => (
