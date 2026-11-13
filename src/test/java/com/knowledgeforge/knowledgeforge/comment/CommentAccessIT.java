@@ -34,6 +34,19 @@ class CommentAccessIT extends NodeIntegrationTest {
     }
 
     @Test
+    void privateCommentsAreHiddenFromOthers() {
+        NodeDTO p = createPage("A");
+        CommentResponseDTO c = service.addComment(p.id(), body("my private note"));
+        mongo.updateFirst(org.springframework.data.mongodb.core.query.Query.query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("_id").is(new org.bson.types.ObjectId(c.getId()))),
+                new org.springframework.data.mongodb.core.query.Update().set("privateTo", new org.bson.types.ObjectId(admin.getId())),
+                "comments");
+        assertEquals(1, service.getComments(p.id()).size());
+        loginAs(newMember("EDITOR"));
+        assertEquals(0, service.getComments(p.id()).size());
+    }
+
+    @Test
     void emptyCommentRejected() {
         NodeDTO p = createPage("A");
         assertEquals(400, statusOf(() -> service.addComment(p.id(), body("  "))));

@@ -362,6 +362,14 @@ class AiServiceTest {
     }
 
     @Test
+    void askFallsBackToNewestPagesWhenSearchFails() {
+        spaceHas(List.of(page("a", "Vacation policy", "20 days", 1)));
+        when(search.search(anyString(), isNull(), isNull(), eq(SPACE_ID), any()))
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("no index"));
+        assertEquals(1, service.ask(SPACE_ID, "vacation policy").usedDocuments());
+    }
+
+    @Test
     void askNeverSendsAPageTheUserCannotRead() {
         spaceHas(List.of(page("a", "Salaries", "secret", 5), page("b", "Vacation policy", "20 days", 1)), "a", "b");
         levels.put("a", Access.TITLE_ONLY);

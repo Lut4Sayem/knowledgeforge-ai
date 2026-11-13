@@ -159,7 +159,13 @@ public class AiService {
 
         // Atlas Search picks the pages (its text is capped at 200 characters).
         List<String> ids = new ArrayList<>();
-        for (SearchResultDTO hit : search.search(q.length() > 200 ? q.substring(0, 200) : q, null, null, spaceId, ASK_DOCS * 3)) {
+        List<SearchResultDTO> hits;
+        try {
+            hits = search.search(q.length() > 200 ? q.substring(0, 200) : q, null, null, spaceId, ASK_DOCS * 3);
+        } catch (org.springframework.dao.DataAccessException e) {
+            hits = List.of(); // search index missing or still building: use the newest pages below
+        }
+        for (SearchResultDTO hit : hits) {
             if ("PAGE".equals(hit.type()) && visible.containsKey(hit.nodeId()) && !ids.contains(hit.nodeId())) ids.add(hit.nodeId());
             if (ids.size() == ASK_DOCS) break;
         }
