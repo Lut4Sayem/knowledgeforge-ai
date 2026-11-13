@@ -51,6 +51,7 @@ export default function Sidebar({ onSearch }: { onSearch: () => void }) {
       )}
       <button type="button" className="sidebar-search" onClick={onSearch}>Search <kbd>Ctrl K</kbd></button>
       <Link to="/" className="sidebar-link">Home</Link>
+      <Link to="/profile" className="sidebar-link">Profile</Link>
 
       <h2 className="sidebar-heading">Projects</h2>
       {projects.map((s) => <SpaceSection key={s.id} space={s} activeId={activeId} />)}
