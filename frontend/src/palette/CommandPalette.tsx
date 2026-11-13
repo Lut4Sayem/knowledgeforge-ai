@@ -25,6 +25,7 @@ function Palette({ onClose }: { onClose: () => void }) {
   const activeId = useMatch('/p/:nodeId')?.params.nodeId
   const [q, setQ] = useState('')
   const [content, setContent] = useState<SearchHit[]>([])
+  const [searching, setSearching] = useState(false)
   const seq = useRef(0)
   const dialog = useRef<HTMLDialogElement>(null)
   const term = q.trim()
@@ -44,15 +45,16 @@ function Palette({ onClose }: { onClose: () => void }) {
   // Server search for page content, after a pause. An answer that is no longer the latest question is dropped.
   useEffect(() => {
     const id = ++seq.current
-    if (!term) {
-      setContent([])
-      return
-    }
+    setContent([]) // hits of the previous term must not stay selectable while the new answer is on its way
+    setSearching(!!term)
+    if (!term) return
     const t = setTimeout(() => {
-      searchAll({ q: term, limit: 10 }).then(
-        (r) => { if (id === seq.current) setContent(r.filter((h) => h.type === 'PAGE')) },
-        () => { if (id === seq.current) setContent([]) },
-      )
+      const done = (r: SearchHit[]) => {
+        if (id !== seq.current) return
+        setContent(r.filter((h) => h.type === 'PAGE'))
+        setSearching(false)
+      }
+      searchAll({ q: term, limit: 10 }).then(done, () => done([]))
     }, DEBOUNCE_MS)
     return () => clearTimeout(t)
   }, [term])
@@ -97,7 +99,8 @@ function Palette({ onClose }: { onClose: () => void }) {
       <Command shouldFilter={false} label="Search pages and actions">
         <Command.Input value={q} onValueChange={setQ} placeholder="Search pages and actions" maxLength={200} autoFocus />
         <Command.List>
-          {term && local.length + inContent.length + actions.length === 0 && <Command.Empty>No matches</Command.Empty>}
+          {term && searching && <p className="palette-note" aria-live="polite">Searching…</p>}
+          {term && !searching && local.length + inContent.length + actions.length === 0 && <Command.Empty>No matches</Command.Empty>}
           {!term && (recent.data ?? []).length > 0 && (
             <Command.Group heading="RECENT">
               {recent.data!.map((h) => (
@@ -126,7 +129,10 @@ function Palette({ onClose }: { onClose: () => void }) {
           {actions.length > 0 && (
             <Command.Group heading="ACTIONS">
               {actions.map((a) => (
-                <Command.Item key={a.id} value={`action-${a.id}`} onSelect={() => { onClose(); void a.run() }}>{a.label}</Command.Item>
+                <Command.Item key={a.id} value={`action-${a.id}`} onSelect={() => {
+                  onClose()
+                  Promise.resolve(a.run()).catch(() => window.alert('That did not work. Check your connection and try again.'))
+                }}>{a.label}</Command.Item>
               ))}
             </Command.Group>
           )}

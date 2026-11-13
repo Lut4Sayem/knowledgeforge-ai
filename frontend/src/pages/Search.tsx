@@ -16,8 +16,11 @@ export default function Search() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
   const tag = params.get('tag') ?? ''
-  const status = ['DRAFT', 'PUBLISHED'].includes(params.get('status') ?? '') ? params.get('status')! : ''
-  const type = TYPES.find((t) => t === params.get('type')) // anything else = all
+  // Old bookmarks wrote ?status=draft and ?type=document: accept them, ignore anything else.
+  const rawStatus = (params.get('status') ?? '').toUpperCase()
+  const status = ['DRAFT', 'PUBLISHED'].includes(rawStatus) ? rawStatus : ''
+  const rawType = (params.get('type') ?? '').toUpperCase().replace('DOCUMENT', 'PAGE')
+  const type = TYPES.find((t) => t === rawType) // anything else = all
   const [text, setText] = useState(q)
 
   const set = (next: Record<string, string | undefined>) =>
@@ -30,7 +33,8 @@ export default function Search() {
       return u
     }, { replace: true })
 
-  useEffect(() => setText(q), [q]) // the URL changed from outside (a tag link)
+  // The URL changed from outside (a tag link). Not when it only echoes what was typed: that would eat a trailing space.
+  useEffect(() => setText((t) => (t.trim() === q.trim() ? t : q)), [q])
   useEffect(() => {
     if (text.trim() === q.trim()) return
     const t = setTimeout(() => set({ q: text.trim() }), DEBOUNCE_MS)
@@ -71,7 +75,7 @@ export default function Search() {
       {!active && (
         <div>
           <h2>Find anything your teams have written</h2>
-          <p>Search by title, text or tag. Press Ctrl K from any page to jump here.</p>
+          <p>Search by title, text or tag. Press Ctrl K from any page to jump to a page.</p>
         </div>
       )}
       {active && hits.isLoading && <p aria-busy="true">Searching…</p>}
@@ -101,7 +105,7 @@ export default function Search() {
                 return (
                   <section key={t}>
                     <h2>{LABEL[t]}</h2>
-                    <ul className="results">{part.map((h) => <Row key={h.nodeId ?? h.spaceId ?? h.teamId} hit={h} />)}</ul>
+                    <ul className="results">{part.map((h) => <Row key={h.nodeId ?? h.spaceId ?? h.teamId} hit={h} q={q} />)}</ul>
                     {!type && rows.length > part.length && (
                       <button type="button" onClick={() => set({ type: t })}>Show all {rows.length}</button>
                     )}
@@ -116,7 +120,7 @@ export default function Search() {
   )
 }
 
-function Row({ hit }: { hit: SearchHit }) {
+function Row({ hit, q }: { hit: SearchHit; q: string }) {
   const title = hit.title || 'Untitled'
   if (hit.type !== 'PAGE') {
     // Spaces and teams have no page of their own in the app yet, so they are listed but not linked.
@@ -131,7 +135,7 @@ function Row({ hit }: { hit: SearchHit }) {
       <div><Snippet html={hit.snippetHtml} /></div>
       {hit.tags.length > 0 && (
         <div className="tags">
-          {hit.tags.map((t) => <span key={t} className="tag"><Link to={`/search?tag=${encodeURIComponent(t)}`}>#{t}</Link></span>)}
+          {hit.tags.map((t) => <span key={t} className="tag"><Link to={`/search?tag=${encodeURIComponent(t)}${q.trim() ? `&q=${encodeURIComponent(q.trim())}` : ''}`}>#{t}</Link></span>)}
         </div>
       )}
     </li>

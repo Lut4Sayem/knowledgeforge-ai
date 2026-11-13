@@ -344,9 +344,9 @@ Wireframe `History`.
 Wireframe `Palette`.
 **Files:** `palette/CommandPalette.tsx` (cmdk), `pages/Search.tsx` (port of current search page onto the new API).
 Behaviour: Ctrl+K / Cmd+K anywhere (also the sidebar button); empty box = recent pages; typing = instant title prefix match over loaded trees + debounced (200 ms) server search for "IN PAGE CONTENT"; ACTIONS: "New page in <current project>", "New project", "Open trash", "Go to settings"; ↑ ↓ / Enter / Esc; focus returns to the trigger on close.
-- [ ] Vitest: `opensOnCtrlK`, `emptyShowsRecent`, `enterOpensPage`, `escRestoresFocus`, `staleResponsesIgnored`.
-- [ ] Playwright `palette.spec.ts`.
-- [ ] Commit `feat: command palette and search page`.
+- [x] Vitest: `opensOnCtrlK`, `emptyShowsRecent`, `enterOpensPage`, `escRestoresFocus`, `staleResponsesIgnored`.
+- [x] Playwright `palette.spec.ts`.
+- [x] Commit `feat: command palette and search page`.
 
 ---
 

@@ -11,10 +11,12 @@ export default function Shell() {
     from.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setOpen(true)
   }, [])
-  const hide = useCallback(() => {
-    setOpen(false)
-    if (from.current?.isConnected) from.current.focus()
-  }, [])
+  const hide = useCallback(() => setOpen(false), [])
+
+  // After the commit: the modal dialog is gone by now, so the trigger is no longer inert and can take focus.
+  useEffect(() => {
+    if (!open && from.current?.isConnected) from.current.focus()
+  }, [open])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
