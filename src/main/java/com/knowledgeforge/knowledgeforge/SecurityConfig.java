@@ -60,22 +60,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
-                                "/login.html",
-                                "/register.html",
-                                "/dashboard.html",
-                                "/team.html",
-                                "/space.html",
-                                "/document.html",
-                                "/join.html",
-                                "/*.css",
-                                "/*.js",
                                 "/assets/**",
                                 "/app", "/app/**", // React app shell; its data calls go through the protected /api/**
                                 "/favicon.ico",
                                 "/api/auth/register",
                                 "/api/auth/login",
-                                "/search.html",
-                                "/profile.html",
+                                "/login.html", "/register.html", "/dashboard.html", "/team.html", "/space.html", "/document.html", "/join.html", "/search.html", "/profile.html", // redirected to /app by LegacyRedirects
                                 "/error", // so real errors (e.g. 500) aren't masked as 401 on public endpoints
                                 "/google557de5fbfde00618.html"
 

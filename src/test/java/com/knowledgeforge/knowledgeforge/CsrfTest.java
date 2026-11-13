@@ -45,7 +45,7 @@ class CsrfTest {
     @Test
     void loginIsExemptAndGetSetsReadableCookie() throws Exception {
         mvc.perform(post("/api/auth/login")).andExpect(status().isOk());
-        mvc.perform(get("/login.html")).andExpect(cookie().exists("XSRF-TOKEN"))
+        mvc.perform(get("/app/login")).andExpect(cookie().exists("XSRF-TOKEN"))
                 .andExpect(cookie().httpOnly("XSRF-TOKEN", false));
     }
 }
