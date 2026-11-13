@@ -1,6 +1,7 @@
 package com.knowledgeforge.knowledgeforge.common;
 
 import org.bson.Document;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.data.domain.Sort;
@@ -106,6 +107,25 @@ public class SchemaSetup implements ApplicationRunner {
                 new Document("$lte", java.util.List.of(new Document("$binarySize", "$state"), MB4))));
         mongo.indexOps("node_contents").createIndex(new Index().named("editSession_lastEditAt")
                 .on("editSession.lastEditAt", Sort.Direction.ASC).sparse());
+        setupSearchIndex();
+    }
+
+    /** Atlas Search index (ADR 0005). Needs Atlas or Atlas-local; plain mongod cannot, so a failure only logs. */
+    private void setupSearchIndex() {
+        try {
+            Document def;
+            try (var in = SchemaSetup.class.getResourceAsStream("/search/nodes_search.json")) {
+                def = Document.parse(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            }
+            boolean exists = mongo.getCollection("node_contents").aggregate(java.util.List.of(
+                    new Document("$listSearchIndexes", new Document("name", def.getString("name"))))).iterator().hasNext();
+            if (!exists) {
+                mongo.getDb().runCommand(new Document("createSearchIndexes", "node_contents")
+                        .append("indexes", java.util.List.of(def)));
+            }
+        } catch (Exception e) {
+            LoggerFactory.getLogger(SchemaSetup.class).warn("Atlas Search index not created: {}", e.getMessage());
+        }
     }
 
     private void setupVersions() {

@@ -1,6 +1,5 @@
 package com.knowledgeforge.knowledgeforge.search;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,11 +15,17 @@ public class SearchController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<SearchResultDTO>> search(
+    public List<SearchResultDTO> search(
             @RequestParam(name = "q", required = false) String q,
-            @RequestParam(name = "type", required = false) String type,
             @RequestParam(name = "tag", required = false) String tag,
-            @RequestParam(name = "status", required = false) String status) {
-        return ResponseEntity.ok(searchService.search(q, type, tag, status));
+            @RequestParam(name = "publishState", required = false) String publishState,
+            @RequestParam(name = "spaceId", required = false) String spaceId,
+            @RequestParam(name = "limit", required = false) Integer limit) {
+        return searchService.search(q, tag, publishState, spaceId, limit);
+    }
+
+    @GetMapping("/me/recent")
+    public List<SearchResultDTO> recent() {
+        return searchService.recent();
     }
 }
