@@ -13,9 +13,9 @@ public class AiController {
         this.aiService = aiService;
     }
 
-    @PostMapping("/api/documents/{documentId}/ai/summary")
-    public SummaryResponse summarize(@PathVariable String documentId) {
-        return aiService.summarize(documentId);
+    @PostMapping({"/api/nodes/{nodeId}/ai/summary", "/api/documents/{nodeId}/ai/summary"})
+    public SummaryResponse summarize(@PathVariable String nodeId) {
+        return aiService.summarize(nodeId);
     }
 
     @PostMapping("/api/spaces/{spaceId}/ai/ask")

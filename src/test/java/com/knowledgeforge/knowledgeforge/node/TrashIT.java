@@ -442,9 +442,9 @@ class TrashIT extends NodeIntegrationTest {
         locks.save(l);
 
         AiSummary s = new AiSummary();
-        s.setDocumentId(nodeId);
+        s.setNodeId(nodeId);
         s.setSummary("sum");
-        s.setDocumentUpdatedAt(now);
+        s.setContentUpdatedAt(now);
         s.setCreatedAt(now);
         summaries.save(s);
         return fileId;
@@ -469,7 +469,7 @@ class TrashIT extends NodeIntegrationTest {
         n += comments.findByNodeIdOrderByCreatedAtAsc(id).size();
         n += attachments.findByNodeId(id).size();
         n += locks.existsById(id) ? 1 : 0;
-        n += summaries.findByDocumentId(id).isPresent() ? 1 : 0;
+        n += summaries.findByNodeId(id).isPresent() ? 1 : 0;
         return n;
     }
 }
