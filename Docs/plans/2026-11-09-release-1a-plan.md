@@ -382,9 +382,10 @@ Rules: source in my personal space; destination a team space where I'm EDITOR/AD
 
 ### Task 9.3: Port remaining pages, comments, AI, dashboard to nodes
 Port Dashboard, Team, Profile pages to React (same behaviour as today, plain CSS). Comments: `/api/nodes/{id}/comments` (page-level list under the page, VIEWERs may comment). AI: Summary reads `node_contents.text` (`POST /api/nodes/{id}/ai/summary`), Ask uses Atlas Search hits instead of keyword scan. Dashboard "recently updated" from `nodes` `{spaceId, status, contentUpdatedAt}`.
-- [ ] Purge cleanup (`TrashService.purgeBranch`): switch comment and AI summary cleanup from `documentId` to `nodeId` with the renames above.
-- [ ] Existing tests updated (`AiServiceTest`, `DashboardServiceTest`, `AccessRulesTest`) + `commentsRespectNodeAccess`.
+- [x] Purge cleanup (`TrashService.purgeBranch`): switch comment and AI summary cleanup from `documentId` to `nodeId` with the renames above.
+- [x] Existing tests updated (`AiServiceTest`, `DashboardServiceTest`; `AccessRulesTest` only covers the old document rules, left for 9.4) + `commentsRespectNodeAccess` (`CommentAccessIT`).
 - [ ] Commit per page/feature.
+- Backend done (branch `feature/release-1a-nodes-backend`): `/api/nodes/{id}/comments` (comment key is `nodeId`, access via `NodeAccessService`), `POST /api/nodes/{id}/ai/summary`, Ask via Atlas Search, dashboard recent pages from `nodes`, purge and move-to-team on `nodeId`. The old `/api/documents/{id}/comments` and `/ai/summary` paths go to the same node code. Still open: React Dashboard, Team and Profile pages, and the comment list under the page.
 
 ### Task 9.4: Cutover
 - Old URLs: `document.html?id=X` -> `/app/p/X`; `space.html?id=` -> `/app/s/:id`; `/` and other old pages -> `/app` equivalents (`HomeController` redirects).

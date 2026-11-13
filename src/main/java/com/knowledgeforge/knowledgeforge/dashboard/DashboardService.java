@@ -2,8 +2,11 @@ package com.knowledgeforge.knowledgeforge.dashboard;
 
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
-import com.knowledgeforge.knowledgeforge.documentPkg.DocumentEntity;
-import com.knowledgeforge.knowledgeforge.documentPkg.DocumentRepository;
+import com.knowledgeforge.knowledgeforge.access.Access;
+import com.knowledgeforge.knowledgeforge.access.NodeAccessService;
+import com.knowledgeforge.knowledgeforge.node.Node;
+import com.knowledgeforge.knowledgeforge.node.NodeRepository;
+import com.knowledgeforge.knowledgeforge.node.NodeStatus;
 import com.knowledgeforge.knowledgeforge.space.Space;
 import com.knowledgeforge.knowledgeforge.space.SpaceRepository;
 import com.knowledgeforge.knowledgeforge.team.Team;
@@ -26,19 +29,21 @@ public class DashboardService {
     private final TeamMemberRepository teamMemberRepository;
     private final TeamRepository teamRepository;
     private final SpaceRepository spaceRepository;
-    private final DocumentRepository documentRepository;
+    private final NodeRepository nodeRepository;
+    private final NodeAccessService access;
     private final ActivityLogRepository activityLogRepository;
 
     public DashboardService(UserRepository userRepository, TeamMemberRepository teamMemberRepository, TeamRepository teamRepository,
             SpaceRepository spaceRepository,
-            DocumentRepository documentRepository,
+            NodeRepository nodeRepository, NodeAccessService access,
                             ActivityLogRepository activityLogRepository
     ) {
         this.userRepository = userRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.teamRepository = teamRepository;
         this.spaceRepository = spaceRepository;
-        this.documentRepository = documentRepository;
+        this.nodeRepository = nodeRepository;
+        this.access = access;
         this.activityLogRepository = activityLogRepository;
     }
 
@@ -91,33 +96,23 @@ public class DashboardService {
             spaceIds.add(s.getId());
         }
 
-        List<DocumentEntity> docs = spaceIds.isEmpty()
-                ? List.of()
-                : documentRepository.findBySpaceIdIn(spaceIds);
-
-        // sort newest first
-        List<DocumentEntity> sorted = new ArrayList<>(docs);
-        sorted.sort((a, b) -> {
-            Date da = a.getUpdatedAt();
-            Date db = b.getUpdatedAt();
-            if (da == null && db == null) return 0;
-            if (da == null) return 1;
-            if (db == null) return -1;
-            return db.compareTo(da);
-        });
+        // Newest pages first. Pages the user may not read (restricted) are dropped; the over-fetch covers a few of them.
+        // shortcut: if more than 20 of the newest 30 are hidden the list is shorter than 10.
+        List<Node> newest = spaceIds.isEmpty() ? List.of()
+                : nodeRepository.findTop30BySpaceIdInAndStatusOrderByContentUpdatedAtDesc(spaceIds, NodeStatus.ACTIVE);
 
         List<RecentDocumentDTO> recent = new ArrayList<>();
-        int limit = Math.min(10, sorted.size());
-        for (int i = 0; i < limit; i++) {
-            DocumentEntity d = sorted.get(i);
+        for (Node d : newest) {
+            if (recent.size() == 10) break;
+            if (access.resolve(user.getId(), d).compareTo(Access.VIEW) < 0) continue;
             Space s = spaceMap.get(d.getSpaceId());
             Team t = (s != null) ? teamMap.get(s.getTeamId()) : null;
 
             RecentDocumentDTO dto = new RecentDocumentDTO();
             dto.setDocumentId(d.getId());
             dto.setTitle(d.getTitle());
-            dto.setStatus(d.getStatus());
-            dto.setUpdatedAt(d.getUpdatedAt());
+            dto.setStatus(d.getPublishState().name());
+            dto.setUpdatedAt(d.getContentUpdatedAt() != null ? d.getContentUpdatedAt() : d.getUpdatedAt());
             dto.setTags(d.getTags());
 
             if (s != null) {
@@ -135,9 +130,11 @@ public class DashboardService {
         Map<String, Integer> spacesPerTeam = new HashMap<>();
         for (Space s : spaces) spacesPerTeam.merge(s.getTeamId(), 1, Integer::sum);
         Map<String, Integer> docsPerTeam = new HashMap<>();
-        for (DocumentEntity d : docs) {
-            Space s = spaceMap.get(d.getSpaceId());
-            if (s != null) docsPerTeam.merge(s.getTeamId(), 1, Integer::sum);
+        int pageCount = 0;
+        for (Space s : spaces) {
+            int n = (int) nodeRepository.countBySpaceIdAndStatus(s.getId(), NodeStatus.ACTIVE);
+            pageCount += n;
+            docsPerTeam.merge(s.getTeamId(), n, Integer::sum);
         }
         List<TeamSummaryDTO> teamSummaries = new ArrayList<>();
         for (TeamMember tm : memberships) {
@@ -151,7 +148,7 @@ public class DashboardService {
         resp.setTeams(teamSummaries);
         resp.setTeamCount(teams.size());
         resp.setSpaceCount(spaces.size());
-        resp.setDocumentCount(docs.size());
+        resp.setDocumentCount(pageCount);
         resp.setRecentDocuments(recent);
         resp.setRecentActivity(activityOut);
         return resp;
