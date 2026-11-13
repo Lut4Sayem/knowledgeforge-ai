@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SearchHit } from '../api/search'
 import Shell from '../app/Shell'
@@ -27,6 +27,11 @@ function Opened() {
   return <p>opened {useParams().nodeId}</p>
 }
 
+function Where() {
+  const l = useLocation()
+  return <p>at {l.pathname}{l.search}</p>
+}
+
 function setup() {
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -34,6 +39,7 @@ function setup() {
         <Routes>
           <Route element={<Shell />}>
             <Route path="/p/:nodeId" element={<Opened />} />
+            <Route path="/search" element={<Where />} />
             <Route path="*" element={<p>home</p>} />
           </Route>
         </Routes>
@@ -59,6 +65,28 @@ describe('command palette', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     await userEvent.keyboard('{Control>}k{/Control}')
     expect(await dialog()).toBeTruthy()
+  })
+
+  it('opensOnCmdK', async () => {
+    setup()
+    await userEvent.keyboard('{Meta>}k{/Meta}')
+    expect(await dialog()).toBeTruthy()
+  })
+
+  it('inputHasFocusRightAfterOpening', async () => {
+    setup()
+    await userEvent.keyboard('{Control>}k{/Control}road') // typed at once: nothing may be lost
+    expect((await screen.findByRole('combobox') as HTMLInputElement).value).toBe('road')
+    expect(document.activeElement).toBe(screen.getByRole('combobox'))
+  })
+
+  it('seeAllOpensTheSearchPage', async () => {
+    setup()
+    await userEvent.keyboard('{Control>}k{/Control}')
+    await userEvent.keyboard('run book')
+    await userEvent.click(await screen.findByRole('option', { name: 'See all results for “run book”' }))
+    expect(await screen.findByText('at /search?q=run%20book')).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('emptyShowsRecent', async () => {

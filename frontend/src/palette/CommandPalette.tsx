@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Command } from 'cmdk'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useMatch, useNavigate } from 'react-router-dom'
 import { createNode, type NodeSummary } from '../api/nodes'
 import { getRecent, searchAll, type SearchHit } from '../api/search'
@@ -28,15 +28,18 @@ function Palette({ onClose }: { onClose: () => void }) {
   const [searching, setSearching] = useState(false)
   const seq = useRef(0)
   const dialog = useRef<HTMLDialogElement>(null)
+  const input = useRef<HTMLInputElement>(null)
   const term = q.trim()
 
   const recent = useQuery({ queryKey: ['recent'], queryFn: getRecent, staleTime: 0, gcTime: 0, retry: false })
   const spaces = useQuery({ queryKey: ['spaces'], queryFn: getMySpaces })
 
-  useEffect(() => {
+  // Layout effect: the dialog is open and the input focused before the browser can deliver the next key.
+  useLayoutEffect(() => {
     const d = dialog.current
     if (d && typeof d.showModal === 'function') d.showModal()
     else d?.setAttribute('open', '') // jsdom has no showModal
+    input.current?.focus()
     return () => {
       if (d && typeof d.close === 'function' && d.open) d.close()
     }
@@ -97,7 +100,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     <dialog ref={dialog} className="palette" aria-label="Search pages and actions" onKeyDown={onKeyDown}
       onClick={(e) => { if (e.target === dialog.current) onClose() }} onCancel={(e) => e.preventDefault()}>
       <Command shouldFilter={false} label="Search pages and actions">
-        <Command.Input value={q} onValueChange={setQ} placeholder="Search pages and actions" maxLength={200} autoFocus />
+        <Command.Input ref={input} value={q} onValueChange={setQ} placeholder="Search pages and actions" maxLength={200} autoFocus />
         <Command.List>
           {term && searching && <p className="palette-note" aria-live="polite">Searching…</p>}
           {term && !searching && local.length + inContent.length + actions.length === 0 && <Command.Empty>No matches</Command.Empty>}
@@ -135,6 +138,11 @@ function Palette({ onClose }: { onClose: () => void }) {
                 }}>{a.label}</Command.Item>
               ))}
             </Command.Group>
+          )}
+          {term && (
+            <Command.Item value="see-all" onSelect={() => { onClose(); nav(`/search?q=${encodeURIComponent(term)}`) }}>
+              See all results for “{term}”
+            </Command.Item>
           )}
         </Command.List>
         <p className="palette-foot">↑ ↓ to move · Enter to open · Esc to close · Empty box shows recent pages</p>
