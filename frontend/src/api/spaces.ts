@@ -20,6 +20,7 @@ export interface Me {
   id: string
   fullName: string
   email: string
+  profilePicture?: string | null
 }
 
 export const getMySpaces = () => api<MySpace[]>('/api/me/spaces')

@@ -367,7 +367,8 @@ Port Dashboard, Team, Profile pages to React (same behaviour as today, plain CSS
 - [x] Comments move from `documentId` to `nodeId` (was Task 9.1): comments, `CommentService` and the comment access checks use nodes (not legacy `documents`), `move-to-team`\'s comment privacy (`privateTo`) follows the node key, and the comment key becomes an ObjectId. No data conversion: the database starts empty (D7).
 - [x] String references (`Space.teamId`, etc.) stay strings unless a task needs ObjectIds; there is no conversion step (D7).
 - [x] Existing tests updated (`AiServiceTest`, `DashboardServiceTest`; `AccessRulesTest` only covers the old document rules, left for 9.4) + `commentsRespectNodeAccess` (`CommentAccessIT`).
-- [ ] Commit per page/feature.
+- [x] Commit per page/feature.
+- Frontend done (branch `feature/release-1a-port-pages`): React Dashboard at `/app` (login lands there), Team page `/app/teams/:teamId`, Profile `/app/profile`, comments + Summarize + Ask panel under each page, Vitest per page and `e2e/portal.spec.ts`. Team page space links still open the old `space.html` until 9.4.
 - Backend done (branch `feature/release-1a-nodes-backend`): `/api/nodes/{id}/comments` (comment key is `nodeId`, access via `NodeAccessService`), `POST /api/nodes/{id}/ai/summary`, Ask via Atlas Search, dashboard recent pages from `nodes`, purge and move-to-team on `nodeId`. The old `/api/documents/{id}/comments` and `/ai/summary` paths go to the same node code. Still open: React Dashboard, Team and Profile pages, and the comment list under the page.
 
 ### Task 9.4: Cutover

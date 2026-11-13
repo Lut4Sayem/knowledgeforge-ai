@@ -1,5 +1,4 @@
-// shortcut: old pages stay the real dashboard until Phase 9 ports it; then this becomes '/app'.
-export const DEFAULT_NEXT = '/dashboard.html'
+export const DEFAULT_NEXT = '/app'
 
 /** Returns a same-origin path from ?next=, never an external URL or an auth page. */
 export function safeNext(raw: string | null): string {

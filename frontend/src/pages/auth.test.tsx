@@ -41,12 +41,12 @@ describe('Login', () => {
     await userEvent.type(screen.getByLabelText('Email'), 'a@b.co')
     await userEvent.type(screen.getByLabelText('Password'), 'secret123')
     await userEvent.click(screen.getByRole('button', { name: 'Log in' }))
-    await waitFor(() => expect(assign).toHaveBeenCalledWith('/dashboard.html'))
+    await waitFor(() => expect(assign).toHaveBeenCalledWith('/app'))
 
     expect(safeNext('/app/p/1?x=1')).toBe('/app/p/1?x=1')
-    expect(safeNext('https://evil.com/x')).toBe('/dashboard.html')
-    expect(safeNext('/\\evil.com')).toBe('/dashboard.html')
-    expect(safeNext('/app/login')).toBe('/dashboard.html')
+    expect(safeNext('https://evil.com/x')).toBe('/app')
+    expect(safeNext('/\\evil.com')).toBe('/app')
+    expect(safeNext('/app/login')).toBe('/app')
   })
 })
 

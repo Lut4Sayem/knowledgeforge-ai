@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import Dashboard from '../dashboard/Dashboard'
 import Join from '../pages/Join'
 import Login from '../pages/Login'
 import Logout from '../pages/Logout'
@@ -12,6 +13,8 @@ const PageView = lazy(() => import('../page/PageView'))
 const TrashPage = lazy(() => import('../trash/TrashPage'))
 const TagPage = lazy(() => import('../page/TagPage'))
 const Search = lazy(() => import('../pages/Search'))
+const TeamPage = lazy(() => import('../team/TeamPage'))
+const Profile = lazy(() => import('../profile/Profile'))
 
 const Plain = ({ children }: { children: string }) => <p style={{ padding: 'var(--space-8)' }}>{children}</p>
 
@@ -25,7 +28,9 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/join/:code" element={<Join />} />
         <Route element={<Shell />}>
-          <Route path="/" element={<Plain>Dashboard arrives with the ported pages.</Plain>} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/teams/:teamId" element={<Suspense fallback={<p>Loading…</p>}><TeamPage /></Suspense>} />
+          <Route path="/profile" element={<Suspense fallback={<p>Loading…</p>}><Profile /></Suspense>} />
           <Route path="/p/:nodeId" element={<Suspense fallback={<p>Loading…</p>}><PageView /></Suspense>} />
           <Route path="/s/:spaceId/trash" element={<Suspense fallback={<p>Loading…</p>}><TrashPage /></Suspense>} />
           <Route path="/tags/:tag" element={<Suspense fallback={<p>Loading…</p>}><TagPage /></Suspense>} />
