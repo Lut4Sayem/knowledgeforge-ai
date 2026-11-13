@@ -1,0 +1,21 @@
+{
+  "name": "nodes_search",
+  "definition": {
+    "mappings": {
+      "dynamic": false,
+      "fields": {
+        "spaceId": { "type": "objectId" },
+        "text": { "type": "string" },
+        "search": {
+          "type": "document",
+          "fields": {
+            "title": [ { "type": "string" }, { "type": "autocomplete" } ],
+            "tags": { "type": "token" },
+            "status": { "type": "token" },
+            "publishState": { "type": "token" }
+          }
+        }
+      }
+    }
+  }
+}

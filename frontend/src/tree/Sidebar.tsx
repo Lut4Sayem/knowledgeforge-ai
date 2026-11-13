@@ -21,7 +21,7 @@ const logOut = (userId: string) =>
     () => window.alert('Could not log out. Check your connection and try again.'), // offline: the code could not load
   )
 
-export default function Sidebar() {
+export default function Sidebar({ onSearch }: { onSearch: () => void }) {
   const me = useQuery({ queryKey: ['me'], queryFn: getMe })
   const teams = useQuery({ queryKey: ['teams'], queryFn: getMyTeams })
   const spaces = useQuery({ queryKey: ['spaces'], queryFn: getMySpaces })
@@ -49,8 +49,7 @@ export default function Sidebar() {
           {teamList.map((t) => <option key={t.teamId} value={t.teamId}>{t.teamName || 'Untitled team'}</option>)}
         </select>
       )}
-      {/* The palette itself arrives with Atlas Search (Phase 7). */}
-      <button type="button" className="sidebar-search" disabled title="Coming soon">Search <kbd>Ctrl K</kbd></button>
+      <button type="button" className="sidebar-search" onClick={onSearch}>Search <kbd>Ctrl K</kbd></button>
       <Link to="/" className="sidebar-link">Home</Link>
 
       <h2 className="sidebar-heading">Projects</h2>
