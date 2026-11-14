@@ -5,10 +5,10 @@ cd /home/azureuser/kf || exit 1
 IMG=ghcr.io/lut4sayem/knowledgeforge-ai:latest
 log() { echo "$(date -u +%FT%TZ) $*"; }
 
-old=$(docker image inspect -f '{{.Id}}' "$IMG" 2>/dev/null || echo none)
+old=$(docker image inspect -f '{{.Id}}' "$IMG" 2>/dev/null) || old=none
 docker compose pull -q app || { log "pull failed"; exit 1; }
 new=$(docker image inspect -f '{{.Id}}' "$IMG")
-[ "$old" = "$new" ] && [ -n "$(docker compose ps -q app)" ] && exit 0
+[ "$old" = "$new" ] && [ -n "$(docker compose ps --status running -q app)" ] && exit 0
 
 log "new image $new (was $old), deploying"
 [ "$old" != none ] && docker tag "$old" kf-previous
