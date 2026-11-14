@@ -1,0 +1,8 @@
+[Unit]
+Description=KnowledgeForge pull-and-restart if the image changed
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=azureuser
+ExecStart=/home/azureuser/kf/update.sh

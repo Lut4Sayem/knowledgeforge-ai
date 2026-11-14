@@ -1,0 +1,30 @@
+name: Nightly backup
+
+on:
+  schedule:
+    - cron: "17 20 * * *" # 20:17 UTC daily
+  workflow_dispatch:
+
+jobs:
+  mongodump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump the production database
+        env:
+          BACKUP_MONGODB_URI: ${{ secrets.BACKUP_MONGODB_URI }}
+        run: |
+          docker run --rm -v "$PWD:/out" mongo:8 \
+            mongodump --uri="$BACKUP_MONGODB_URI" --archive=/out/kf.archive --gzip
+      - name: Encrypt with age
+        env:
+          AGE_PUBLIC_KEY: ${{ secrets.AGE_PUBLIC_KEY }}
+        run: |
+          sudo apt-get install -y -qq age
+          age -r "$AGE_PUBLIC_KEY" -o kf-$(date -u +%F).archive.age kf.archive
+          rm kf.archive
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kf-backup
+          path: "*.age"
+          retention-days: 7
+          if-no-files-found: error
