@@ -381,7 +381,7 @@ Port Dashboard, Team, Profile pages to React (same behaviour as today, plain CSS
 ## Phase 10: Release 1a ship
 
 ### Task 10.1: Hosting (ADR 0006), backups, monitoring
-**Files:** `deploy/docker-compose.yml` (app + Caddy with automatic HTTPS; collab service joins in 1b), `deploy/Caddyfile`, `.github/workflows/deploy.yml` (on `main`: build image, push to GHCR, SSH deploy to the Azure VM), `.github/workflows/backup.yml` (nightly `mongodump`, encrypted with `age`, kept 7 days as artifact), Spring Actuator `/actuator/health` (public, no details).
+**Files:** `deploy/docker-compose.yml` (app + Caddy with automatic HTTPS; collab service joins in 1b), `deploy/Caddyfile`, `.github/workflows/deploy.yml` (on `main`: build image, push to GHCR; the VM pulls it every 5 min via a systemd timer, health-checked with rollback), `.github/workflows/backup.yml` (nightly `mongodump`, encrypted with `age`, kept 7 days as artifact), Spring Actuator `/actuator/health` (public, no details).
 - [ ] JVM tuned for the VM (`-XX:MaxRAMPercentage=60`), measured memory written in PROJECT_CONTEXT.
 - [ ] Restore test from a nightly backup into Atlas-local. Uptime monitor on `/actuator/health`.
 

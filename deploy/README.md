@@ -5,6 +5,14 @@ The VM pulls it every 5 minutes (`kf-update.timer` runs `update.sh`); a failed h
 
 ## One-time VM setup (Ubuntu 24.04, 1 GB RAM)
 ```sh
+# ssh: key-only (PasswordAuthentication no) + fail2ban
+sudo apt-get install -y fail2ban
+printf '[sshd]
+enabled = true
+maxretry = 5
+bantime = 1h
+' | sudo tee /etc/fail2ban/jail.d/sshd.local
+sudo systemctl enable --now fail2ban
 # swap
 sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
