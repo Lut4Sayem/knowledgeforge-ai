@@ -48,7 +48,8 @@ class WebSmokeIT extends IntegrationTest {
     void healthIsPublicWithoutDetails() throws Exception {
         HttpResponse<String> h = send("GET", "/actuator/health", null, null);
         assertEquals(200, h.statusCode());
-        assertEquals("{\"status\":\"UP\"}", h.body());
+        // CI adds a "groups" list (probe groups); only details/components must stay hidden
+        assertTrue(h.body().contains("\"status\":\"UP\"") && !h.body().contains("components"));
         assertEquals(401, send("GET", "/actuator/env", null, null).statusCode());
     }
 
