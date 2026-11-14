@@ -1,10 +1,5 @@
 package com.knowledgeforge.knowledgeforge;
 
-import com.knowledgeforge.knowledgeforge.activity.ActivityLogService;
-import com.knowledgeforge.knowledgeforge.attachment.AttachmentRepository;
-import com.knowledgeforge.knowledgeforge.attachment.AttachmentStorageService;
-import com.knowledgeforge.knowledgeforge.documentPkg.*;
-import com.knowledgeforge.knowledgeforge.documentVersion.DocumentVersionRepository;
 import com.knowledgeforge.knowledgeforge.space.CreateSpaceRequest;
 import com.knowledgeforge.knowledgeforge.space.Space;
 import com.knowledgeforge.knowledgeforge.space.SpaceRepository;
@@ -30,19 +25,13 @@ import static org.mockito.Mockito.*;
 // Unit tests for who-can-do-what. Repositories are mocked, so no database is needed.
 class AccessRulesTest {
 
-    static final String EMAIL = "me@test.com", USER_ID = "u1", TEAM_ID = "t1", SPACE_ID = "s1", DOC_ID = "d1";
+    static final String EMAIL = "me@test.com", USER_ID = "u1", TEAM_ID = "t1", SPACE_ID = "s1";
 
     UserRepository users = mock(UserRepository.class);
     TeamMemberRepository members = mock(TeamMemberRepository.class);
     SpaceRepository spaces = mock(SpaceRepository.class);
-    DocumentRepository documents = mock(DocumentRepository.class);
     TeamRepository teams = mock(TeamRepository.class);
     TeamJoinRequestRepository joinRequests = mock(TeamJoinRequestRepository.class);
-
-    DocumentService documentService = new DocumentService(documents, spaces, members, users,
-            mock(DocumentVersionRepository.class), mock(ActivityLogService.class),
-            mock(AttachmentRepository.class), mock(AttachmentStorageService.class),
-            mock(com.knowledgeforge.knowledgeforge.ai.AiSummaryRepository.class));
 
     @BeforeEach
     void setUp() {
@@ -55,11 +44,6 @@ class AccessRulesTest {
         space.setId(SPACE_ID);
         space.setTeamId(TEAM_ID);
         when(spaces.findById(SPACE_ID)).thenReturn(Optional.of(space));
-
-        DocumentEntity doc = new DocumentEntity();
-        doc.setId(DOC_ID);
-        doc.setSpaceId(SPACE_ID);
-        when(documents.findById(DOC_ID)).thenReturn(Optional.of(doc));
 
         when(members.canEdit(any(), any())).thenCallRealMethod();
     }
@@ -99,37 +83,6 @@ class AccessRulesTest {
         assertThat(members.canEdit(TEAM_ID, USER_ID)).isFalse();
         myRole(null);
         assertThat(members.canEdit(TEAM_ID, USER_ID)).isFalse();
-    }
-
-    @Test
-    void viewerCanReadButNotWriteDocuments() {
-        myRole("VIEWER");
-        assertThat(documentService.getDocumentByID(DOC_ID).getId()).isEqualTo(DOC_ID);
-
-        assertStatus(() -> documentService.createDocument(SPACE_ID, new CreateDocumentRequest()), HttpStatus.FORBIDDEN);
-        assertStatus(() -> documentService.updateDocument(DOC_ID, new UpdateDocumentRequest()), HttpStatus.FORBIDDEN);
-        assertStatus(() -> documentService.deleteDocument(DOC_ID), HttpStatus.FORBIDDEN);
-        verify(documents, never()).save(any());
-        verify(documents, never()).deleteById(any());
-    }
-
-    @Test
-    void editorCanUpdateDocuments() {
-        myRole("EDITOR");
-        when(documents.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        documentService.updateDocument(DOC_ID, new UpdateDocumentRequest());
-        verify(documents).save(any());
-    }
-
-    @Test
-    void nonMemberCannotReadDocuments() {
-        myRole(null);
-        assertStatus(() -> documentService.getDocumentByID(DOC_ID), HttpStatus.FORBIDDEN);
-    }
-
-    @Test
-    void missingDocumentIs404() {
-        assertStatus(() -> documentService.getDocumentByID("nope"), HttpStatus.NOT_FOUND);
     }
 
     @Test

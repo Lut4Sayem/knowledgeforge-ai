@@ -20,12 +20,6 @@ public class TeamController {
         return ResponseEntity.status(201).body(body);
     }
 
-    @GetMapping
-    public ResponseEntity<List<Team>> getAllTeams(){
-        List<Team> teams= teamService.getTeams();
-        return ResponseEntity.status(200).body(teams);
-    }
-
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamDetailsResponseDTO> getTeam(@PathVariable String teamId){
         TeamDetailsResponseDTO response= teamService.getTeamDetails(teamId);

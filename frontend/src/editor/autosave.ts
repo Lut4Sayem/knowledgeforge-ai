@@ -3,7 +3,7 @@
 //
 // Stale saves (D6): this copy and the server's are Yjs documents of one lineage, so a 409 is answered by
 // MERGING the server state into the local document and saving again. The exception is a state that was
-// replaced wholesale (version restore, migration): the server then has a new contentEpoch, and merging the
+// replaced wholesale (version restore): the server then has a new contentEpoch, and merging the
 // old lineage into it would bring back what the restore removed. Such a copy is kept as a private
 // "recovered" version instead, and the page loads the server state.
 import { useEffect, useState } from 'react'

@@ -374,7 +374,7 @@ Port Dashboard, Team, Profile pages to React (same behaviour as today, plain CSS
 ### Task 9.4: Cutover
 - Old URLs: `document.html?id=X` -> `/app/p/X`; `space.html?id=` -> `/app/s/:id`; `/` and other old pages -> `/app` equivalents (`HomeController` redirects).
 - Delete `static/*.html`, `static/app.js`, `static/style.css`, `documentPkg`, `documentVersion`, old search code; the `legacyMarkdown` field and the migration code are already gone (D7).
-- [ ] Commit `chore: retire legacy pages and document model`.
+- [x] Commit `chore: retire legacy pages and document model`. Done on `chore/release-1a-cutover`: `LegacyRedirects` (old URLs -> `/app`), `/app/s/:spaceId` opens the first page, legacy pages, `documentPkg`, `documentVersion` and old-only endpoints removed.
 
 ---
 

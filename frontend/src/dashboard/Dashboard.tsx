@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createTeam, getDashboard } from '../api/teams'
-import { timeAgo } from '../trash/TrashPage'
+import { timeAgo } from '../ui/timeAgo'
 
 export default function Dashboard() {
   const dash = useQuery({ queryKey: ['dashboard'], queryFn: getDashboard })

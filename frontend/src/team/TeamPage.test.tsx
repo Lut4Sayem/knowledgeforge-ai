@@ -63,6 +63,17 @@ describe('team page', () => {
     expect(((await screen.findByLabelText('Invite link')) as HTMLInputElement).value).toBe(`${location.origin}/app/join/abc`)
   })
 
+  it('doubleClickOnAcceptAnswersTheRequestOnce', async () => {
+    setup('u1')
+    let finish: () => void = () => {}
+    teams.answerJoinRequest.mockReturnValue(new Promise<void>((r) => { finish = r }))
+    const accept = await screen.findByRole('button', { name: 'Accept' })
+    await userEvent.dblClick(accept)
+    expect(teams.answerJoinRequest).toHaveBeenCalledTimes(1)
+    expect((screen.getByRole('button', { name: 'Reject' }) as HTMLButtonElement).disabled).toBe(true)
+    finish()
+  })
+
   it('editorSeesNoAdminControls', async () => {
     setup('u2')
     await screen.findByText('Alpha')

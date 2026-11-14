@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { getMe } from '../api/spaces'
 import {
   answerJoinRequest, createInvite, createTeamSpace, getJoinRequests, getTeam, getTeamSpaces, removeMember, setRole, type Member,
@@ -21,6 +21,7 @@ export default function TeamPage() {
   const [link, setLink] = useState('')
   const [spaceName, setSpaceName] = useState('')
   const [error, setError] = useState('')
+  const [answering, setAnswering] = useState('') // join request being answered: its buttons stay off until the server replies
   const refresh = () => Promise.all(['team', 'dashboard', 'teams'].map((k) => qc.invalidateQueries({ queryKey: [k] })))
   const run = (fn: () => Promise<unknown>) => fn().then(() => setError(''), (e: Error) => setError(e.message))
 
@@ -53,8 +54,7 @@ export default function TeamPage() {
       {error && <p role="alert">{error}</p>}
 
       <h2>Spaces</h2>
-      {/* old space page until the cutover (9.4) maps spaces into /app */}
-      <ul>{spaces.data?.map((s) => <li key={s.id}><a href={`/space.html?id=${s.id}`}>{s.name}</a></li>)}</ul>
+      <ul>{spaces.data?.map((s) => <li key={s.id}><Link to={`/s/${s.id}`}>{s.name}</Link></li>)}</ul>
       {mine && mine.role !== 'VIEWER' && (
         <form onSubmit={(e) => { e.preventDefault(); if (spaceName.trim()) addSpace.mutate() }}>
           <label>Space name <input value={spaceName} onChange={(e) => setSpaceName(e.target.value)} maxLength={100} /></label>
@@ -89,7 +89,16 @@ export default function TeamPage() {
               <li key={r.id}>
                 {r.fullName} ({r.email}){' '}
                 {([true, false] as const).map((ok) => (
-                  <button key={String(ok)} type="button" onClick={() => run(async () => { await answerJoinRequest(teamId, r.id, ok); await Promise.all([refresh(), requests.refetch()]) })}>
+                  <button
+                    key={String(ok)}
+                    type="button"
+                    disabled={answering === r.id}
+                    onClick={async () => {
+                      setAnswering(r.id)
+                      await run(async () => { await answerJoinRequest(teamId, r.id, ok); await Promise.all([refresh(), requests.refetch()]) })
+                      setAnswering('')
+                    }}
+                  >
                     {ok ? 'Accept' : 'Reject'}
                   </button>
                 ))}

@@ -23,6 +23,8 @@ import java.util.*;
 public class UserController {
 
     private final UserRepository userRepository;
+    static final int MAX_NAME_LENGTH = 100; // same as the profile form's maxLength
+
     private final TeamMemberRepository teamMemberRepository;
     private final TeamRepository teamRepository;
     private final ProfilePictureService pictureService;
@@ -94,7 +96,11 @@ public class UserController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         if (request.getFullName() != null) {
-            user.setFullName(request.getFullName().trim());
+            String name = request.getFullName().trim();
+            if (name.isEmpty() || name.length() > MAX_NAME_LENGTH) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must be 1 to " + MAX_NAME_LENGTH + " characters");
+            }
+            user.setFullName(name);
         }
 
         user.setUpdatedAt(new Date());

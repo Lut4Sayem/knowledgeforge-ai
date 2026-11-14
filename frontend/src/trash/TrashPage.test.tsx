@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Branch } from '../api/nodes'
 import { ConfirmHost } from '../ui/ConfirmDialog'
 import { confirmTrash } from './ConfirmTrashDialog'
-import TrashPage, { daysLeft, timeAgo } from './TrashPage'
+import { timeAgo } from '../ui/timeAgo'
+import TrashPage, { daysLeft } from './TrashPage'
 
 const api = vi.hoisted(() => ({ getTrash: vi.fn(), getArchived: vi.fn(), restoreBranch: vi.fn(), unarchiveNode: vi.fn(), deleteForever: vi.fn() }))
 vi.mock('../api/nodes', () => api)

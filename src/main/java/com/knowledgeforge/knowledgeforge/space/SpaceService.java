@@ -72,23 +72,6 @@ public class SpaceService {
         return spaceRepository.findByTeamId(teamId);
     }
 
-    public Space getSpaceById(String spaceId) {
-        Space space = spaceRepository.findById(spaceId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Space not found"));
-
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-
-        boolean isMember = teamMemberRepository.existsByTeamIdAndUserId(space.getTeamId(), user.getId());
-        if (!isMember) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this team");
-        }
-
-        return space;
-    }
-
-
     /** Idempotent: the unique partial index on ownerUserId guarantees one personal space per user. */
     public Space createPersonalSpace(String userId) {
         return spaceRepository.findByOwnerUserId(userId).orElseGet(() -> {

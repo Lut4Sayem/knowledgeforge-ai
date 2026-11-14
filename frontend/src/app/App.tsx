@@ -12,6 +12,7 @@ import Shell from './Shell'
 const PageView = lazy(() => import('../page/PageView'))
 const TrashPage = lazy(() => import('../trash/TrashPage'))
 const TagPage = lazy(() => import('../page/TagPage'))
+const SpaceHome = lazy(() => import('../page/SpaceHome'))
 const Search = lazy(() => import('../pages/Search'))
 const TeamPage = lazy(() => import('../team/TeamPage'))
 const Profile = lazy(() => import('../profile/Profile'))
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/teams/:teamId" element={<Suspense fallback={<p>Loading…</p>}><TeamPage /></Suspense>} />
           <Route path="/profile" element={<Suspense fallback={<p>Loading…</p>}><Profile /></Suspense>} />
           <Route path="/p/:nodeId" element={<Suspense fallback={<p>Loading…</p>}><PageView /></Suspense>} />
+          <Route path="/s/:spaceId" element={<Suspense fallback={<p>Loading…</p>}><SpaceHome /></Suspense>} />
           <Route path="/s/:spaceId/trash" element={<Suspense fallback={<p>Loading…</p>}><TrashPage /></Suspense>} />
           <Route path="/tags/:tag" element={<Suspense fallback={<p>Loading…</p>}><TagPage /></Suspense>} />
           <Route path="/search" element={<Suspense fallback={<p>Loading…</p>}><Search /></Suspense>} />
