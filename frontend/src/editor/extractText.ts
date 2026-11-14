@@ -1,5 +1,5 @@
 // Plain text of a page for search and diff: one line per block (one per table row), status labels included.
-// Takes blocks, not the editor, so the Node migration script can use it on converted content too.
+// Takes blocks, not the editor, so it also runs on content that has no editor instance.
 interface AnyBlock {
   type: string
   props?: Record<string, unknown>

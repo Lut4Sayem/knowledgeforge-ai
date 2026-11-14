@@ -21,6 +21,7 @@ export default function TeamPage() {
   const [link, setLink] = useState('')
   const [spaceName, setSpaceName] = useState('')
   const [error, setError] = useState('')
+  const [answering, setAnswering] = useState('') // join request being answered: its buttons stay off until the server replies
   const refresh = () => Promise.all(['team', 'dashboard', 'teams'].map((k) => qc.invalidateQueries({ queryKey: [k] })))
   const run = (fn: () => Promise<unknown>) => fn().then(() => setError(''), (e: Error) => setError(e.message))
 
@@ -88,7 +89,16 @@ export default function TeamPage() {
               <li key={r.id}>
                 {r.fullName} ({r.email}){' '}
                 {([true, false] as const).map((ok) => (
-                  <button key={String(ok)} type="button" onClick={() => run(async () => { await answerJoinRequest(teamId, r.id, ok); await Promise.all([refresh(), requests.refetch()]) })}>
+                  <button
+                    key={String(ok)}
+                    type="button"
+                    disabled={answering === r.id}
+                    onClick={async () => {
+                      setAnswering(r.id)
+                      await run(async () => { await answerJoinRequest(teamId, r.id, ok); await Promise.all([refresh(), requests.refetch()]) })
+                      setAnswering('')
+                    }}
+                  >
                     {ok ? 'Accept' : 'Reject'}
                   </button>
                 ))}

@@ -1,5 +1,5 @@
-// The one editor schema. The browser editor and the Node migration script must both import it from here,
-// otherwise a page converted in Node would not open in the browser. Keep this file free of CSS imports.
+// The one editor schema. The browser editor and any Node code that builds content must both import it from here,
+// otherwise content built in Node would not open in the browser. Keep this file free of CSS imports.
 import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core'
 import { bookmarkBlock } from './BookmarkBlock'
 import { statusInline } from './StatusBlock'

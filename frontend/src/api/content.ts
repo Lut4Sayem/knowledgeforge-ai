@@ -4,7 +4,7 @@ export interface Content {
   format: string
   state: string // base64 Yjs state, '' for a new page
   revision: number
-  /** Goes up when the state was replaced wholesale (restore, migration). Copies from another epoch must not be merged in. */
+  /** Goes up when the state was replaced wholesale (restore). Copies from another epoch must not be merged in. */
   contentEpoch: number
 }
 

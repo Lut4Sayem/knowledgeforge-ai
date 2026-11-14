@@ -1,5 +1,5 @@
 // @vitest-environment node
-// The migration script (Phase 9) runs this same schema in Node: markdown -> blocks -> Y.Doc, no browser.
+// Node-side code must be able to run this same schema: markdown -> blocks -> Y.Doc, no browser.
 import { ServerBlockNoteEditor } from '@blocknote/server-util'
 import { getDocument } from '@blocknote/server-util/dom'
 import { describe, expect, it } from 'vitest'
