@@ -23,4 +23,6 @@ COPY --from=builder /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "java -jar app.jar --server.port=$PORT"]
+# JAVA_OPTS and PORT come from the environment (compose on the VM); PORT defaults to 8080
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=60"
+CMD ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar --server.port=${PORT:-8080}"]

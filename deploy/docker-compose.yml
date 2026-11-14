@@ -1,0 +1,27 @@
+# Runs on the VM in /home/azureuser/kf (copy this folder there). Secrets live in ./.env, never in git.
+services:
+  app:
+    image: ghcr.io/lut4sayem/knowledgeforge-ai:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      JAVA_OPTS: "-XX:MaxRAMPercentage=60 -XX:+UseSerialGC -Xss512k"
+      PORT: "8080"
+    ports:
+      - "127.0.0.1:8080:8080" # for the update script's health check only
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
