@@ -2,12 +2,13 @@ package com.knowledgeforge.knowledgeforge;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
 
 /** Old bookmarks and emailed links keep working: every old page URL redirects to its place in the React app. */
 @Controller
@@ -61,7 +62,7 @@ public class LegacyRedirects {
     /** The value is a path segment: encoded, so it cannot add path parts or send the user off site. */
     private static ResponseEntity<Void> to(String template, String value) {
         if (value == null || value.isBlank()) return found("/app");
-        return "redirect:" + UriComponentsBuilder.fromPath(template).buildAndExpand(value).encode().toUriString();
+        return found(template.replace("{v}", UriUtils.encodePathSegment(value, StandardCharsets.UTF_8)));
     }
 
     // Location header set directly: a "redirect:" view would encode the already encoded query a second time.

@@ -16,12 +16,12 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    @GetMapping({"/nodes/{nodeId}/comments", "/documents/{nodeId}/comments"})
+    @GetMapping("/nodes/{nodeId}/comments")
     public ResponseEntity<List<CommentResponseDTO>> getComments(@PathVariable String nodeId) {
         return ResponseEntity.ok(commentService.getComments(nodeId));
     }
 
-    @PostMapping({"/nodes/{nodeId}/comments", "/documents/{nodeId}/comments"})
+    @PostMapping("/nodes/{nodeId}/comments")
     public ResponseEntity<CommentResponseDTO> addComment(
             @PathVariable String nodeId,
             @RequestBody CreateCommentRequest request

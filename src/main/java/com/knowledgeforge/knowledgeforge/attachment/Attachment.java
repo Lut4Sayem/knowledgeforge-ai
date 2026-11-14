@@ -12,7 +12,6 @@ public class Attachment {
     @Id
     private String id;
 
-    private String documentId; // old document pages; new pages use nodeId (documentId goes away in Phase 9)
     @Indexed
     private String nodeId;
 
@@ -38,9 +37,6 @@ public class Attachment {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
-
-    public String getDocumentId() { return documentId; }
-    public void setDocumentId(String documentId) { this.documentId = documentId; }
 
     public String getNodeId() { return nodeId; }
     public void setNodeId(String nodeId) { this.nodeId = nodeId; }

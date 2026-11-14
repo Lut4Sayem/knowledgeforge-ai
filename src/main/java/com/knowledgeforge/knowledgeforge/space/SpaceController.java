@@ -28,9 +28,4 @@ public class SpaceController {
     public ResponseEntity<List<MySpaceDTO>> getMySpaces(){
         return ResponseEntity.ok(spaceService.getMySpaces());
     }
-
-    @GetMapping("/api/spaces/{spaceId}")
-    public ResponseEntity<Space> getSpaceById(@PathVariable String spaceId){
-        return ResponseEntity.status(200).body(spaceService.getSpaceById(spaceId));
-    }
 }

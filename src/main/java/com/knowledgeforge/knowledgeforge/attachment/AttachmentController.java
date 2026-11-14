@@ -22,28 +22,6 @@ public class AttachmentController {
         this.attachmentService = attachmentService;
     }
 
-    @GetMapping("/documents/{documentId}/attachments")
-    public ResponseEntity<List<Attachment>> getAttachments(@PathVariable String documentId) {
-        return ResponseEntity.ok(attachmentService.getAttachments(documentId));
-    }
-
-    @PostMapping("/documents/{documentId}/attachments")
-    public ResponseEntity<Attachment> addAttachment(
-            @PathVariable String documentId,
-            @RequestBody CreateAttachmentRequest request
-    ) {
-        Attachment saved = attachmentService.addAttachment(documentId, request);
-        return ResponseEntity.status(201).body(saved);
-    }
-
-    @PostMapping(value = "/documents/{documentId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Attachment> uploadFile(
-            @PathVariable String documentId,
-            @RequestParam("file") MultipartFile file
-    ) {
-        return ResponseEntity.status(201).body(attachmentService.uploadFile(documentId, file));
-    }
-
     @GetMapping("/nodes/{nodeId}/attachments")
     public ResponseEntity<List<Attachment>> getNodeAttachments(@PathVariable String nodeId) {
         return ResponseEntity.ok(attachmentService.getNodeAttachments(nodeId));

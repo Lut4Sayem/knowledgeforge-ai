@@ -1,15 +1,6 @@
 package com.knowledgeforge.knowledgeforge.attachment;
 
-import com.knowledgeforge.knowledgeforge.activity.ActivityLogService;
-import com.knowledgeforge.knowledgeforge.ai.AiSummaryRepository;
-import com.knowledgeforge.knowledgeforge.documentPkg.DocumentEntity;
-import com.knowledgeforge.knowledgeforge.documentPkg.DocumentRepository;
-import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
-import com.knowledgeforge.knowledgeforge.documentVersion.DocumentVersionRepository;
-import com.knowledgeforge.knowledgeforge.space.Space;
-import com.knowledgeforge.knowledgeforge.space.SpaceRepository;
-import com.knowledgeforge.knowledgeforge.team.TeamMember;
-import com.knowledgeforge.knowledgeforge.team.TeamMemberRepository;
+import com.knowledgeforge.knowledgeforge.access.NodeAccessService;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -34,22 +25,16 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-// Upload/download rules. Real DocumentService (so role checks are real); repositories and GridFS are mocked.
+// Upload/download rules. Node access is mocked per role; repositories and GridFS are mocked.
 class AttachmentServiceTest {
 
-    static final String EMAIL = "me@test.com", USER_ID = "u1", TEAM_ID = "t1", SPACE_ID = "s1", DOC_ID = "d1";
+    static final String EMAIL = "me@test.com", USER_ID = "u1", NODE_ID = "n1";
 
     UserRepository users = mock(UserRepository.class);
-    TeamMemberRepository members = mock(TeamMemberRepository.class);
-    SpaceRepository spaces = mock(SpaceRepository.class);
-    DocumentRepository documents = mock(DocumentRepository.class);
     AttachmentRepository attachments = mock(AttachmentRepository.class);
     AttachmentStorageService storage = mock(AttachmentStorageService.class);
-    AiSummaryRepository summaries = mock(AiSummaryRepository.class);
-
-    DocumentService documentService = new DocumentService(documents, spaces, members, users,
-            mock(DocumentVersionRepository.class), mock(ActivityLogService.class), attachments, storage, summaries);
-    AttachmentService service = new AttachmentService(attachments, storage, documentService, users, mock(com.knowledgeforge.knowledgeforge.access.NodeAccessService.class));
+    NodeAccessService access = mock(NodeAccessService.class);
+    AttachmentService service = new AttachmentService(attachments, storage, users, access);
 
     @BeforeEach
     void setUp() {
@@ -58,17 +43,6 @@ class AttachmentServiceTest {
         me.setId(USER_ID);
         when(users.findByEmail(EMAIL)).thenReturn(Optional.of(me));
 
-        Space space = new Space();
-        space.setId(SPACE_ID);
-        space.setTeamId(TEAM_ID);
-        when(spaces.findById(SPACE_ID)).thenReturn(Optional.of(space));
-
-        DocumentEntity doc = new DocumentEntity();
-        doc.setId(DOC_ID);
-        doc.setSpaceId(SPACE_ID);
-        when(documents.findById(DOC_ID)).thenReturn(Optional.of(doc));
-
-        when(members.canEdit(any(), any())).thenCallRealMethod();
         when(storage.store(any(), anyString())).thenReturn("f1");
         when(attachments.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(attachments.findByFileIdIsNotNull()).thenReturn(List.of());
@@ -79,17 +53,16 @@ class AttachmentServiceTest {
         SecurityContextHolder.clearContext();
     }
 
+    /** Same rules NodeAccessService enforces: VIEWER may read, only ADMIN and EDITOR may write, non-members get 403. */
     void myRole(String role) {
-        when(members.existsByTeamIdAndUserId(TEAM_ID, USER_ID)).thenReturn(role != null);
+        reset(access);
+        ResponseStatusException denied = new ResponseStatusException(HttpStatus.FORBIDDEN, "No access");
         if (role == null) {
-            when(members.findByTeamIdAndUserId(TEAM_ID, USER_ID)).thenReturn(Optional.empty());
-            return;
+            doThrow(denied).when(access).requireView(any());
+            doThrow(denied).when(access).requireEdit(any());
+        } else if (role.equals("VIEWER")) {
+            doThrow(denied).when(access).requireEdit(any());
         }
-        TeamMember m = new TeamMember();
-        m.setTeamId(TEAM_ID);
-        m.setUserId(USER_ID);
-        m.setRole(role);
-        when(members.findByTeamIdAndUserId(TEAM_ID, USER_ID)).thenReturn(Optional.of(m));
     }
 
     static MockMultipartFile file(String name, int bytes) {
@@ -105,7 +78,7 @@ class AttachmentServiceTest {
     static Attachment fileAttachment(String id, String fileId, long size) {
         Attachment a = new Attachment();
         a.setId(id);
-        a.setDocumentId(DOC_ID);
+        a.setNodeId(NODE_ID);
         a.setFileId(fileId);
         a.setSize(size);
         a.setOriginalName("report.pdf");
@@ -116,7 +89,7 @@ class AttachmentServiceTest {
     @Test
     void editorUploadStoresFileWithOurContentType() {
         myRole("EDITOR");
-        Attachment a = service.uploadFile(DOC_ID, file("Report.PDF", 10));
+        Attachment a = service.uploadNodeFile(NODE_ID, file("Report.PDF", 10));
 
         verify(storage).store(any(), eq("application/pdf"));
         assertThat(a.getFileId()).isEqualTo("f1");
@@ -128,7 +101,7 @@ class AttachmentServiceTest {
     @Test
     void viewerCannotUpload() {
         myRole("VIEWER");
-        assertStatus(() -> service.uploadFile(DOC_ID, file("a.pdf", 10)), HttpStatus.FORBIDDEN);
+        assertStatus(() -> service.uploadNodeFile(NODE_ID, file("a.pdf", 10)), HttpStatus.FORBIDDEN);
         verifyNoInteractions(storage);
     }
 
@@ -136,7 +109,7 @@ class AttachmentServiceTest {
     void disallowedTypesAreRejected() {
         myRole("EDITOR");
         for (String name : List.of("logo.svg", "page.html", "tool.exe", "archive.zip", "noextension")) {
-            assertStatus(() -> service.uploadFile(DOC_ID, file(name, 10)), HttpStatus.BAD_REQUEST);
+            assertStatus(() -> service.uploadNodeFile(NODE_ID, file(name, 10)), HttpStatus.BAD_REQUEST);
         }
         verifyNoInteractions(storage);
     }
@@ -144,8 +117,8 @@ class AttachmentServiceTest {
     @Test
     void emptyFileIs400AndOversizeIs413() {
         myRole("EDITOR");
-        assertStatus(() -> service.uploadFile(DOC_ID, file("a.pdf", 0)), HttpStatus.BAD_REQUEST);
-        assertStatus(() -> service.uploadFile(DOC_ID, file("a.pdf", (int) AttachmentService.MAX_FILE_BYTES + 1)),
+        assertStatus(() -> service.uploadNodeFile(NODE_ID, file("a.pdf", 0)), HttpStatus.BAD_REQUEST);
+        assertStatus(() -> service.uploadNodeFile(NODE_ID, file("a.pdf", (int) AttachmentService.MAX_FILE_BYTES + 1)),
                 HttpStatus.PAYLOAD_TOO_LARGE);
         verifyNoInteractions(storage);
     }
@@ -155,7 +128,7 @@ class AttachmentServiceTest {
         myRole("EDITOR");
         when(attachments.findByFileIdIsNotNull())
                 .thenReturn(List.of(fileAttachment("a0", "f0", AttachmentService.MAX_TOTAL_BYTES - 5)));
-        assertStatus(() -> service.uploadFile(DOC_ID, file("a.pdf", 10)), HttpStatus.PAYLOAD_TOO_LARGE);
+        assertStatus(() -> service.uploadNodeFile(NODE_ID, file("a.pdf", 10)), HttpStatus.PAYLOAD_TOO_LARGE);
         verify(storage, never()).store(any(), anyString());
     }
 
@@ -163,7 +136,7 @@ class AttachmentServiceTest {
     void storedFileIsRemovedIfRecordCannotBeSaved() {
         myRole("EDITOR");
         when(attachments.save(any())).thenThrow(new RuntimeException("db down"));
-        assertThatThrownBy(() -> service.uploadFile(DOC_ID, file("a.pdf", 10))).hasMessage("db down");
+        assertThatThrownBy(() -> service.uploadNodeFile(NODE_ID, file("a.pdf", 10))).hasMessage("db down");
         verify(storage).delete("f1");
     }
 
@@ -211,23 +184,6 @@ class AttachmentServiceTest {
         assertStatus(() -> service.deleteAttachment("a1"), HttpStatus.FORBIDDEN);
         verify(attachments, never()).deleteById(any());
         verifyNoInteractions(storage);
-    }
-
-    @Test
-    void deletingADocumentCleansUpItsFiles() {
-        myRole("ADMIN");
-        Attachment link = new Attachment();
-        link.setUrl("https://example.com");
-        List<Attachment> list = List.of(fileAttachment("a1", "f1", 3), link);
-        when(attachments.findByDocumentId(DOC_ID)).thenReturn(list);
-
-        documentService.deleteDocument(DOC_ID);
-
-        verify(attachments).deleteAll(list);
-        verify(storage).delete("f1");
-        verify(storage).delete(null); // link attachment: storage ignores a null id
-        verify(summaries).deleteByNodeId(DOC_ID); // cached AI summary goes with the document
-        verify(documents).deleteById(DOC_ID);
     }
 
     @Test

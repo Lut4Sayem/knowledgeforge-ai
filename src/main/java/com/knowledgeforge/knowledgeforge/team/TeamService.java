@@ -55,24 +55,6 @@ public class TeamService {
 
     }
 
-    public List<Team> getTeams(){
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        boolean emailNotInDB = userOpt.isEmpty();
-        if(emailNotInDB){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User Not Found");
-        }
-        String userId = userOpt.get().getId();
-        List<TeamMember> teamMembers = teamMemberRepository.findByUserId(userId);
-        List<String> teamIds = new ArrayList<>();
-        for (TeamMember teamMember : teamMembers) {
-            teamIds.add(teamMember.getTeamId());
-        }
-        List<Team> teams = teamRepository.findByIdIn(teamIds);
-        return teams;
-    }
-
-
     public TeamDetailsResponseDTO getTeamDetails(String teamId) {
         Optional<Team> teamOpt = teamRepository.findById(teamId);
         if (teamOpt.isEmpty()){

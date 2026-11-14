@@ -18,7 +18,8 @@ class LegacyRedirectsTest {
     MockMvc mvc;
 
     private void redirects(String from, String to) throws Exception {
-        mvc.perform(get(from)).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(to));
+        // a raw URI: get(String) would encode the % again
+        mvc.perform(get(java.net.URI.create(from))).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(to));
     }
 
     @Test

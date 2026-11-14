@@ -5,7 +5,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import com.knowledgeforge.knowledgeforge.access.NodeAccessService;
-import com.knowledgeforge.knowledgeforge.documentPkg.DocumentService;
 import com.knowledgeforge.knowledgeforge.user.User;
 import com.knowledgeforge.knowledgeforge.user.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,45 +44,23 @@ public class AttachmentService {
 
     private final AttachmentRepository attachmentRepository;
     private final AttachmentStorageService storage;
-    private final DocumentService documentService;
     private final UserRepository userRepository;
     private final NodeAccessService access;
 
     public AttachmentService(
             AttachmentRepository attachmentRepository,
             AttachmentStorageService storage,
-            DocumentService documentService,
             UserRepository userRepository,
             NodeAccessService access
     ) {
         this.access = access;
         this.attachmentRepository = attachmentRepository;
         this.storage = storage;
-        this.documentService = documentService;
         this.userRepository = userRepository;
     }
 
     /** A stored file plus the metadata the controller needs for safe download headers. */
     public record FileDownload(Attachment attachment, Resource content) {}
-
-    public List<Attachment> getAttachments(String documentId) {
-        documentService.getDocumentByID(documentId);
-
-        return attachmentRepository.findByDocumentId(documentId);
-    }
-
-    public Attachment addAttachment(String documentId, CreateAttachmentRequest request) {
-        documentService.getDocumentForEdit(documentId);
-
-        Attachment a = new Attachment();
-        a.setDocumentId(documentId);
-        a.setOriginalName(request.getOriginalName());
-        a.setUrl(request.getUrl());
-        a.setUploadedBy(currentUser().getId());
-        a.setUploadedAt(new Date());
-
-        return attachmentRepository.save(a);
-    }
 
     public List<Attachment> getNodeAttachments(String nodeId) {
         access.requireView(nodeId);
@@ -93,11 +70,6 @@ public class AttachmentService {
     public Attachment uploadNodeFile(String nodeId, MultipartFile file) {
         access.requireEdit(nodeId);
         return store(file, a -> a.setNodeId(nodeId));
-    }
-
-    public Attachment uploadFile(String documentId, MultipartFile file) {
-        documentService.getDocumentForEdit(documentId);
-        return store(file, a -> a.setDocumentId(documentId));
     }
 
     private Attachment store(MultipartFile file, java.util.function.Consumer<Attachment> owner) {
@@ -165,13 +137,11 @@ public class AttachmentService {
     }
 
     private void requireView(Attachment a) {
-        if (a.getNodeId() != null) access.requireView(a.getNodeId());
-        else documentService.getDocumentByID(a.getDocumentId());
+        access.requireView(a.getNodeId());
     }
 
     private void requireEdit(Attachment a) {
-        if (a.getNodeId() != null) access.requireEdit(a.getNodeId());
-        else documentService.getDocumentForEdit(a.getDocumentId());
+        access.requireEdit(a.getNodeId());
     }
 
     private Attachment findAttachment(String attachmentId) {
